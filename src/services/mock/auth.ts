@@ -1,7 +1,2 @@
-/** Senha única dos usuários mock. Trocar por hash/API no backend. */
+/** Senha dos usuários mock até a API real substituir o service. */
 export const SENHA_DEMONSTRACAO = "clinica123";
-
-export const CREDENCIAIS_DEMO = {
-  email: "aline.ferreira@vidaintegrada.com.br",
-  senha: SENHA_DEMONSTRACAO,
-} as const;

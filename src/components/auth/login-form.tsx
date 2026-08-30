@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FormField } from "@/components/shared/form-section";
-import { autenticar, CREDENCIAIS_DEMO } from "@/services/auth";
+import { autenticar } from "@/services/auth";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { cn } from "@/lib/utils";
 import type { Unidade, Usuario } from "@/types";
@@ -97,12 +97,6 @@ export function LoginForm() {
     if (!pendente || !unidadeId) return;
     setConfirmandoUnidade(true);
     concluir(pendente.usuario, unidadeId, pendente.lembrar);
-  }
-
-  function usarDemonstracao() {
-    setValue("email", CREDENCIAIS_DEMO.email, { shouldValidate: true });
-    setValue("senha", CREDENCIAIS_DEMO.senha, { shouldValidate: true });
-    setErroAuth(null);
   }
 
   if (!hidratado || sessao) {
@@ -234,23 +228,7 @@ export function LoginForm() {
         </Button>
       </form>
 
-      <div className="mt-8 rounded-xl border border-border bg-muted/60 p-4">
-        <p className="text-xs font-medium text-foreground">Acesso de demonstração</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          {CREDENCIAIS_DEMO.email}
-          <span className="mx-1.5 text-border">·</span>
-          senha {CREDENCIAIS_DEMO.senha}
-        </p>
-        <button
-          type="button"
-          onClick={usarDemonstracao}
-          className="mt-2 text-xs font-medium text-primary hover:underline"
-        >
-          Preencher credenciais
-        </button>
-      </div>
-
-      <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
+      <p className="mt-8 text-xs leading-relaxed text-muted-foreground">
         O cadastro de novos usuários é feito pelo administrador da clínica em
         <span className="font-medium text-foreground"> Configurações › Usuários</span>.
       </p>

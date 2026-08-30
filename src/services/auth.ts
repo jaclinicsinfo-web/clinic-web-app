@@ -1,9 +1,7 @@
 import type { Unidade, Usuario } from "@/types";
 
-import { CREDENCIAIS_DEMO, SENHA_DEMONSTRACAO } from "./mock/auth";
+import { SENHA_DEMONSTRACAO } from "./mock/auth";
 import { clinica, usuarios } from "./mock/pessoas";
-
-export { CREDENCIAIS_DEMO, SENHA_DEMONSTRACAO };
 
 export type ResultadoLogin =
   | { ok: true; usuario: Usuario; unidades: Unidade[] }
