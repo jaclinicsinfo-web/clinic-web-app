@@ -13,13 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatCep, formatCnpj, formatPhone } from "@/lib/format";
+import { cnpjValido, telefoneValido } from "@/lib/validacao";
 import type { Clinica } from "@/types";
 
 const schema = z.object({
   nomeFantasia: z.string().min(3, "Informe o nome fantasia."),
   razaoSocial: z.string().min(3, "Informe a razão social."),
-  cnpj: z.string().min(18, "Informe um CNPJ válido."),
-  telefone: z.string().min(14, "Informe um telefone válido."),
+  cnpj: z.string().refine(cnpjValido, "CNPJ inválido."),
+  telefone: z.string().refine(telefoneValido, "Telefone inválido."),
   email: z.string().email("E-mail inválido."),
   cep: z.string().min(9, "CEP incompleto."),
   rua: z.string().min(3, "Informe o logradouro."),

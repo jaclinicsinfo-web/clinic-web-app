@@ -14,41 +14,48 @@ import { FormField } from "@/components/shared/form-section";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { formatCnpj, formatPhone } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { cnpjValido, telefoneValido } from "@/lib/validacao";
 import { concluirSetup, consultarSetup } from "@/services/setup";
 
-const setupSchema = z
-  .object({
-    nomeFantasia: z.string().trim().min(3, "Nome fantasia deve ter no mínimo 3 caracteres."),
-    razaoSocial: z.string().trim().min(3, "Razão social deve ter no mínimo 3 caracteres."),
-    cnpj: z
-      .string()
-      .refine((valor) => valor.replace(/\D/g, "").length === 14, "CNPJ deve conter 14 dígitos."),
-    telefone: z
-      .string()
-      .refine(
-        (valor) => [10, 11].includes(valor.replace(/\D/g, "").length),
-        "Telefone deve conter 10 ou 11 dígitos.",
-      ),
-    emailClinica: z.string().trim().email("E-mail da clínica inválido."),
-    unidadeNome: z.string().trim().min(3, "Nome da unidade deve ter no mínimo 3 caracteres."),
-    unidadeCidade: z.string().trim().min(2, "Cidade inválida."),
-    adminNome: z.string().trim().min(3, "Nome do administrador deve ter no mínimo 3 caracteres."),
-    adminEmail: z.string().trim().email("E-mail do administrador inválido."),
-    senha: z.string().min(8, "A senha deve ter no mínimo 8 caracteres."),
-    confirmarSenha: z.string().min(1, "Confirme a senha."),
-  })
-  .refine((dados) => dados.senha === dados.confirmarSenha, {
-    path: ["confirmarSenha"],
-    message: "As senhas não coincidem.",
-  });
+const setupCamposSchema = z.object({
+  nomeFantasia: z.string().trim().min(3, "Nome fantasia deve ter no mínimo 3 caracteres."),
+  razaoSocial: z.string().trim().min(3, "Razão social deve ter no mínimo 3 caracteres."),
+  cnpj: z.string().refine(cnpjValido, "CNPJ inválido."),
+  telefone: z.string().refine(telefoneValido, "Telefone inválido."),
+  emailClinica: z.string().trim().email("E-mail da clínica inválido."),
+  unidadeNome: z.string().trim().min(3, "Nome da unidade deve ter no mínimo 3 caracteres."),
+  unidadeCidade: z.string().trim().min(2, "Cidade inválida."),
+  adminNome: z.string().trim().min(3, "Nome do administrador deve ter no mínimo 3 caracteres."),
+  adminEmail: z.string().trim().email("E-mail do administrador inválido."),
+  senha: z.string().min(8, "A senha deve ter no mínimo 8 caracteres."),
+  confirmarSenha: z.string().min(1, "Confirme a senha."),
+});
 
-type SetupFormValues = z.infer<typeof setupSchema>;
+const setupSchema = setupCamposSchema.refine((dados) => dados.senha === dados.confirmarSenha, {
+  path: ["confirmarSenha"],
+  message: "As senhas não coincidem.",
+});
+
+type SetupFormValues = z.infer<typeof setupCamposSchema>;
 
 const CAMPOS_PASSO: Record<1 | 2 | 3, (keyof SetupFormValues)[]> = {
   1: ["nomeFantasia", "razaoSocial", "cnpj", "telefone", "emailClinica"],
   2: ["unidadeNome", "unidadeCidade"],
   3: ["adminNome", "adminEmail", "senha", "confirmarSenha"],
 };
+
+function schemaDoPasso(passo: 1 | 2 | 3) {
+  const campos = CAMPOS_PASSO[passo];
+  const selecao = Object.fromEntries(campos.map((campo) => [campo, true])) as {
+    [K in (typeof campos)[number]]: true;
+  };
+  const schema = setupCamposSchema.pick(selecao);
+  if (passo !== 3) return schema;
+  return schema.refine((dados) => dados.senha === dados.confirmarSenha, {
+    path: ["confirmarSenha"],
+    message: "As senhas não coincidem.",
+  });
+}
 
 const ROTULOS_PASSO = ["Clínica", "Unidade", "Administrador"];
 
@@ -67,7 +74,9 @@ export function SetupForm() {
     register,
     handleSubmit,
     setValue,
-    trigger,
+    setError,
+    clearErrors,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<SetupFormValues>({
     resolver: zodResolver(setupSchema),
@@ -116,9 +125,18 @@ export function SetupForm() {
     };
   }, [hidratado, sessao, router]);
 
-  async function avancar() {
-    const valido = await trigger(CAMPOS_PASSO[passo]);
-    if (!valido) return;
+  function avancar() {
+    const resultado = schemaDoPasso(passo).safeParse(getValues());
+    if (!resultado.success) {
+      for (const issue of resultado.error.issues) {
+        const campo = issue.path[0];
+        if (typeof campo === "string") {
+          setError(campo as keyof SetupFormValues, { type: "manual", message: issue.message });
+        }
+      }
+      return;
+    }
+    clearErrors(CAMPOS_PASSO[passo]);
     setErroSetup(null);
     setPasso((atual) => (atual === 3 ? 3 : ((atual + 1) as 1 | 2 | 3)));
   }
@@ -217,7 +235,7 @@ export function SetupForm() {
         onSubmit={(evento) => {
           if (passo < 3) {
             evento.preventDefault();
-            void avancar();
+            avancar();
             return;
           }
           void handleSubmit(onSubmit)(evento);
@@ -385,7 +403,7 @@ export function SetupForm() {
             </Button>
           )}
           {passo < 3 ? (
-            <Button type="button" className="flex-1" size="lg" onClick={() => void avancar()}>
+            <Button type="button" className="flex-1" size="lg" onClick={avancar}>
               Continuar
             </Button>
           ) : (
