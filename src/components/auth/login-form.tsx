@@ -14,10 +14,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FormField } from "@/components/shared/form-section";
-import { autenticar } from "@/services/auth";
+import { autenticar, selecionarUnidade } from "@/services/auth";
+import { consultarSetup } from "@/services/setup";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { cn } from "@/lib/utils";
-import type { Unidade, Usuario } from "@/types";
+import { ApiError } from "@/lib/api";
+import type { PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Informe seu e-mail.").email("E-mail inválido."),
@@ -31,6 +33,8 @@ interface LoginPendente {
   usuario: Usuario;
   unidades: Unidade[];
   lembrar: boolean;
+  plano: PlanoAtual | null;
+  usoUsuarios: UsoUsuarios | null;
 }
 
 export function LoginForm() {
@@ -44,6 +48,7 @@ export function LoginForm() {
   const [pendente, setPendente] = React.useState<LoginPendente | null>(null);
   const [unidadeId, setUnidadeId] = React.useState("");
   const [confirmandoUnidade, setConfirmandoUnidade] = React.useState(false);
+  const [setup, setSetup] = React.useState<"checando" | "pronto" | "redirecionando">("checando");
 
   const {
     register,
@@ -57,13 +62,41 @@ export function LoginForm() {
   });
 
   React.useEffect(() => {
-    if (hidratado && sessao) {
+    if (!hidratado) return;
+    if (sessao) {
       router.replace("/dashboard");
+      return;
     }
+
+    let ativo = true;
+    consultarSetup()
+      .then((data) => {
+        if (!ativo) return;
+        if (data.precisaSetup) {
+          setSetup("redirecionando");
+          router.replace("/setup");
+          return;
+        }
+        setSetup("pronto");
+      })
+      .catch(() => {
+        if (ativo) setSetup("pronto");
+      });
+
+    return () => {
+      ativo = false;
+    };
   }, [hidratado, sessao, router]);
 
-  function concluir(usuario: Usuario, unidadeAtualId: string, lembrar: boolean) {
-    iniciarSessao(usuario, unidadeAtualId, lembrar);
+  function concluir(
+    usuario: Usuario,
+    unidadeAtualId: string,
+    lembrar: boolean,
+    unidades: Unidade[],
+    plano: PlanoAtual | null,
+    usoUsuarios: UsoUsuarios | null,
+  ) {
+    iniciarSessao(usuario, unidadeAtualId, unidades, lembrar, plano, usoUsuarios);
     toast.success(`Olá, ${usuario.nome.split(" ")[0]}!`, {
       description: `${usuario.perfilNome} · sessão iniciada`,
     });
@@ -72,7 +105,7 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginFormValues) {
     setErroAuth(null);
-    const resultado = await autenticar(values.email, values.senha);
+    const resultado = await autenticar(values.email, values.senha, values.lembrar);
 
     if (!resultado.ok) {
       setErroAuth(resultado.erro);
@@ -85,21 +118,49 @@ export function LoginForm() {
     }
 
     if (resultado.unidades.length === 1) {
-      concluir(resultado.usuario, resultado.unidades[0].id, values.lembrar);
+      concluir(
+        resultado.usuario,
+        resultado.unidades[0].id,
+        values.lembrar,
+        resultado.unidades,
+        resultado.plano,
+        resultado.usoUsuarios,
+      );
       return;
     }
 
-    setUnidadeId(resultado.unidades[0].id);
-    setPendente({ usuario: resultado.usuario, unidades: resultado.unidades, lembrar: values.lembrar });
+    setUnidadeId(resultado.unidadeAtualId ?? resultado.unidades[0].id);
+    setPendente({
+      usuario: resultado.usuario,
+      unidades: resultado.unidades,
+      lembrar: values.lembrar,
+      plano: resultado.plano,
+      usoUsuarios: resultado.usoUsuarios,
+    });
   }
 
-  function confirmarUnidade() {
+  async function confirmarUnidade() {
     if (!pendente || !unidadeId) return;
     setConfirmandoUnidade(true);
-    concluir(pendente.usuario, unidadeId, pendente.lembrar);
+    setErroAuth(null);
+
+    try {
+      await selecionarUnidade(unidadeId, pendente.lembrar);
+      concluir(
+        pendente.usuario,
+        unidadeId,
+        pendente.lembrar,
+        pendente.unidades,
+        pendente.plano,
+        pendente.usoUsuarios,
+      );
+    } catch (error) {
+      setConfirmandoUnidade(false);
+      setErroAuth(error instanceof ApiError ? error.message : "Não foi possível selecionar a unidade.");
+    }
   }
 
-  if (!hidratado || sessao) {
+  if (!hidratado || sessao || setup !== "pronto") {
     return (
       <div className="flex h-40 items-center justify-center">
         <Loader2 className="size-5 animate-spin text-primary" aria-label="Carregando" />
@@ -127,6 +188,16 @@ export function LoginForm() {
           Olá, {pendente.usuario.nome.split(" ")[0]}. Você tem acesso a mais de uma unidade. Escolha onde deseja
           trabalhar nesta sessão.
         </p>
+
+        {erroAuth && (
+          <p
+            role="alert"
+            className="mt-4 flex items-start gap-2 rounded-lg border border-danger-bg bg-danger-bg px-3 py-2.5 text-sm text-danger"
+          >
+            <AlertCircle className="mt-0.5 size-4 shrink-0" />
+            {erroAuth}
+          </p>
+        )}
 
         <RadioGroup value={unidadeId} onValueChange={setUnidadeId} className="mt-8 gap-3">
           {pendente.unidades.map((unidade) => {

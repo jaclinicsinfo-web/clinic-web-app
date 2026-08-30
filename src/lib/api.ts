@@ -5,8 +5,9 @@
  * consomem os services, nunca o cliente diretamente.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
-const TOKEN_STORAGE_KEY = "clinicerp.token";
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
+const TOKEN_LOCAL = "clinicerp.token";
+const TOKEN_TEMP = "clinicerp.token.temp";
 
 export class ApiError extends Error {
   constructor(
@@ -21,15 +22,24 @@ export class ApiError extends Error {
 
 export function getToken() {
   if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+  return window.localStorage.getItem(TOKEN_LOCAL) ?? window.sessionStorage.getItem(TOKEN_TEMP);
 }
 
-export function setToken(token: string) {
-  window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+export function setToken(token: string, lembrar = true) {
+  if (lembrar) {
+    window.localStorage.setItem(TOKEN_LOCAL, token);
+    window.sessionStorage.removeItem(TOKEN_TEMP);
+    return;
+  }
+
+  window.sessionStorage.setItem(TOKEN_TEMP, token);
+  window.localStorage.removeItem(TOKEN_LOCAL);
 }
 
 export function clearToken() {
-  window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(TOKEN_LOCAL);
+  window.sessionStorage.removeItem(TOKEN_TEMP);
 }
 
 interface RequestOptions extends Omit<RequestInit, "body"> {
@@ -40,7 +50,11 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
 async function request<TResponse>(endpoint: string, options: RequestOptions = {}): Promise<TResponse> {
   const { params, body, headers, ...rest } = options;
 
-  const url = new URL(`${API_BASE_URL}${endpoint}`, API_BASE_URL || "http://localhost");
+  if (!API_BASE_URL) {
+    throw new ApiError("URL da API não configurada.", 0);
+  }
+
+  const url = new URL(`${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) url.searchParams.set(key, String(value));
@@ -49,15 +63,20 @@ async function request<TResponse>(endpoint: string, options: RequestOptions = {}
 
   const token = getToken();
 
-  const response = await fetch(API_BASE_URL ? url.toString() : `${endpoint}${url.search}`, {
-    ...rest,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      ...rest,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...headers,
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError("Não foi possível conectar ao servidor. Tente novamente.", 0);
+  }
 
   if (response.status === 204) return undefined as TResponse;
 

@@ -386,7 +386,21 @@ export interface Usuario {
   ultimoAcesso?: string;
 }
 
-/** Sessão do painel (front). Substitui JWT/NextAuth quando o backend existir. */
+export type CodigoPlano = "essencial" | "profissional" | "ilimitado";
+
+export interface PlanoAtual {
+  codigo: CodigoPlano;
+  nome: string;
+  limiteUsuarios: number | null;
+}
+
+export interface UsoUsuarios {
+  usados: number;
+  limite: number | null;
+  podeAdicionar: boolean;
+}
+
+/** Sessão do painel autenticado. */
 export interface SessaoUsuario {
   id: string;
   nome: string;
@@ -394,6 +408,10 @@ export interface SessaoUsuario {
   perfil: string;
   unidadeAtualId: string;
   unidadesAcesso: string[];
+  unidades: Unidade[];
+  plano: PlanoAtual | null;
+  usoUsuarios: UsoUsuarios | null;
+  planoEvento: "upgrade" | "downgrade" | null;
 }
 
 export interface Clinica {

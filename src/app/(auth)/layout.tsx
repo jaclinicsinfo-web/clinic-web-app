@@ -53,7 +53,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </aside>
 
       <main className="flex w-full items-center justify-center bg-card px-6 py-12 lg:w-[52%]">
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-md">
           <div className="mb-10 flex items-center gap-3 lg:hidden">
             <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <HeartPulse className="size-5" />

@@ -22,10 +22,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { listUnidadesDaSessao } from "@/services/auth";
 import { getAlertas } from "@/services/dashboard";
 import { listPacientes } from "@/services/pacientes";
 import { listProfissionais } from "@/services/profissionais";
+import { toast } from "sonner";
 
 interface TopbarProps {
   onOpenMobileMenu: () => void;
@@ -47,10 +47,7 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
   const [termo, setTermo] = React.useState("");
   const [buscaAberta, setBuscaAberta] = React.useState(false);
 
-  const unidades = React.useMemo(
-    () => listUnidadesDaSessao(sessao?.unidadesAcesso ?? []),
-    [sessao?.unidadesAcesso],
-  );
+  const unidades = sessao?.unidades ?? [];
   const alertas = React.useMemo(() => getAlertas(), []);
 
   const resultados = React.useMemo<ResultadoBusca[]>(() => {
@@ -151,7 +148,14 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
 
       <div className="ml-auto flex items-center gap-2">
         {sessao && unidades.length > 0 && (
-          <Select value={sessao.unidadeAtualId} onValueChange={setUnidade}>
+          <Select
+            value={sessao.unidadeAtualId}
+            onValueChange={(id) => {
+              void setUnidade(id).catch(() => {
+                toast.error("Não foi possível trocar a unidade.");
+              });
+            }}
+          >
             <SelectTrigger className="hidden w-52 md:flex" aria-label="Unidade">
               <span className="flex min-w-0 items-center gap-2">
                 <Building2 className="size-4 shrink-0 text-muted-foreground" />

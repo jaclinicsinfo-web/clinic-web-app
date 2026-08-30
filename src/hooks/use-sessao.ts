@@ -3,12 +3,23 @@
 import * as React from "react";
 import { create } from "zustand";
 
-import type { SessaoUsuario, Usuario } from "@/types";
+import { clearToken, getToken } from "@/lib/api";
+import { comparouPlanos, LIMITES_PLANO, planoEstaAcimaDoTeto } from "@/lib/plano";
+import { encerrarSessaoApi, selecionarUnidade } from "@/services/auth";
+import type { CodigoPlano, PlanoAtual, SessaoUsuario, Unidade, UsoUsuarios, Usuario } from "@/types";
 
 const STORAGE_LOCAL = "clinicerp.sessao";
 const STORAGE_TEMP = "clinicerp.sessao.temp";
+const STORAGE_PLANO_VISTO = "clinicerp.planoVisto";
 
-function montarSessao(usuario: Usuario, unidadeAtualId: string): SessaoUsuario {
+function montarSessao(
+  usuario: Usuario,
+  unidadeAtualId: string,
+  unidades: Unidade[],
+  plano: PlanoAtual | null,
+  usoUsuarios: UsoUsuarios | null,
+  planoEvento: SessaoUsuario["planoEvento"],
+): SessaoUsuario {
   return {
     id: usuario.id,
     nome: usuario.nome,
@@ -16,7 +27,45 @@ function montarSessao(usuario: Usuario, unidadeAtualId: string): SessaoUsuario {
     perfil: usuario.perfilNome,
     unidadeAtualId,
     unidadesAcesso: usuario.unidadesAcesso,
+    unidades,
+    plano,
+    usoUsuarios,
+    planoEvento,
   };
+}
+
+function lerPlanoVisto() {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(STORAGE_PLANO_VISTO);
+}
+
+function gravarPlanoVisto(codigo: string) {
+  window.localStorage.setItem(STORAGE_PLANO_VISTO, codigo);
+}
+
+function asCodigoPlano(valor: string | null): CodigoPlano | null {
+  if (valor === "essencial" || valor === "profissional" || valor === "ilimitado") return valor;
+  return null;
+}
+
+function resolverEvento(
+  planoAnterior: PlanoAtual | null | undefined,
+  plano: PlanoAtual | null,
+  uso: UsoUsuarios | null,
+): SessaoUsuario["planoEvento"] {
+  if (planoEstaAcimaDoTeto(uso)) return "downgrade";
+  if (!plano) return null;
+
+  const visto = asCodigoPlano(lerPlanoVisto());
+  const referencia: PlanoAtual | null =
+    planoAnterior ??
+    (visto ? { codigo: visto, nome: "", limiteUsuarios: LIMITES_PLANO[visto] } : null);
+
+  if (!referencia || referencia.codigo === plano.codigo) return null;
+
+  const mudanca = comparouPlanos(referencia, plano);
+  if (mudanca === "upgrade" && visto !== plano.codigo) return "upgrade";
+  return null;
 }
 
 function lerStorage(): SessaoUsuario | null {
@@ -26,7 +75,14 @@ function lerStorage(): SessaoUsuario | null {
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw) as SessaoUsuario;
+    const parsed = JSON.parse(raw) as SessaoUsuario;
+    if (!parsed?.id || !Array.isArray(parsed.unidades)) return null;
+    return {
+      ...parsed,
+      plano: parsed.plano ?? null,
+      usoUsuarios: parsed.usoUsuarios ?? null,
+      planoEvento: resolverEvento(null, parsed.plano, parsed.usoUsuarios),
+    };
   } catch {
     return null;
   }
@@ -55,8 +111,24 @@ interface SessaoState {
   hidratado: boolean;
   lembrar: boolean;
   hidratar: () => void;
-  iniciarSessao: (usuario: Usuario, unidadeAtualId: string, lembrar: boolean) => void;
-  setUnidade: (unidadeAtualId: string) => void;
+  iniciarSessao: (
+    usuario: Usuario,
+    unidadeAtualId: string,
+    unidades: Unidade[],
+    lembrar: boolean,
+    plano?: PlanoAtual | null,
+    usoUsuarios?: UsoUsuarios | null,
+  ) => void;
+  aplicarContextoPlano: (input: {
+    usuario?: Usuario;
+    unidades?: Unidade[];
+    unidadeAtualId?: string | null;
+    plano: PlanoAtual | null;
+    usoUsuarios: UsoUsuarios | null;
+  }) => void;
+  atualizarUso: (usoUsuarios: UsoUsuarios) => void;
+  dispensarAvisoUpgrade: () => void;
+  setUnidade: (unidadeAtualId: string) => Promise<void>;
   encerrarSessao: () => void;
 }
 
@@ -66,22 +138,70 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
   lembrar: true,
   hidratar: () => {
     if (get().hidratado) return;
+    const token = getToken();
     const persistida = typeof window !== "undefined" && Boolean(window.localStorage.getItem(STORAGE_LOCAL));
+    if (!token) {
+      limparStorage();
+      set({ sessao: null, hidratado: true, lembrar: persistida });
+      return;
+    }
     set({ sessao: lerStorage(), hidratado: true, lembrar: persistida });
   },
-  iniciarSessao: (usuario, unidadeAtualId, lembrar) => {
-    const sessao = montarSessao(usuario, unidadeAtualId);
+  iniciarSessao: (usuario, unidadeAtualId, unidades, lembrar, plano = null, usoUsuarios = null) => {
+    const evento = resolverEvento(null, plano, usoUsuarios);
+    const sessao = montarSessao(usuario, unidadeAtualId, unidades, plano, usoUsuarios, evento);
+    if (plano && evento !== "upgrade") gravarPlanoVisto(plano.codigo);
     gravarStorage(sessao, lembrar);
     set({ sessao, lembrar });
   },
-  setUnidade: (unidadeAtualId) => {
+  aplicarContextoPlano: (input) => {
     const atual = get().sessao;
     if (!atual) return;
-    const sessao = { ...atual, unidadeAtualId };
+    const evento = resolverEvento(atual.plano, input.plano, input.usoUsuarios);
+    const sessao: SessaoUsuario = {
+      ...atual,
+      nome: input.usuario?.nome ?? atual.nome,
+      email: input.usuario?.email ?? atual.email,
+      perfil: input.usuario?.perfilNome ?? atual.perfil,
+      unidades: input.unidades ?? atual.unidades,
+      unidadeAtualId: input.unidadeAtualId ?? atual.unidadeAtualId,
+      plano: input.plano,
+      usoUsuarios: input.usoUsuarios,
+      planoEvento: evento,
+    };
+    gravarStorage(sessao, get().lembrar);
+    if (input.plano && evento !== "upgrade") gravarPlanoVisto(input.plano.codigo);
+    set({ sessao });
+  },
+  atualizarUso: (usoUsuarios) => {
+    const atual = get().sessao;
+    if (!atual) return;
+    const evento = resolverEvento(atual.plano, atual.plano, usoUsuarios);
+    const sessao = { ...atual, usoUsuarios, planoEvento: evento };
+    if (evento !== "downgrade" && atual.plano) gravarPlanoVisto(atual.plano.codigo);
+    gravarStorage(sessao, get().lembrar);
+    set({ sessao });
+  },
+  dispensarAvisoUpgrade: () => {
+    const atual = get().sessao;
+    if (!atual?.plano) return;
+    gravarPlanoVisto(atual.plano.codigo);
+    const sessao = { ...atual, planoEvento: null };
+    gravarStorage(sessao, get().lembrar);
+    set({ sessao });
+  },
+  setUnidade: async (unidadeAtualId) => {
+    const atual = get().sessao;
+    if (!atual || atual.unidadeAtualId === unidadeAtualId) return;
+
+    const resultado = await selecionarUnidade(unidadeAtualId, get().lembrar);
+    const sessao = { ...atual, unidadeAtualId: resultado.unidadeAtualId };
     gravarStorage(sessao, get().lembrar);
     set({ sessao });
   },
   encerrarSessao: () => {
+    void encerrarSessaoApi();
+    clearToken();
     limparStorage();
     set({ sessao: null });
   },

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Plus, UserX } from "lucide-react";
+import { MoreHorizontal, Plus, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -30,12 +30,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ApiError } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import type { PerfilAcesso, Unidade, Usuario } from "@/types";
 
 const schema = z.object({
   nome: z.string().min(3, "Informe o nome."),
   email: z.string().email("E-mail inválido."),
+  senha: z.string().min(8, "A senha deve ter ao menos 8 caracteres."),
   perfilId: z.string().min(1, "Selecione o perfil."),
   unidadeId: z.string().min(1, "Selecione ao menos uma unidade."),
 });
@@ -46,14 +48,30 @@ export function UsuariosTable({
   usuarios,
   perfis,
   unidades,
+  carregando,
+  podeAdicionar,
+  podeGerenciar,
+  usuarioAtualId,
+  onCriar,
+  onInativar,
+  onAtivar,
 }: {
   usuarios: Usuario[];
   perfis: PerfilAcesso[];
   unidades: Unidade[];
+  carregando?: boolean;
+  podeAdicionar: boolean;
+  podeGerenciar: boolean;
+  usuarioAtualId?: string;
+  onCriar: (values: FormValues) => Promise<void>;
+  onInativar: (id: string) => Promise<void>;
+  onAtivar: (id: string) => Promise<void>;
 }) {
   const [status, setStatus] = React.useState("todos");
   const [aberto, setAberto] = React.useState(false);
   const [inativando, setInativando] = React.useState<Usuario | null>(null);
+  const [ativando, setAtivando] = React.useState<Usuario | null>(null);
+  const [salvando, setSalvando] = React.useState(false);
 
   const dados = React.useMemo(
     () => usuarios.filter((usuario) => status === "todos" || usuario.status === status),
@@ -69,7 +87,7 @@ export function UsuariosTable({
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: "", email: "", perfilId: "", unidadeId: "" },
+    defaultValues: { nome: "", email: "", senha: "", perfilId: "", unidadeId: "" },
   });
 
   const columns = React.useMemo<ColumnDef<Usuario, unknown>[]>(
@@ -118,26 +136,39 @@ export function UsuariosTable({
         enableHiding: false,
         enableGlobalFilter: false,
         size: 56,
-        cell: ({ row }) => (
-          <div className="flex justify-end" onClick={(event) => event.stopPropagation()}>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon-sm" aria-label={`Ações de ${row.original.nome}`}>
-                  <MoreHorizontal />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem destructive onSelect={() => setInativando(row.original)}>
-                  <UserX />
-                  Inativar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const proprio = row.original.id === usuarioAtualId;
+          const ativo = row.original.status === "ativo";
+          if (!podeGerenciar || proprio) return null;
+
+          return (
+            <div className="flex justify-end" onClick={(event) => event.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon-sm" aria-label={`Ações de ${row.original.nome}`}>
+                    <MoreHorizontal />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {ativo ? (
+                    <DropdownMenuItem destructive onSelect={() => setInativando(row.original)}>
+                      <UserX />
+                      Inativar
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onSelect={() => setAtivando(row.original)}>
+                      <UserCheck />
+                      Reativar
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
       },
     ],
-    [unidades],
+    [unidades, podeGerenciar, usuarioAtualId],
   );
 
   return (
@@ -147,7 +178,7 @@ export function UsuariosTable({
         data={dados}
         searchPlaceholder="Buscar por nome ou e-mail..."
         exportFileName="usuarios"
-        emptyTitle="Nenhum usuário encontrado"
+        emptyTitle={carregando ? "Carregando usuários..." : "Nenhum usuário encontrado"}
         toolbar={
           <>
             <Select value={status} onValueChange={setStatus}>
@@ -160,7 +191,11 @@ export function UsuariosTable({
                 <SelectItem value="inativo">Inativos</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={() => setAberto(true)}>
+            <Button
+              onClick={() => setAberto(true)}
+              disabled={!podeAdicionar}
+              title={!podeAdicionar ? "Limite do plano atingido ou sem permissão." : undefined}
+            >
               <Plus />
               Novo usuário
             </Button>
@@ -178,14 +213,20 @@ export function UsuariosTable({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Novo usuário</DialogTitle>
-            <DialogDescription>O convite de acesso é enviado por e-mail após salvar.</DialogDescription>
+            <DialogDescription>
+              A conta entra no limite do plano. Envie a senha inicial ao colaborador por um canal seguro.
+            </DialogDescription>
           </DialogHeader>
           <form
             onSubmit={handleSubmit(async (values) => {
-              await new Promise((resolve) => setTimeout(resolve, 500));
-              toast.success("Usuário convidado", { description: values.email });
-              reset();
-              setAberto(false);
+              try {
+                await onCriar(values);
+                toast.success("Usuário criado", { description: values.email });
+                reset();
+                setAberto(false);
+              } catch (error) {
+                toast.error(error instanceof ApiError ? error.message : "Não foi possível criar o usuário.");
+              }
             })}
           >
             <DialogBody className="space-y-4">
@@ -194,6 +235,15 @@ export function UsuariosTable({
               </FormField>
               <FormField label="E-mail" htmlFor="usuario-email" error={errors.email?.message} required>
                 <Input id="usuario-email" type="email" aria-invalid={Boolean(errors.email)} {...register("email")} />
+              </FormField>
+              <FormField label="Senha inicial" htmlFor="usuario-senha" error={errors.senha?.message} required>
+                <Input
+                  id="usuario-senha"
+                  type="password"
+                  autoComplete="new-password"
+                  aria-invalid={Boolean(errors.senha)}
+                  {...register("senha")}
+                />
               </FormField>
               <FormField label="Perfil" error={errors.perfilId?.message} required>
                 <Select value={watch("perfilId")} onValueChange={(valor) => setValue("perfilId", valor)}>
@@ -229,7 +279,7 @@ export function UsuariosTable({
                 Cancelar
               </Button>
               <Button type="submit" loading={isSubmitting}>
-                Enviar convite
+                Criar usuário
               </Button>
             </DialogFooter>
           </form>
@@ -240,11 +290,44 @@ export function UsuariosTable({
         open={Boolean(inativando)}
         onOpenChange={(abertoDialog) => !abertoDialog && setInativando(null)}
         title="Inativar usuário?"
-        description={`${inativando?.nome ?? ""} perderá o acesso ao painel imediatamente.`}
+        description={`${inativando?.nome ?? ""} perderá o acesso ao painel imediatamente. O histórico é mantido e a vaga do plano é liberada.`}
         confirmLabel="Inativar"
-        onConfirm={() => {
-          toast.success("Usuário inativado", { description: inativando?.nome });
-          setInativando(null);
+        loading={salvando}
+        onConfirm={async () => {
+          if (!inativando) return;
+          setSalvando(true);
+          try {
+            await onInativar(inativando.id);
+            toast.success("Usuário inativado", { description: inativando.nome });
+            setInativando(null);
+          } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : "Não foi possível inativar.");
+          } finally {
+            setSalvando(false);
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(ativando)}
+        onOpenChange={(abertoDialog) => !abertoDialog && setAtivando(null)}
+        title="Reativar usuário?"
+        description={`${ativando?.nome ?? ""} voltará a ocupar uma vaga do plano.`}
+        confirmLabel="Reativar"
+        destructive={false}
+        loading={salvando}
+        onConfirm={async () => {
+          if (!ativando) return;
+          setSalvando(true);
+          try {
+            await onAtivar(ativando.id);
+            toast.success("Usuário reativado", { description: ativando.nome });
+            setAtivando(null);
+          } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : "Não foi possível reativar.");
+          } finally {
+            setSalvando(false);
+          }
         }}
       />
     </>
