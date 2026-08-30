@@ -1,11 +1,7 @@
 import type { ModuloSistema } from "@/types";
-import { clinica, perfisAcesso, usuarioLogado, usuarios } from "./mock/pessoas";
+import { clinica, perfisAcesso } from "./mock/pessoas";
 
-export { clinica, usuarioLogado };
-
-export function listUsuarios() {
-  return usuarios;
-}
+export { clinica };
 
 export function listPerfisAcesso() {
   return perfisAcesso;

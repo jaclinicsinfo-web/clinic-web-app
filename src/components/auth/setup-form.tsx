@@ -10,18 +10,14 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FormField } from "@/components/shared/form-section";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { formatCnpj, formatPhone } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { listarPlanosApi } from "@/services/planos";
 import { concluirSetup, consultarSetup } from "@/services/setup";
-import type { CodigoPlano, PlanoAtual } from "@/types";
 
 const setupSchema = z
   .object({
-    plano: z.enum(["essencial", "profissional", "ilimitado"]),
     nomeFantasia: z.string().trim().min(3, "Nome fantasia deve ter no mínimo 3 caracteres."),
     razaoSocial: z.string().trim().min(3, "Razão social deve ter no mínimo 3 caracteres."),
     cnpj: z
@@ -49,17 +45,12 @@ const setupSchema = z
 type SetupFormValues = z.infer<typeof setupSchema>;
 
 const CAMPOS_PASSO: Record<1 | 2 | 3, (keyof SetupFormValues)[]> = {
-  1: ["nomeFantasia", "razaoSocial", "cnpj", "telefone", "emailClinica", "plano"],
+  1: ["nomeFantasia", "razaoSocial", "cnpj", "telefone", "emailClinica"],
   2: ["unidadeNome", "unidadeCidade"],
   3: ["adminNome", "adminEmail", "senha", "confirmarSenha"],
 };
 
 const ROTULOS_PASSO = ["Clínica", "Unidade", "Administrador"];
-
-function rotuloLimite(limite: number | null) {
-  if (limite === null) return "sem limite de usuários";
-  return `até ${limite} usuário${limite === 1 ? "" : "s"}`;
-}
 
 export function SetupForm() {
   const router = useRouter();
@@ -69,7 +60,6 @@ export function SetupForm() {
 
   const [passo, setPasso] = React.useState<1 | 2 | 3>(1);
   const [status, setStatus] = React.useState<"checando" | "pronto" | "redirecionando">("checando");
-  const [planos, setPlanos] = React.useState<PlanoAtual[]>([]);
   const [mostrarSenha, setMostrarSenha] = React.useState(false);
   const [erroSetup, setErroSetup] = React.useState<string | null>(null);
 
@@ -78,12 +68,10 @@ export function SetupForm() {
     handleSubmit,
     setValue,
     trigger,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<SetupFormValues>({
     resolver: zodResolver(setupSchema),
     defaultValues: {
-      plano: "essencial",
       nomeFantasia: "",
       razaoSocial: "",
       cnpj: "",
@@ -98,8 +86,6 @@ export function SetupForm() {
     },
   });
 
-  const planoAtual = watch("plano");
-
   React.useEffect(() => {
     if (!hidratado) return;
     if (sessao) {
@@ -109,15 +95,14 @@ export function SetupForm() {
     }
 
     let ativo = true;
-    Promise.all([consultarSetup(), listarPlanosApi()])
-      .then(([setup, lista]) => {
+    consultarSetup()
+      .then((setup) => {
         if (!ativo) return;
         if (!setup.precisaSetup) {
           setStatus("redirecionando");
           router.replace("/login");
           return;
         }
-        setPlanos(lista.planos);
         setStatus("pronto");
       })
       .catch(() => {
@@ -141,7 +126,6 @@ export function SetupForm() {
   async function onSubmit(values: SetupFormValues) {
     setErroSetup(null);
     const resultado = await concluirSetup({
-      plano: values.plano,
       clinica: {
         nomeFantasia: values.nomeFantasia,
         razaoSocial: values.razaoSocial,
@@ -195,7 +179,7 @@ export function SetupForm() {
       <p className="text-xs font-medium uppercase tracking-wider text-primary">Primeiro acesso</p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Configurar a clínica</h1>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Crie a clínica, a primeira unidade e o usuário administrador geral. Os demais acessos entram depois em
+        Crie a clínica, a primeira unidade e o usuário administrador. Os demais acessos entram depois em
         Configurações › Usuários.
       </p>
 
@@ -300,42 +284,6 @@ export function SetupForm() {
                 aria-invalid={Boolean(errors.emailClinica)}
                 {...register("emailClinica")}
               />
-            </FormField>
-            <FormField label="Plano" error={errors.plano?.message} required>
-              <RadioGroup
-                value={planoAtual}
-                onValueChange={(valor) => setValue("plano", valor as CodigoPlano)}
-                className="gap-2"
-              >
-                {(planos.length > 0
-                  ? planos
-                  : [
-                      { codigo: "essencial" as const, nome: "Essencial", limiteUsuarios: 5 },
-                      { codigo: "profissional" as const, nome: "Profissional", limiteUsuarios: 20 },
-                      { codigo: "ilimitado" as const, nome: "Ilimitado", limiteUsuarios: null },
-                    ]
-                ).map((plano) => {
-                  const selecionado = plano.codigo === planoAtual;
-                  return (
-                    <label
-                      key={plano.codigo}
-                      htmlFor={`plano-${plano.codigo}`}
-                      className={cn(
-                        "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors",
-                        selecionado ? "border-primary bg-primary-subtle" : "border-border hover:bg-muted",
-                      )}
-                    >
-                      <RadioGroupItem value={plano.codigo} id={`plano-${plano.codigo}`} className="mt-0.5" />
-                      <span className="min-w-0">
-                        <span className="block text-sm font-medium text-foreground">{plano.nome}</span>
-                        <span className="mt-0.5 block text-xs text-muted-foreground">
-                          {rotuloLimite(plano.limiteUsuarios)}
-                        </span>
-                      </span>
-                    </label>
-                  );
-                })}
-              </RadioGroup>
             </FormField>
           </>
         )}

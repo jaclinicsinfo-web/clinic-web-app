@@ -1,13 +1,11 @@
 import { api, ApiError, clearToken } from "@/lib/api";
 import { persistirSessao, type ResultadoLogin, type SessaoApi } from "@/services/auth";
-import type { CodigoPlano } from "@/types";
 
 export interface StatusSetup {
   precisaSetup: boolean;
 }
 
 export interface DadosSetup {
-  plano: CodigoPlano;
   clinica: {
     nomeFantasia: string;
     razaoSocial: string;

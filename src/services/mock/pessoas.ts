@@ -1,4 +1,4 @@
-import type { Clinica, Paciente, PerfilAcesso, Profissional, Usuario } from "@/types";
+import type { Clinica, Paciente, PerfilAcesso, Profissional } from "@/types";
 
 export const clinica: Clinica = {
   id: "clin-1",
@@ -665,77 +665,6 @@ export const perfisAcesso: PerfilAcesso[] = [
     ],
   },
 ];
-
-export const usuarios: Usuario[] = [
-  {
-    id: "user-1",
-    nome: "Aline Ferreira",
-    email: "aline.ferreira@vidaintegrada.com.br",
-    perfilId: "perfil-1",
-    perfilNome: "Administrador",
-    unidadesAcesso: ["un-1", "un-2", "un-3"],
-    status: "ativo",
-    ultimoAcesso: "2026-02-27T08:12:00Z",
-  },
-  {
-    id: "user-2",
-    nome: "Diego Martins",
-    email: "diego.martins@vidaintegrada.com.br",
-    perfilId: "perfil-2",
-    perfilNome: "Gestor",
-    unidadesAcesso: ["un-1", "un-2"],
-    status: "ativo",
-    ultimoAcesso: "2026-02-26T17:40:00Z",
-  },
-  {
-    id: "user-3",
-    nome: "Priscila Gomes",
-    email: "priscila.gomes@vidaintegrada.com.br",
-    perfilId: "perfil-3",
-    perfilNome: "Recepção",
-    unidadesAcesso: ["un-1"],
-    status: "ativo",
-    ultimoAcesso: "2026-02-27T07:55:00Z",
-  },
-  {
-    id: "user-4",
-    nome: "Helena Marques",
-    email: "helena.marques@vidaintegrada.com.br",
-    perfilId: "perfil-4",
-    perfilNome: "Profissional de saúde",
-    unidadesAcesso: ["un-1"],
-    status: "ativo",
-    ultimoAcesso: "2026-02-26T13:20:00Z",
-  },
-  {
-    id: "user-5",
-    nome: "Renato Bastos",
-    email: "renato.bastos@vidaintegrada.com.br",
-    perfilId: "perfil-5",
-    perfilNome: "Financeiro",
-    unidadesAcesso: ["un-1", "un-2", "un-3"],
-    status: "ativo",
-    ultimoAcesso: "2026-02-25T18:02:00Z",
-  },
-  {
-    id: "user-6",
-    nome: "Sandra Vasques",
-    email: "sandra.vasques@vidaintegrada.com.br",
-    perfilId: "perfil-3",
-    perfilNome: "Recepção",
-    unidadesAcesso: ["un-3"],
-    status: "inativo",
-    ultimoAcesso: "2025-10-30T16:45:00Z",
-  },
-];
-
-export const usuarioLogado = {
-  id: "user-1",
-  nome: "Aline Ferreira",
-  email: "aline.ferreira@vidaintegrada.com.br",
-  perfil: "Administrador",
-  unidadeAtualId: "un-1",
-};
 
 export function getPaciente(id: string) {
   return pacientes.find((paciente) => paciente.id === id);
