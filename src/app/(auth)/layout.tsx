@@ -1,9 +1,11 @@
 import { HeartPulse } from "lucide-react";
 
+const FEATURES = ["Agenda", "Prontuário", "Financeiro", "Convênios", "Multi-unidade", "RBAC", "LGPD"];
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
-      <aside className="relative hidden w-[48%] flex-col justify-between overflow-hidden bg-sidebar p-12 lg:flex">
+      <aside className="relative hidden w-[48%] flex-col items-center justify-center overflow-hidden bg-sidebar px-12 py-16 lg:flex">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12),transparent_55%)]"
@@ -13,55 +15,22 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           className="pointer-events-none absolute -bottom-24 -left-16 size-80 rounded-full bg-primary/40 blur-3xl"
         />
 
-        <div className="relative flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <HeartPulse className="size-5" />
+        <div className="relative flex flex-col items-center text-center">
+          <span className="flex size-20 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg shadow-black/20">
+            <HeartPulse className="size-10" />
           </span>
-          <div>
-            <p className="text-base font-semibold text-white">ClinicERP</p>
-            <p className="text-xs text-sidebar-muted">Clínica Vida Integrada</p>
-          </div>
+          <h1 className="mt-8 text-4xl font-semibold tracking-tight text-white">J.A. Clinics</h1>
+          <p className="mt-8 max-w-sm text-sm leading-relaxed text-sidebar-muted">{FEATURES.join(" · ")}</p>
         </div>
-
-        <div className="relative max-w-md">
-          <h2 className="text-3xl font-semibold leading-tight text-white">
-            Toda a operação da clínica em um só lugar.
-          </h2>
-          <p className="mt-4 text-sm leading-relaxed text-sidebar-muted">
-            Agenda, prontuário, faturamento de convênios e financeiro integrados — com indicadores em tempo real para
-            apoiar as decisões da gestão.
-          </p>
-
-          <dl className="mt-10 grid grid-cols-2 gap-6">
-            {[
-              { valor: "9 módulos", descricao: "Do agendamento ao relatório gerencial" },
-              { valor: "Multi-unidade", descricao: "Contexto por filial em um clique" },
-              { valor: "RBAC", descricao: "Permissões por módulo e por ação" },
-              { valor: "LGPD", descricao: "Consentimento e trilha de acesso" },
-            ].map((item) => (
-              <div key={item.valor}>
-                <dt className="text-sm font-semibold text-white">{item.valor}</dt>
-                <dd className="mt-1 text-xs leading-relaxed text-sidebar-muted">{item.descricao}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-
-        <p className="relative text-xs text-sidebar-muted">
-          Acesso restrito à equipe da clínica. Não há acesso de pacientes neste sistema.
-        </p>
       </aside>
 
       <main className="flex w-full items-center justify-center bg-card px-6 py-12 lg:w-[52%]">
         <div className="w-full max-w-md">
-          <div className="mb-10 flex items-center gap-3 lg:hidden">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <HeartPulse className="size-5" />
+          <div className="mb-10 flex flex-col items-center text-center lg:hidden">
+            <span className="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+              <HeartPulse className="size-7" />
             </span>
-            <div>
-              <p className="text-base font-semibold text-foreground">ClinicERP</p>
-              <p className="text-xs text-muted-foreground">Gestão de clínicas</p>
-            </div>
+            <p className="mt-4 text-xl font-semibold tracking-tight text-foreground">J.A. Clinics</p>
           </div>
           {children}
         </div>

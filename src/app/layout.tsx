@@ -14,8 +14,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "ClinicERP — Gestão de Clínicas",
-    template: "%s · ClinicERP",
+    default: "J.A. Clinics — Gestão de Clínicas",
+    template: "%s · J.A. Clinics",
   },
   description:
     "ERP para gestão administrativa de clínicas: pacientes, agenda, prontuário, financeiro, convênios e relatórios.",
