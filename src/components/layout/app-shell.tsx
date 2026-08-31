@@ -3,14 +3,12 @@
 import * as React from "react";
 import { usePathname } from "next/navigation";
 
-import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { GuardaModulo } from "@/components/auth/guarda-modulo";
 import { PlanoBanner } from "@/components/layout/plano-banner";
 import { PlanoSync } from "@/components/layout/plano-sync";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
-import { GuardaModulo } from "@/components/auth/guarda-modulo";
 import { useSessaoStore } from "@/hooks/use-sessao";
-import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -47,10 +45,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
         <PlanoBanner />
-
-        <div className={cn("border-b border-border bg-card px-4 py-2.5 lg:px-6")}>
-          <Breadcrumbs />
-        </div>
 
         <main className="flex-1 overflow-y-auto scrollbar-thin">
           <div className="mx-auto w-full max-w-[1600px] p-4 lg:p-6">

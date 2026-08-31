@@ -33,9 +33,9 @@ export function Breadcrumbs() {
   });
 
   return (
-    <nav aria-label="Trilha de navegação" className="flex items-center gap-1.5 text-xs text-muted-foreground">
+    <nav aria-label="Trilha de navegação" className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
       <Link href="/dashboard" className="flex items-center transition-colors hover:text-foreground" aria-label="Início">
-        <Home className="size-3.5" />
+        <Home className="size-4" />
       </Link>
 
       {crumbs.map((crumb) => (
