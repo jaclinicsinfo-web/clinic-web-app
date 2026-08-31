@@ -153,7 +153,7 @@ export async function registrarEvolucaoApi(
     procedimentoRealizado: string;
     tipoRegistro: Atendimento["tipoRegistro"];
     queixaPrincipal: string | null;
-    quadroClinico: string;
+    quadroClinico: string | null;
     evolucao: string;
     conduta: string | null;
     respostaAoTratamento: Atendimento["respostaAoTratamento"] | null;

@@ -171,7 +171,9 @@ export function PacienteVisaoGeral() {
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground">{atendimento.profissionalNome}</p>
-                      <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{atendimento.evolucao}</p>
+                      {atendimento.evolucao ? (
+                        <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{atendimento.evolucao}</p>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

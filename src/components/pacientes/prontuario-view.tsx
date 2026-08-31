@@ -63,7 +63,7 @@ type EvolucaoPayload = {
   procedimentoRealizado: string;
   profissionalId: string;
   queixaPrincipal: string | null;
-  quadroClinico: string;
+  quadroClinico: string | null;
   evolucao: string;
   conduta: string | null;
   respostaAoTratamento: RespostaTratamento | null;
@@ -378,9 +378,9 @@ function paraItemTimeline(atendimento: Atendimento): TimelineItem {
         {atendimento.quadroClinico && (
           <p className="mt-1 leading-relaxed">{atendimento.quadroClinico}</p>
         )}
-        <p className={cn("leading-relaxed", atendimento.quadroClinico ? "mt-1.5" : "mt-1.5")}>
-          {atendimento.evolucao}
-        </p>
+        {atendimento.evolucao ? (
+          <p className="mt-1.5 leading-relaxed">{atendimento.evolucao}</p>
+        ) : null}
         {atendimento.conduta && (
           <p className="mt-1.5 text-xs">
             <span className="font-medium text-foreground">Conduta: </span>
@@ -479,7 +479,7 @@ function EvolucaoDialog({
         procedimentoRealizado: procedimentoNome,
         profissionalId: profissional,
         queixaPrincipal: queixa.trim() || null,
-        quadroClinico: quadro.trim(),
+        quadroClinico: quadro.trim() || null,
         evolucao: evolucao.trim(),
         conduta: conduta.trim() || null,
         respostaAoTratamento: tipo === "alta" ? "resolvido" : resposta,
@@ -565,7 +565,7 @@ function EvolucaoDialog({
             </FormField>
           </div>
 
-          <FormField label="Queixa / motivo" htmlFor="queixa" hint="O que o paciente relata neste encontro.">
+          <FormField label="Queixa / motivo" htmlFor="queixa">
             <Input
               id="queixa"
               value={queixa}
@@ -577,8 +577,6 @@ function EvolucaoDialog({
           <FormField
             label={tipo === "alta" ? "Situação na alta" : "Como o paciente está hoje"}
             htmlFor="quadro"
-            required
-            hint="Descreva o quadro atual em relação à avaliação inicial."
           >
             <Textarea
               id="quadro"
@@ -593,7 +591,7 @@ function EvolucaoDialog({
             />
           </FormField>
 
-          <FormField label="Evolução / observações" htmlFor="evolucao" required>
+          <FormField label="Evolução / observações" htmlFor="evolucao">
             <Textarea
               id="evolucao"
               rows={4}
@@ -668,7 +666,7 @@ function EvolucaoDialog({
           <Button
             onClick={() => void salvar()}
             loading={salvando}
-            disabled={!podeRegistrar || !profissional || evolucao.trim().length < 10 || quadro.trim().length < 8}
+            disabled={!podeRegistrar || !profissional}
           >
             {tipo === "alta" ? "Confirmar alta" : "Salvar evolução"}
           </Button>
