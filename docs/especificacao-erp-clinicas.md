@@ -94,7 +94,7 @@ src/
 
 ### 3.1 Estrutura visual
 - **Sidebar fixa** à esquerda (colapsável), com ícones + labels, agrupada por módulo.
-- **Topbar** com: busca global, notificações, seletor de unidade/clínica (multi-unidade), avatar do usuário logado com menu (perfil, sair).
+- **Topbar** com: notificações, seletor de unidade/clínica (multi-unidade), avatar do usuário logado com menu (perfil, sair). Sem busca global — a busca fica nas tabelas de cada tela.
 - **Breadcrumb** abaixo da topbar em páginas internas.
 - **Área de conteúdo** com padding consistente, cards com `rounded-xl`, `shadow-sm`, `border`.
 

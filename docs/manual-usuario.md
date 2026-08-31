@@ -737,7 +737,7 @@ Agrupa as saídas: produto, quantidade total e número de ocorrências. **Export
 
 ## 12. Relatórios
 
-Visão gerencial com **período**, **tabela**, **gráfico** e **Exportar** (CSV) em cada bloco.
+Visão gerencial com **período**, **tabela**, **gráfico** e **Exportar** (CSV) em cada bloco. Os números vêm do banco (agenda, cobranças e comissões).
 
 **Períodos**
 

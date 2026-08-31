@@ -5,12 +5,21 @@ import { useRouter } from "next/navigation";
 
 import { RelatorioSection } from "@/components/relatorios/relatorio-section";
 import { CHART_COLORS, GraficoBarras, GraficoEvolucao, GraficoPizza } from "@/components/relatorios/relatorio-charts";
+import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ApiError } from "@/lib/api";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/format";
-import { type PeriodoRelatorio, type RelatoriosData, periodosRelatorio } from "@/services/relatorios";
+import {
+  obterRelatoriosApi,
+  type PeriodoRelatorio,
+  type RelatoriosData,
+  periodosRelatorio,
+} from "@/services/relatorios";
 
 const tipos = [
   { id: "faturamento", label: "Faturamento" },
@@ -22,17 +31,80 @@ const tipos = [
 ] as const;
 
 interface RelatoriosWorkspaceProps {
-  dados: RelatoriosData;
   periodo: PeriodoRelatorio;
   tipo: string;
 }
 
-export function RelatoriosWorkspace({ dados, periodo, tipo }: RelatoriosWorkspaceProps) {
+export function RelatoriosWorkspace({ periodo, tipo }: RelatoriosWorkspaceProps) {
   const router = useRouter();
   const aba = tipos.some((item) => item.id === tipo) ? tipo : "faturamento";
+  const [dados, setDados] = React.useState<RelatoriosData | null>(null);
+  const [erro, setErro] = React.useState<string | null>(null);
+  const [tentativa, setTentativa] = React.useState(0);
+
+  React.useEffect(() => {
+    let ativo = true;
+    setErro(null);
+    setDados(null);
+    obterRelatoriosApi(periodo)
+      .then((payload) => {
+        if (ativo) setDados(payload);
+      })
+      .catch((error) => {
+        if (ativo) {
+          setErro(error instanceof ApiError ? error.message : "Não foi possível carregar os relatórios.");
+        }
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [periodo, tentativa]);
 
   function atualizar(proximoPeriodo: string, proximoTipo: string) {
     router.push(`/relatorios?periodo=${proximoPeriodo}&tipo=${proximoTipo}`);
+  }
+
+  const seletorPeriodo = (
+    <Select value={periodo} onValueChange={(valor) => atualizar(valor, aba)}>
+      <SelectTrigger className="w-48" aria-label="Período do relatório">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {periodosRelatorio.map((item) => (
+          <SelectItem key={item.id} value={item.id}>
+            {item.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+
+  if (erro) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Relatórios" description="Não foi possível carregar os dados." actions={seletorPeriodo} />
+        <EmptyState
+          title="Não foi possível carregar"
+          description={erro}
+          action={
+            <Button variant="outline" onClick={() => setTentativa((atual) => atual + 1)}>
+              Tentar novamente
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (!dados) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Relatórios" description="Carregando visão gerencial." actions={seletorPeriodo} />
+        <Skeleton className="h-10 w-full max-w-xl" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-72 w-full" />
+      </div>
+    );
   }
 
   return (
@@ -40,20 +112,7 @@ export function RelatoriosWorkspace({ dados, periodo, tipo }: RelatoriosWorkspac
       <PageHeader
         title="Relatórios"
         description={`Visão gerencial de ${dados.intervalo.label}. Filtros de período, tabela, gráfico e exportação CSV.`}
-        actions={
-          <Select value={periodo} onValueChange={(valor) => atualizar(valor, aba)}>
-            <SelectTrigger className="w-48" aria-label="Período do relatório">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {periodosRelatorio.map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        }
+        actions={seletorPeriodo}
       />
 
       <Tabs value={aba} onValueChange={(valor) => atualizar(periodo, valor)}>

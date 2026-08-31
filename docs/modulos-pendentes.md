@@ -23,6 +23,7 @@ A especificação completa está em [`especificacao-erp-clinicas.md`](./especifi
 | Recuperação de senha | Pronto |
 | Notificações (sino) | Pronto |
 | Dashboard | Pronto |
+| Relatórios | Pronto |
 
 O profissional de saúde vê **só a própria agenda** e os pacientes em que é preferido **ou** já teve agendamento. O vínculo de preferência aponta para o cadastro clínico em `profissionais`, não mais para a conta de usuário.
 
@@ -42,7 +43,7 @@ O profissional de saúde vê **só a própria agenda** e os pacientes em que é 
 | Recuperação de senha | Integrada | Pronto | — |
 | Notificações | Integrada (sino) | Pronto | — |
 | Dashboard | Integrada | Pronto | — |
-| Relatórios | Mock | Falta | 1 |
+| Relatórios | Integrada | Pronto | — |
 
 ---
 
@@ -149,16 +150,18 @@ O profissional de saúde vê só a própria agenda e os próprios pacientes. Sem
 
 ## 6. Relatórios
 
-`/relatorios` é mock. Falta, com filtro de período e exportação (PDF/Excel):
+Tela `/relatorios` usa a API. Filtro de período, abas, tabelas, gráficos e exportação CSV em cada bloco.
 
-- Faturamento (geral, por profissional, convênio, procedimento)
-- Atendimentos (realizados, cancelados, faltas)
-- Inadimplência
-- Novos pacientes × recorrentes
+Já lê do banco:
+
+- Faturamento dos atendimentos realizados (geral, por profissional, convênio, procedimento)
+- Atendimentos (realizados, cancelados, faltas e evolução)
+- Inadimplência (cobranças vencidas em aberto, por paciente)
+- Novos cadastros × recorrentes atendidos
 - Produtividade por profissional
-- Comissões
+- Comissões do período
 
-Depende de agenda, financeiro e profissionais prontos — os três já estão no banco.
+Períodos: este mês, mês anterior, últimos 30 dias, últimos 12 meses, ano corrente. Recepção e Profissional de saúde não veem o módulo no padrão de fábrica. Se o perfil tiver relatórios com recorte clínico, os números seguem a própria agenda.
 
 ## 7. Dados da clínica e unidades
 
@@ -207,9 +210,10 @@ Recepção e Financeiro não veem prontuário nem documentos clínicos.
 
 - ~~Recuperação e redefinição de senha~~ — feito (`/esqueci-senha` e `/redefinir-senha`; envio por SMTP se configurado)
 - ~~Centro de notificações (sino)~~ — feito (estoque baixo, despesas vencidas, carteirinhas)
-- Busca global na topbar
 - Documentos do **profissional** (contratos/certidões) — os do paciente já existem
 - Envio real de lembretes (WhatsApp/e-mail)
+
+Busca global na topbar **não entra** no produto: a busca continua só nas tabelas de cada tela.
 
 ---
 
@@ -226,6 +230,8 @@ Segue a seção 17 da especificação, ajustada ao que já existe:
 7. ~~Estoque~~ — feito (produtos, movimentações, consumo e alerta de mínimo)
 8. ~~Recuperação de senha e notificações~~ — feito
 9. ~~Dashboard~~ — feito (números reais; recorte por perfil)
-10. **Relatórios**
+10. ~~Relatórios~~ — feito (período, abas, CSV)
+
+Os itens que restam não são módulo de menu: documentos do profissional, envio real de lembretes, modelos de mensagem e integrações.
 
 Cada módulo deve seguir o padrão já usado: Model → Controller → View na API, e `src/services` no painel sem mock.
