@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import type { Agendamento, GradeHorario, Profissional } from "@/types";
+import type { Agendamento, Comissao, GradeHorario, Profissional } from "@/types";
 
 export interface ResumoProfissionais {
   total: number;
@@ -87,6 +87,7 @@ export async function obterProfissionalApi(id: string) {
     pacientesAtendidos: PacienteDoProfissional[];
     agenda: Agendamento[];
     procedimentosHabilitados: { id: string; nome: string }[];
+    comissoes: Comissao[];
   }>(`/profissionais/${id}`);
 }
 

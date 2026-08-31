@@ -2,10 +2,9 @@ import { format, isSameMonth, parseISO, subMonths } from "date-fns";
 
 import type { Paciente } from "@/types";
 import { agendamentos, hoje } from "./mock/agenda";
-import { cobrancas } from "./mock/financeiro";
+import { cobrancas, getResumoContasAPagar, getResumoContasAReceber } from "./mock/financeiro";
 import { pacientes, profissionais } from "./mock/pessoas";
 import { produtos } from "./mock/estoque";
-import { getResumoContasAPagar, getResumoContasAReceber } from "./financeiro";
 import { getFunilAgendamentos, getResumoDoDia, getTaxaFaltas, getTaxaOcupacao } from "./agenda";
 
 export function getIndicadoresDashboard() {

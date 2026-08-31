@@ -1,199 +1,261 @@
-import { addDays, isBefore, isSameMonth, isWithinInterval, parseISO, subMonths } from "date-fns";
+import { api } from "@/lib/api";
+import type {
+  Cobranca,
+  Comissao,
+  Despesa,
+  FluxoCaixaPonto,
+  FormaPagamento,
+  LoteConvenio,
+} from "@/types";
 
-import type { Cobranca, Comissao, Despesa, LoteConvenio } from "@/types";
-import { hoje } from "./mock/agenda";
-import {
-  cobrancas,
-  comissoes,
-  despesas,
-  fluxoCaixaDiario,
-  fluxoCaixaMensal,
-  getPacientesInadimplentes,
-  lotesConvenio,
-} from "./mock/financeiro";
-
-export { getPacientesInadimplentes };
-
-export function listCobrancas(): Cobranca[] {
-  return [...cobrancas].sort((a, b) => parseISO(b.vencimento).getTime() - parseISO(a.vencimento).getTime());
+export interface FormaPagamentoCadastro {
+  id: string;
+  codigo: FormaPagamento;
+  nome: string;
+  taxa: number;
+  ativo: boolean;
 }
 
-export function listDespesas(): Despesa[] {
-  return [...despesas].sort((a, b) => parseISO(b.vencimento).getTime() - parseISO(a.vencimento).getTime());
+export interface ResumoContasAReceber {
+  totalEmAberto: number;
+  totalAtrasado: number;
+  recebidoNoMes: number;
+  vencendo7Dias: number;
+  quantidadeAtrasada: number;
+  quantidadeEmAberto: number;
+  quantidadeVencendo7Dias: number;
 }
 
-export function listLotesConvenio(): LoteConvenio[] {
-  return [...lotesConvenio].sort((a, b) => b.competencia.localeCompare(a.competencia));
+export interface ResumoContasAPagar {
+  totalAPagar: number;
+  totalVencido: number;
+  pagoNoMes: number;
+  vencendo7Dias: number;
+  quantidadeVencida: number;
+  quantidadeAPagar: number;
+  quantidadeVencendo7Dias: number;
 }
 
-export function listComissoes(): Comissao[] {
-  return [...comissoes].sort((a, b) => b.competencia.localeCompare(a.competencia));
+export interface ResumoFluxoCaixa {
+  entradasMes: number;
+  saidasMes: number;
+  saldoMes: number;
+  variacaoEntradas: number;
+  variacaoSaidas: number;
+  variacaoSaldo: number;
 }
 
-export function getFluxoCaixaDiario() {
-  return fluxoCaixaDiario;
+export interface ResumoLotes {
+  valorApresentado: number;
+  valorGlosado: number;
+  valorRecebido: number;
+  taxaGlosa: number;
+  lotesAbertos: number;
+  lotesAguardando: number;
 }
 
-export function getFluxoCaixaMensal() {
-  return fluxoCaixaMensal;
+export interface ResumoComissoes {
+  competencia: string;
+  totalPrevisto: number;
+  aprovadas: number;
+  pagas: number;
+  profissionaisComissionados: number;
 }
 
-export function getResumoContasAReceber() {
-  const emAberto = cobrancas.filter((cobranca) => cobranca.status === "pendente" || cobranca.status === "parcelado");
-  const atrasadas = cobrancas.filter((cobranca) => cobranca.status === "atrasado");
-  const recebidoMes = cobrancas.filter(
-    (cobranca) => cobranca.status === "pago" && isSameMonth(parseISO(cobranca.vencimento), hoje),
-  );
+export interface LinhaDre {
+  categoria: string;
+  valor: number;
+}
 
-  const proximos7Dias = cobrancas.filter((cobranca) => {
-    if (cobranca.status !== "pendente") return false;
-    const vencimento = parseISO(cobranca.vencimento);
-    return isWithinInterval(vencimento, { start: hoje, end: addDays(hoje, 7) });
+export interface PacienteInadimplente {
+  paciente: { id: string; nome: string; telefone: string };
+  valorEmAberto: number;
+}
+
+export interface VisaoGeralFinanceiro {
+  receber: ResumoContasAReceber;
+  pagar: ResumoContasAPagar;
+  fluxo: ResumoFluxoCaixa;
+  convenios: ResumoLotes;
+  comissoes: ResumoComissoes;
+  dre: { receitas: LinhaDre[]; despesas: LinhaDre[] };
+  fluxoDiario: FluxoCaixaPonto[];
+  fluxoMensal: FluxoCaixaPonto[];
+  inadimplentes: PacienteInadimplente[];
+}
+
+export interface PagamentoPayload {
+  valor?: number;
+  formaPagamento: FormaPagamento;
+  data: string;
+  observacoes?: string | null;
+}
+
+export interface CobrancaPayload {
+  pacienteId: string;
+  agendamentoId?: string | null;
+  descricao: string;
+  valor: number;
+  vencimento: string;
+  convenioId?: string | null;
+  formaPagamento?: FormaPagamento | null;
+  observacoes?: string | null;
+  parcelas?: number;
+}
+
+export interface DespesaPayload {
+  descricao: string;
+  categoria: string;
+  fornecedor: string;
+  valor: number;
+  vencimento: string;
+  recorrente: boolean;
+  formaPagamento?: FormaPagamento | null;
+  observacoes?: string | null;
+}
+
+export async function obterVisaoGeralApi() {
+  return api.get<VisaoGeralFinanceiro>("/financeiro");
+}
+
+export async function listarCobrancasApi(pacienteId?: string) {
+  return api.get<{
+    cobrancas: Cobranca[];
+    resumo: ResumoContasAReceber;
+    convenios: { id: string; nome: string }[];
+    pacientes: { id: string; nome: string }[];
+    formasPagamento: FormaPagamentoCadastro[];
+  }>("/financeiro/cobrancas", { params: { pacienteId } });
+}
+
+export async function criarCobrancaApi(payload: CobrancaPayload) {
+  const data = await api.post<{ cobranca: Cobranca }>("/financeiro/cobrancas", payload);
+  return data.cobranca;
+}
+
+export async function pagarCobrancaApi(id: string, payload: PagamentoPayload) {
+  const data = await api.patch<{ cobranca: Cobranca }>(`/financeiro/cobrancas/${id}/pagar`, payload);
+  return data.cobranca;
+}
+
+export async function parcelarCobrancaApi(id: string, quantidade: number, formaPagamento?: FormaPagamento) {
+  const data = await api.patch<{ cobranca: Cobranca }>(`/financeiro/cobrancas/${id}/parcelar`, {
+    quantidade,
+    formaPagamento,
   });
-
-  const somar = (lista: Cobranca[]) => lista.reduce((total, cobranca) => total + cobranca.valor, 0);
-
-  return {
-    totalEmAberto: somar(emAberto),
-    totalAtrasado: somar(atrasadas),
-    recebidoNoMes: somar(recebidoMes),
-    vencendo7Dias: somar(proximos7Dias),
-    quantidadeAtrasada: atrasadas.length,
-    quantidadeEmAberto: emAberto.length,
-    quantidadeVencendo7Dias: proximos7Dias.length,
-  };
+  return data.cobranca;
 }
 
-export function getResumoContasAPagar() {
-  const aPagar = despesas.filter((despesa) => despesa.status === "a_pagar");
-  const vencidas = despesas.filter((despesa) => despesa.status === "vencido");
-  const pagasMes = despesas.filter(
-    (despesa) => despesa.status === "pago" && isSameMonth(parseISO(despesa.vencimento), hoje),
+export async function cancelarCobrancaApi(id: string) {
+  const data = await api.patch<{ cobranca: Cobranca }>(`/financeiro/cobrancas/${id}/cancelar`);
+  return data.cobranca;
+}
+
+export async function pagarParcelaApi(id: string, numero: number, payload: PagamentoPayload) {
+  const data = await api.patch<{ cobranca: Cobranca }>(
+    `/financeiro/cobrancas/${id}/parcelas/${numero}/pagar`,
+    payload,
   );
-
-  const proximos7Dias = aPagar.filter((despesa) =>
-    isWithinInterval(parseISO(despesa.vencimento), { start: hoje, end: addDays(hoje, 7) }),
-  );
-
-  const somar = (lista: Despesa[]) => lista.reduce((total, despesa) => total + despesa.valor, 0);
-
-  return {
-    totalAPagar: somar(aPagar),
-    totalVencido: somar(vencidas),
-    pagoNoMes: somar(pagasMes),
-    vencendo7Dias: somar(proximos7Dias),
-    quantidadeVencida: vencidas.length,
-    quantidadeAPagar: aPagar.length,
-    quantidadeVencendo7Dias: proximos7Dias.length,
-  };
+  return data.cobranca;
 }
 
-export function getResumoFluxoCaixa() {
-  const mesAtual = fluxoCaixaMensal[fluxoCaixaMensal.length - 1];
-  const mesAnterior = fluxoCaixaMensal[fluxoCaixaMensal.length - 2];
-
-  const variacao = (atual: number, anterior: number) =>
-    anterior === 0 ? 0 : ((atual - anterior) / anterior) * 100;
-
-  return {
-    entradasMes: mesAtual.entradas,
-    saidasMes: mesAtual.saidas,
-    saldoMes: mesAtual.saldo,
-    variacaoEntradas: variacao(mesAtual.entradas, mesAnterior.entradas),
-    variacaoSaidas: variacao(mesAtual.saidas, mesAnterior.saidas),
-    variacaoSaldo: variacao(mesAtual.saldo, mesAnterior.saldo),
-  };
+export async function listarDespesasApi() {
+  return api.get<{
+    despesas: Despesa[];
+    resumo: ResumoContasAPagar;
+    categorias: string[];
+    formasPagamento: FormaPagamentoCadastro[];
+  }>("/financeiro/despesas");
 }
 
-/** DRE simplificado: receitas e despesas agrupadas por categoria no mês corrente. */
-export function getDreSimplificado() {
-  const receitaPorForma = new Map<string, number>();
-  cobrancas
-    .filter((cobranca) => cobranca.status === "pago" && isSameMonth(parseISO(cobranca.vencimento), hoje))
-    .forEach((cobranca) => {
-      const chave = cobranca.convenioId ? "Convênio" : "Particular";
-      receitaPorForma.set(chave, (receitaPorForma.get(chave) ?? 0) + cobranca.valor);
-    });
-
-  const despesaPorCategoria = new Map<string, number>();
-  despesas
-    .filter((despesa) => isSameMonth(parseISO(despesa.vencimento), hoje))
-    .forEach((despesa) => {
-      despesaPorCategoria.set(despesa.categoria, (despesaPorCategoria.get(despesa.categoria) ?? 0) + despesa.valor);
-    });
-
-  return {
-    receitas: [...receitaPorForma.entries()]
-      .map(([categoria, valor]) => ({ categoria, valor }))
-      .sort((a, b) => b.valor - a.valor),
-    despesas: [...despesaPorCategoria.entries()]
-      .map(([categoria, valor]) => ({ categoria, valor }))
-      .sort((a, b) => b.valor - a.valor),
-  };
+export async function criarDespesaApi(payload: DespesaPayload) {
+  const data = await api.post<{ despesa: Despesa }>("/financeiro/despesas", payload);
+  return data.despesa;
 }
 
-export function getResumoConvenios() {
-  const somar = (campo: keyof Pick<LoteConvenio, "valorApresentado" | "valorGlosado" | "valorRecebido">) =>
-    lotesConvenio.reduce((total, lote) => total + lote[campo], 0);
-
-  const apresentado = somar("valorApresentado");
-  const glosado = somar("valorGlosado");
-
-  return {
-    valorApresentado: apresentado,
-    valorGlosado: glosado,
-    valorRecebido: somar("valorRecebido"),
-    taxaGlosa: apresentado > 0 ? (glosado / apresentado) * 100 : 0,
-    lotesAbertos: lotesConvenio.filter((lote) => lote.status === "aberto").length,
-    lotesAguardando: lotesConvenio.filter((lote) => lote.status === "enviado").length,
-  };
+export async function pagarDespesaApi(id: string, payload: PagamentoPayload) {
+  const data = await api.patch<{ despesa: Despesa }>(`/financeiro/despesas/${id}/pagar`, payload);
+  return data.despesa;
 }
 
-export function getResumoComissoes() {
-  const competenciaAtual = comissoes.reduce((maior, comissao) =>
-    comissao.competencia > maior ? comissao.competencia : maior,
-    comissoes[0]?.competencia ?? "",
-  );
-
-  const doMes = comissoes.filter((comissao) => comissao.competencia === competenciaAtual);
-
-  return {
-    competencia: competenciaAtual,
-    totalPrevisto: doMes.reduce((total, comissao) => total + comissao.valorComissao, 0),
-    aprovadas: comissoes
-      .filter((comissao) => comissao.status === "aprovada")
-      .reduce((total, comissao) => total + comissao.valorComissao, 0),
-    pagas: comissoes
-      .filter((comissao) => comissao.status === "paga")
-      .reduce((total, comissao) => total + comissao.valorComissao, 0),
-    profissionaisComissionados: doMes.length,
-  };
+export async function excluirDespesaApi(id: string) {
+  await api.delete(`/financeiro/despesas/${id}`);
 }
 
-/** Faturamento dos últimos 6 meses agrupado por convênio x particular. */
-export function getFaturamentoPorOrigem() {
-  const particular = cobrancas
-    .filter((cobranca) => cobranca.status === "pago" && !cobranca.convenioId)
-    .reduce((total, cobranca) => total + cobranca.valor, 0);
-
-  const convenio = cobrancas
-    .filter((cobranca) => cobranca.status === "pago" && cobranca.convenioId)
-    .reduce((total, cobranca) => total + cobranca.valor, 0);
-
-  return [
-    { origem: "Particular", valor: Number(particular.toFixed(2)) },
-    { origem: "Convênio", valor: Number(convenio.toFixed(2)) },
-  ];
+export async function obterFluxoCaixaApi() {
+  return api.get<{
+    resumo: ResumoFluxoCaixa;
+    diario: FluxoCaixaPonto[];
+    mensal: FluxoCaixaPonto[];
+    dre: { receitas: LinhaDre[]; despesas: LinhaDre[] };
+  }>("/financeiro/fluxo-caixa");
 }
 
-export function getCobrancasVencendoHoje() {
-  return cobrancas.filter(
-    (cobranca) => cobranca.status === "pendente" && cobranca.vencimento === hoje.toISOString().slice(0, 10),
-  );
+export async function listarLotesApi() {
+  return api.get<{
+    lotes: LoteConvenio[];
+    resumo: ResumoLotes;
+    convenios: { id: string; nome: string }[];
+  }>("/financeiro/lotes");
 }
 
-export function getDespesasRecentesVencidas() {
-  return despesas
-    .filter((despesa) => despesa.status === "vencido" && isBefore(subMonths(hoje, 2), parseISO(despesa.vencimento)))
-    .sort((a, b) => parseISO(a.vencimento).getTime() - parseISO(b.vencimento).getTime());
+export async function criarLoteApi(convenioId: string, competencia: string) {
+  const data = await api.post<{ lote: LoteConvenio }>("/financeiro/lotes", { convenioId, competencia });
+  return data.lote;
+}
+
+export async function enviarLoteApi(id: string) {
+  const data = await api.patch<{ lote: LoteConvenio }>(`/financeiro/lotes/${id}/enviar`);
+  return data.lote;
+}
+
+export async function reconciliarLoteApi(id: string, valorGlosado: number, valorRecebido: number) {
+  const data = await api.patch<{ lote: LoteConvenio }>(`/financeiro/lotes/${id}/reconciliar`, {
+    valorGlosado,
+    valorRecebido,
+  });
+  return data.lote;
+}
+
+export async function listarComissoesApi(params?: { profissionalId?: string; competencia?: string }) {
+  return api.get<{
+    comissoes: Comissao[];
+    resumo: ResumoComissoes;
+    competencias: string[];
+  }>("/financeiro/comissoes", { params });
+}
+
+export async function calcularComissoesApi(competencia?: string) {
+  return api.post<{
+    comissoes: Comissao[];
+    resumo: ResumoComissoes;
+    competencias: string[];
+  }>("/financeiro/comissoes/calcular", { competencia });
+}
+
+export async function fecharFolhaApi(competencia: string) {
+  return api.post<{
+    comissoes: Comissao[];
+    resumo: ResumoComissoes;
+    competencias: string[];
+  }>("/financeiro/comissoes/fechar-folha", { competencia });
+}
+
+export async function aprovarComissaoApi(id: string) {
+  const data = await api.patch<{ comissao: Comissao }>(`/financeiro/comissoes/${id}/aprovar`);
+  return data.comissao;
+}
+
+export async function pagarComissaoApi(id: string, payload: PagamentoPayload) {
+  const data = await api.patch<{ comissao: Comissao }>(`/financeiro/comissoes/${id}/pagar`, payload);
+  return data.comissao;
+}
+
+export async function listarFormasPagamentoApi() {
+  return api.get<{ formas: FormaPagamentoCadastro[] }>("/formas-pagamento");
+}
+
+export async function salvarFormasPagamentoApi(formas: Omit<FormaPagamentoCadastro, "id">[]) {
+  const data = await api.put<{ formas: FormaPagamentoCadastro[] }>("/formas-pagamento", { formas });
+  return data.formas;
 }

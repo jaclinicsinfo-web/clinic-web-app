@@ -17,6 +17,7 @@ const PacientePerfilContext = React.createContext<{
   paciente: Paciente;
   detalhe: DetalhePacienteResponse;
   atualizarDetalhe: (parcial: Partial<DetalhePacienteResponse>) => void;
+  recarregar: () => Promise<void>;
 } | null>(null);
 
 export function usePacientePerfil() {
@@ -38,6 +39,12 @@ export function PacientePerfilShell({
   const [detalhe, setDetalhe] = React.useState<DetalhePacienteResponse | null>(null);
   const [carregando, setCarregando] = React.useState(true);
   const [erro, setErro] = React.useState<string | null>(null);
+
+  const recarregar = React.useCallback(async () => {
+    const data = await obterPacienteApi(pacienteId);
+    setDetalhe(data);
+    setPacienteNome(data.paciente.id, data.paciente.nome);
+  }, [pacienteId, setPacienteNome]);
 
   React.useEffect(() => {
     let ativo = true;
@@ -110,6 +117,7 @@ export function PacientePerfilShell({
         detalhe,
         atualizarDetalhe: (parcial) =>
           setDetalhe((atual) => (atual ? { ...atual, ...parcial } : atual)),
+        recarregar,
       }}
     >
       <div className="space-y-5">

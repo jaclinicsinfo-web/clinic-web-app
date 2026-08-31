@@ -3,21 +3,63 @@
 import * as React from "react";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ApiError } from "@/lib/api";
 import { formatPercent } from "@/lib/format";
-import { formasPagamentoAceitas } from "@/services/configuracoes";
+import { listarFormasPagamentoApi, salvarFormasPagamentoApi, type FormaPagamentoCadastro } from "@/services/financeiro";
 
-export function FormasPagamentoView({
-  formas,
-}: {
-  formas: typeof formasPagamentoAceitas;
-}) {
-  const [itens, setItens] = React.useState(formas);
+export function FormasPagamentoView() {
+  const [itens, setItens] = React.useState<FormaPagamentoCadastro[]>([]);
+  const [carregando, setCarregando] = React.useState(true);
+  const [salvando, setSalvando] = React.useState(false);
+  const [erro, setErro] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let ativo = true;
+    async function carregar() {
+      setCarregando(true);
+      setErro(null);
+      try {
+        const data = await listarFormasPagamentoApi();
+        if (ativo) setItens(data.formas);
+      } catch (error) {
+        if (ativo) {
+          setErro(error instanceof ApiError ? error.message : "Não foi possível carregar as formas de pagamento.");
+        }
+      } finally {
+        if (ativo) setCarregando(false);
+      }
+    }
+    void carregar();
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  async function salvar() {
+    setSalvando(true);
+    try {
+      const formas = await salvarFormasPagamentoApi(
+        itens.map((item) => ({ codigo: item.codigo, nome: item.nome, taxa: item.taxa, ativo: item.ativo })),
+      );
+      setItens(formas);
+      toast.success("Formas de pagamento salvas");
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível salvar.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  if (erro) {
+    return <EmptyState title="Não foi possível carregar" description={erro} />;
+  }
 
   return (
     <div className="space-y-6">
@@ -25,7 +67,9 @@ export function FormasPagamentoView({
         title="Formas de pagamento"
         description="Canais aceitos no caixa e no faturamento particular."
         actions={
-          <Button onClick={() => toast.success("Formas de pagamento salvas")}>Salvar</Button>
+          <Button onClick={() => void salvar()} loading={salvando} disabled={carregando}>
+            Salvar
+          </Button>
         }
       />
       <Card>

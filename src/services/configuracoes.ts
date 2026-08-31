@@ -1,11 +1,5 @@
-import type { ModuloSistema } from "@/types";
-import { clinica } from "./mock/pessoas";
-
-export { clinica };
-
-export function listUnidades() {
-  return clinica.unidades;
-}
+import { api } from "@/lib/api";
+import type { Clinica, ModuloSistema, Unidade } from "@/types";
 
 export const modulosLabels: Record<ModuloSistema, string> = {
   dashboard: "Dashboard",
@@ -19,12 +13,71 @@ export const modulosLabels: Record<ModuloSistema, string> = {
   configuracoes: "Configurações",
 };
 
-export const formasPagamentoAceitas = [
-  { id: "dinheiro", nome: "Dinheiro", ativo: true, taxa: 0 },
-  { id: "pix", nome: "PIX", ativo: true, taxa: 0 },
-  { id: "cartao_debito", nome: "Cartão de débito", ativo: true, taxa: 1.49 },
-  { id: "cartao_credito", nome: "Cartão de crédito", ativo: true, taxa: 3.29 },
-  { id: "boleto", nome: "Boleto bancário", ativo: true, taxa: 2.5 },
-  { id: "convenio", nome: "Faturamento por convênio", ativo: true, taxa: 0 },
-];
+export interface ClinicaPayload {
+  nomeFantasia: string;
+  razaoSocial: string;
+  cnpj: string;
+  telefone: string;
+  email: string;
+  endereco: {
+    cep: string;
+    rua: string;
+    numero: string;
+    complemento?: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
+  };
+}
 
+export interface UnidadePayload {
+  nome: string;
+  cidade: string;
+}
+
+export interface UnidadeMutacao {
+  unidade: Unidade;
+  unidadesSessao: Unidade[];
+}
+
+export async function obterClinicaApi() {
+  const data = await api.get<{ clinica: Clinica }>("/clinica");
+  return data.clinica;
+}
+
+export async function salvarClinicaApi(payload: ClinicaPayload) {
+  const data = await api.patch<{ clinica: Clinica }>("/clinica", payload);
+  return data.clinica;
+}
+
+export async function enviarLogoClinicaApi(arquivo: File) {
+  const form = new FormData();
+  form.append("arquivo", arquivo);
+  const data = await api.upload<{ clinica: Clinica }>("/clinica/logo", form);
+  return data.clinica;
+}
+
+export async function baixarLogoClinicaApi() {
+  return api.blob("/clinica/logo");
+}
+
+export async function removerLogoClinicaApi() {
+  const data = await api.delete<{ clinica: Clinica }>("/clinica/logo");
+  return data.clinica;
+}
+
+export async function criarUnidadeApi(payload: UnidadePayload) {
+  return api.post<UnidadeMutacao>("/clinica/unidades", payload);
+}
+
+export async function atualizarUnidadeApi(id: string, payload: UnidadePayload) {
+  return api.patch<UnidadeMutacao>(`/clinica/unidades/${id}`, payload);
+}
+
+export async function inativarUnidadeApi(id: string) {
+  return api.patch<UnidadeMutacao>(`/clinica/unidades/${id}/inativar`);
+}
+
+export async function ativarUnidadeApi(id: string) {
+  return api.patch<UnidadeMutacao>(`/clinica/unidades/${id}/ativar`);
+}

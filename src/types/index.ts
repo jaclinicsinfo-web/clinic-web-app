@@ -21,6 +21,7 @@ export interface Unidade {
   id: string;
   nome: string;
   cidade: string;
+  ativo?: boolean;
 }
 
 // ------------------------------------------------------------------- Pacientes
@@ -253,11 +254,13 @@ export interface Cobranca {
   valor: number;
   formaPagamento: FormaPagamento | null;
   convenioId: string | null;
+  convenioNome?: string | null;
   status: CobrancaStatus;
   vencimento: string;
   parcelas: Parcela[];
   pagoEm?: string;
   criadoEm: string;
+  valorAberto?: number;
 }
 
 export type DespesaStatus = "a_pagar" | "pago" | "vencido";
@@ -426,6 +429,7 @@ export interface SessaoUsuario {
   unidadeAtualId: string;
   unidadesAcesso: string[];
   unidades: Unidade[];
+  clinicaNome: string | null;
   plano: PlanoAtual | null;
   usoUsuarios: UsoUsuarios | null;
   planoEvento: "upgrade" | "downgrade" | null;
@@ -439,6 +443,7 @@ export interface Clinica {
   telefone: string;
   email: string;
   endereco: Endereco;
+  temLogo: boolean;
   logoUrl?: string;
   unidades: Unidade[];
 }

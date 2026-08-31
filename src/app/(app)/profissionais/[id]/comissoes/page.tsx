@@ -4,6 +4,6 @@ import { useProfissionalPerfil } from "@/components/profissionais/profissional-p
 import { ProfissionalComissoesTable } from "@/components/profissionais/profissional-comissoes-table";
 
 export default function ProfissionalComissoesPage() {
-  useProfissionalPerfil();
-  return <ProfissionalComissoesTable comissoes={[]} />;
+  const { comissoes } = useProfissionalPerfil();
+  return <ProfissionalComissoesTable comissoes={comissoes} />;
 }

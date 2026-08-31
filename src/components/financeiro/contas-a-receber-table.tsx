@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import { CreditCard, Layers, MoreHorizontal, UserRound } from "lucide-react";
-import { toast } from "sonner";
 
 import { DataTable } from "@/components/shared/data-table";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -23,15 +22,21 @@ import { RegistrarPagamentoDialog } from "@/components/financeiro/registrar-paga
 import { formasPagamento } from "@/components/financeiro/utils";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { formaPagamentoLabels } from "@/lib/status";
-import { getConvenioNome } from "@/services/catalogo";
 import type { Cobranca } from "@/types";
+import type { PagamentoRegistrado } from "@/components/financeiro/registrar-pagamento-dialog";
 
 interface ContasAReceberTableProps {
   cobrancas: Cobranca[];
   convenios: { id: string; nome: string }[];
+  onPagar: (cobranca: Cobranca, pagamento: PagamentoRegistrado) => Promise<void> | void;
 }
 
-export function ContasAReceberTable({ cobrancas, convenios }: ContasAReceberTableProps) {
+function nomeConvenio(cobranca: Cobranca) {
+  if (cobranca.convenioNome) return cobranca.convenioNome;
+  return cobranca.convenioId ? "Convênio" : "Particular";
+}
+
+export function ContasAReceberTable({ cobrancas, convenios, onPagar }: ContasAReceberTableProps) {
   const [status, setStatus] = React.useState("todos");
   const [origem, setOrigem] = React.useState("todas");
   const [forma, setForma] = React.useState("todas");
@@ -66,7 +71,7 @@ export function ContasAReceberTable({ cobrancas, convenios }: ContasAReceberTabl
               >
                 {cobranca.pacienteNome}
               </Link>
-              <p className="text-xs text-muted-foreground">{getConvenioNome(cobranca.convenioId)}</p>
+              <p className="text-xs text-muted-foreground">{nomeConvenio(cobranca)}</p>
             </div>
           );
         },
@@ -252,7 +257,7 @@ export function ContasAReceberTable({ cobrancas, convenios }: ContasAReceberTabl
           recebendo
             ? {
                 titulo: recebendo.pacienteNome,
-                subtitulo: `${recebendo.descricao} · ${getConvenioNome(recebendo.convenioId)}`,
+                subtitulo: `${recebendo.descricao} · ${nomeConvenio(recebendo)}`,
                 vencimento: recebendo.vencimento,
                 valor: recebendo.valor,
               }
@@ -260,10 +265,9 @@ export function ContasAReceberTable({ cobrancas, convenios }: ContasAReceberTabl
         }
         valorSugerido={recebendo?.valor ?? 0}
         formaSugerida={recebendo?.formaPagamento ?? null}
-        onConfirm={(pagamento) => {
-          toast.success("Pagamento registrado", {
-            description: `${recebendo?.pacienteNome ?? ""} · ${formatCurrency(pagamento.valor)} em ${formaPagamentoLabels[pagamento.formaPagamento]}`,
-          });
+        onConfirm={async (pagamento) => {
+          if (!recebendo) return;
+          await onPagar(recebendo, pagamento);
           setRecebendo(null);
         }}
       />

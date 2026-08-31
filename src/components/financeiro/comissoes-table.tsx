@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import { BadgeCheck, Banknote, MoreHorizontal, Stethoscope } from "lucide-react";
-import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { DataTable } from "@/components/shared/data-table";
@@ -25,11 +24,13 @@ import type { Comissao } from "@/types";
 interface ComissoesTableProps {
   comissoes: Comissao[];
   competencias: string[];
+  onAprovar: (comissao: Comissao) => Promise<void> | void;
+  onPagar: (comissao: Comissao) => Promise<void> | void;
 }
 
 type AcaoComissao = { comissao: Comissao; tipo: "aprovar" | "pagar" };
 
-export function ComissoesTable({ comissoes, competencias }: ComissoesTableProps) {
+export function ComissoesTable({ comissoes, competencias, onAprovar, onPagar }: ComissoesTableProps) {
   const [competencia, setCompetencia] = React.useState("todas");
   const [status, setStatus] = React.useState("todos");
   const [acao, setAcao] = React.useState<AcaoComissao | null>(null);
@@ -204,10 +205,10 @@ export function ComissoesTable({ comissoes, competencias }: ComissoesTableProps)
             : ""
         }
         confirmLabel={aprovando ? "Aprovar" : "Registrar pagamento"}
-        onConfirm={() => {
-          toast.success(aprovando ? "Comissão aprovada" : "Pagamento registrado", {
-            description: `${acao?.comissao.profissionalNome ?? ""} · ${formatCurrency(acao?.comissao.valorComissao ?? 0)}`,
-          });
+        onConfirm={async () => {
+          if (!acao) return;
+          if (acao.tipo === "aprovar") await onAprovar(acao.comissao);
+          else await onPagar(acao.comissao);
           setAcao(null);
         }}
       />

@@ -1,4 +1,4 @@
-import { addDays, addMonths, format, isBefore, parseISO, startOfMonth, subDays, subMonths } from "date-fns";
+import { addDays, addMonths, format, isBefore, isSameMonth, isWithinInterval, parseISO, startOfMonth, subDays, subMonths } from "date-fns";
 
 import type {
   Cobranca,
@@ -309,4 +309,49 @@ export function getPacientesInadimplentes() {
     }))
     .filter((item) => item.valorEmAberto > 0)
     .sort((a, b) => b.valorEmAberto - a.valorEmAberto);
+}
+
+/** Usado pelo dashboard enquanto ele ainda é mock. */
+export function getResumoContasAReceber() {
+  const emAberto = cobrancas.filter((cobranca) => cobranca.status === "pendente" || cobranca.status === "parcelado");
+  const atrasadas = cobrancas.filter((cobranca) => cobranca.status === "atrasado");
+  const recebidoMes = cobrancas.filter(
+    (cobranca) => cobranca.status === "pago" && isSameMonth(parseISO(cobranca.vencimento), hoje),
+  );
+  const proximos7Dias = cobrancas.filter((cobranca) => {
+    if (cobranca.status !== "pendente") return false;
+    const vencimento = parseISO(cobranca.vencimento);
+    return isWithinInterval(vencimento, { start: hoje, end: addDays(hoje, 7) });
+  });
+  const somar = (lista: Cobranca[]) => lista.reduce((total, cobranca) => total + cobranca.valor, 0);
+  return {
+    totalEmAberto: somar(emAberto),
+    totalAtrasado: somar(atrasadas),
+    recebidoNoMes: somar(recebidoMes),
+    vencendo7Dias: somar(proximos7Dias),
+    quantidadeAtrasada: atrasadas.length,
+    quantidadeEmAberto: emAberto.length,
+    quantidadeVencendo7Dias: proximos7Dias.length,
+  };
+}
+
+export function getResumoContasAPagar() {
+  const aPagar = despesas.filter((despesa) => despesa.status === "a_pagar");
+  const vencidas = despesas.filter((despesa) => despesa.status === "vencido");
+  const pagasMes = despesas.filter(
+    (despesa) => despesa.status === "pago" && isSameMonth(parseISO(despesa.vencimento), hoje),
+  );
+  const proximos7Dias = aPagar.filter((despesa) =>
+    isWithinInterval(parseISO(despesa.vencimento), { start: hoje, end: addDays(hoje, 7) }),
+  );
+  const somar = (lista: Despesa[]) => lista.reduce((total, despesa) => total + despesa.valor, 0);
+  return {
+    totalAPagar: somar(aPagar),
+    totalVencido: somar(vencidas),
+    pagoNoMes: somar(pagasMes),
+    vencendo7Dias: somar(proximos7Dias),
+    quantidadeVencida: vencidas.length,
+    quantidadeAPagar: aPagar.length,
+    quantidadeVencendo7Dias: proximos7Dias.length,
+  };
 }

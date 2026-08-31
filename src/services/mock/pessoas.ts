@@ -7,6 +7,7 @@ export const clinica: Clinica = {
   cnpj: "12345678000190",
   telefone: "1633214500",
   email: "contato@vidaintegrada.com.br",
+  temLogo: false,
   endereco: {
     cep: "14010100",
     rua: "Rua São Sebastião",
@@ -17,9 +18,9 @@ export const clinica: Clinica = {
     uf: "SP",
   },
   unidades: [
-    { id: "un-1", nome: "Unidade Centro", cidade: "Ribeirão Preto" },
-    { id: "un-2", nome: "Unidade Jardins", cidade: "Ribeirão Preto" },
-    { id: "un-3", nome: "Unidade Franca", cidade: "Franca" },
+    { id: "un-1", nome: "Unidade Centro", cidade: "Ribeirão Preto", ativo: true },
+    { id: "un-2", nome: "Unidade Jardins", cidade: "Ribeirão Preto", ativo: true },
+    { id: "un-3", nome: "Unidade Franca", cidade: "Franca", ativo: true },
   ],
 };
 

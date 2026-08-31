@@ -36,6 +36,7 @@ interface LoginPendente {
   plano: PlanoAtual | null;
   usoUsuarios: UsoUsuarios | null;
   permissoes: Permissao[] | null;
+  clinicaNome: string | null;
 }
 
 export function LoginForm() {
@@ -97,8 +98,9 @@ export function LoginForm() {
     plano: PlanoAtual | null,
     usoUsuarios: UsoUsuarios | null,
     permissoes: Permissao[] | null,
+    clinicaNome: string | null,
   ) {
-    iniciarSessao(usuario, unidadeAtualId, unidades, lembrar, plano, usoUsuarios, permissoes);
+    iniciarSessao(usuario, unidadeAtualId, unidades, lembrar, plano, usoUsuarios, permissoes, clinicaNome);
     toast.success(`Olá, ${usuario.nome.split(" ")[0]}!`, {
       description: `${usuario.perfilNome} · sessão iniciada`,
     });
@@ -128,6 +130,7 @@ export function LoginForm() {
         resultado.plano,
         resultado.usoUsuarios,
         resultado.permissoes,
+        resultado.clinicaNome,
       );
       return;
     }
@@ -140,6 +143,7 @@ export function LoginForm() {
       plano: resultado.plano,
       usoUsuarios: resultado.usoUsuarios,
       permissoes: resultado.permissoes,
+      clinicaNome: resultado.clinicaNome,
     });
   }
 
@@ -158,6 +162,7 @@ export function LoginForm() {
         pendente.plano,
         pendente.usoUsuarios,
         pendente.permissoes,
+        pendente.clinicaNome,
       );
     } catch (error) {
       setConfirmandoUnidade(false);

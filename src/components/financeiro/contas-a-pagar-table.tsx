@@ -3,7 +3,6 @@
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { CheckCircle2, MoreHorizontal, Repeat } from "lucide-react";
-import { toast } from "sonner";
 
 import { DataTable } from "@/components/shared/data-table";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -16,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RegistrarPagamentoDialog } from "@/components/financeiro/registrar-pagamento-dialog";
+import { RegistrarPagamentoDialog, type PagamentoRegistrado } from "@/components/financeiro/registrar-pagamento-dialog";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { formaPagamentoLabels } from "@/lib/status";
 import type { Despesa } from "@/types";
@@ -24,9 +23,10 @@ import type { Despesa } from "@/types";
 interface ContasAPagarTableProps {
   despesas: Despesa[];
   categorias: string[];
+  onPagar: (despesa: Despesa, pagamento: PagamentoRegistrado) => Promise<void> | void;
 }
 
-export function ContasAPagarTable({ despesas, categorias }: ContasAPagarTableProps) {
+export function ContasAPagarTable({ despesas, categorias, onPagar }: ContasAPagarTableProps) {
   const [status, setStatus] = React.useState("todos");
   const [categoria, setCategoria] = React.useState("todas");
   const [pagando, setPagando] = React.useState<Despesa | null>(null);
@@ -202,10 +202,9 @@ export function ContasAPagarTable({ despesas, categorias }: ContasAPagarTablePro
         formaSugerida={pagando?.formaPagamento ?? null}
         dataLabel="Data do pagamento"
         confirmLabel="Confirmar baixa"
-        onConfirm={(pagamento) => {
-          toast.success("Despesa baixada", {
-            description: `${pagando?.descricao ?? ""} · ${formatCurrency(pagamento.valor)} em ${formaPagamentoLabels[pagamento.formaPagamento]}`,
-          });
+        onConfirm={async (pagamento) => {
+          if (!pagando) return;
+          await onPagar(pagando, pagamento);
           setPagando(null);
         }}
       />

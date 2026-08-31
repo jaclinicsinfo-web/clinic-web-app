@@ -8,6 +8,7 @@ export type ResultadoLogin =
       usuario: Usuario;
       unidades: Unidade[];
       unidadeAtualId: string | null;
+      clinicaNome: string | null;
       plano: PlanoAtual | null;
       usoUsuarios: UsoUsuarios | null;
       permissoes: Permissao[] | null;
@@ -19,6 +20,7 @@ export interface ContextoAuth {
   usuario: Usuario;
   unidades: Unidade[];
   unidadeAtualId: string | null;
+  clinicaNome: string | null;
   plano: PlanoAtual | null;
   usoUsuarios: UsoUsuarios | null;
   permissoes: Permissao[] | null;
@@ -75,6 +77,7 @@ export function persistirSessao(data: SessaoApi, lembrar: boolean): Extract<Resu
     usuario: data.usuario,
     unidades: data.unidades,
     unidadeAtualId: data.unidadeAtualId,
+    clinicaNome: data.clinicaNome ?? null,
     plano: lerPlano(data),
     usoUsuarios: lerUso(data),
     permissoes: lerPermissoes(data),
@@ -106,6 +109,7 @@ export async function obterSessaoAtual(): Promise<ContextoAuth | null> {
       usuario: data.usuario,
       unidades: data.unidades,
       unidadeAtualId: data.unidadeAtualId,
+      clinicaNome: data.clinicaNome ?? null,
       plano: lerPlano(data),
       usoUsuarios: lerUso(data),
       permissoes: lerPermissoes(data),

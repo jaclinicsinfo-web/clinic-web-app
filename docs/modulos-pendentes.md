@@ -17,6 +17,8 @@ A especificação completa está em [`especificacao-erp-clinicas.md`](./especifi
 | Profissionais (cadastro clínico, grade, procedimentos, vínculo com login) | Pronto |
 | Agenda (agendamentos, status, reagendamento, bloqueios, lista de espera) | Pronto |
 | Prontuário e documentos do paciente (evolução, anexos, log de acesso) | Pronto |
+| Financeiro (receber, pagar, fluxo, lotes de convênio, comissões, formas de pagamento) | Pronto |
+| Dados da clínica e unidades | Pronto |
 
 O profissional de saúde vê **só a própria agenda** e os pacientes em que é preferido **ou** já teve agendamento. O vínculo de preferência aponta para o cadastro clínico em `profissionais`, não mais para a conta de usuário.
 
@@ -25,16 +27,16 @@ O profissional de saúde vê **só a própria agenda** e os pacientes em que é 
 | Módulo | Tela no painel | API / banco | Prioridade |
 |---|---|---|---|
 | Agenda | Integrada | Pronto | — |
-| Profissionais | Integrada | Pronto (comissões e docs do profissional ainda não) | — |
+| Profissionais | Integrada | Pronto (docs do profissional ainda não) | — |
 | Convênios | Integrada | Pronto | — |
 | Procedimentos | Integrada (em Configurações) | Pronto | — |
 | Prontuário / documentos do paciente | Integrada | Pronto | — |
-| Financeiro | Mock | Falta | 1 |
-| Dashboard | Mock | Falta | 2 |
-| Relatórios | Mock | Falta | 3 |
-| Configurações da clínica | Mock | Parcial (clínica/unidade existem no setup) | 3 |
-| Formas de pagamento | Mock | Falta | 3 |
-| Estoque | Mock | Falta | 4 |
+| Financeiro | Integrada | Pronto | — |
+| Formas de pagamento | Integrada | Pronto | — |
+| Dados da clínica / unidades | Integrada | Pronto | — |
+| Dashboard | Mock | Falta | 1 |
+| Relatórios | Mock | Falta | 2 |
+| Estoque | Mock | Falta | 3 |
 | Recuperação de senha | Não há | Falta | transversal |
 | Notificações e busca global | Só o desenho | Falta | transversal |
 
@@ -53,6 +55,8 @@ Já persiste:
 - Lista de espera (inclusão e encaixe)
 - Indicador de lembrete enviado (envio real de WhatsApp/e-mail continua opcional)
 
+Ao marcar o atendimento como **atendido**, o sistema gera a cobrança correspondente (se ainda não existir).
+
 O profissional de saúde vê **só a própria agenda**. No perfil do paciente, próximo agendamento, último atendimento e a aba Histórico usam esses registros.
 
 Cadastro rápido de paciente pela agenda foi desativado: use a ficha em Pacientes.
@@ -68,8 +72,9 @@ Entidade clínica própria, distinta da conta de login:
 - Grade semanal de horários
 - Procedimentos que a pessoa pode realizar
 - Vínculo opcional com a conta de login (para o profissional de saúde ver só os seus pacientes e a sua agenda)
+- Aba de **comissões** integrada ao cálculo/folha do módulo financeiro
 
-Ainda mock nesta área: aba de **comissões** (depende do financeiro) e **documentos do profissional** (contratos/certidões).
+Ainda mock nesta área: **documentos do profissional** (contratos/certidões).
 
 ## 3. Convênios e procedimentos
 
@@ -81,7 +86,7 @@ CRUD no banco e no painel:
 - Tabela de preços por procedimento
 - Pacientes vinculados (o vínculo no cadastro do paciente já existia)
 
-Faturamento em lote de guias continua no módulo financeiro.
+Faturamento em lote de guias está no módulo financeiro (`/financeiro/convenios`).
 
 ### Procedimentos (`/configuracoes/procedimentos`)
 
@@ -91,35 +96,35 @@ A escrita do catálogo exige permissão de **configurações** (em geral Adminis
 
 ## 4. Financeiro
 
-Telas em `/financeiro` (visão geral, contas a receber/pagar, fluxo de caixa, faturamento de convênios, comissões) são mock.
+Telas em `/financeiro` gravam no banco: visão geral, contas a receber/pagar, fluxo de caixa, faturamento de convênios e comissões.
 
-Falta:
+Já persiste:
 
 **Contas a receber**
-- Cobrança ligada a agendamento ou avulsa
-- Status: pendente, pago, atrasado, parcelado, cancelado
+- Cobrança ligada a agendamento (gerada ao concluir o atendimento) ou avulsa
+- Status efetivo: pendente, pago, atrasado, parcelado, cancelado
 - Baixa de pagamento (dinheiro, PIX, cartão, boleto, convênio)
 - Parcelas
 - Extrato no perfil do paciente e botão “gerar cobrança”
 
 **Contas a pagar**
 - Despesas, categorias, fornecedor, recorrência
-- Status: a pagar, pago, vencido
+- Status efetivo: a pagar, pago, vencido
 
 **Fluxo de caixa**
-- Entradas × saídas por período, saldo projetado vs realizado
+- Entradas × saídas por período (realizado a partir das baixas)
 
 **Convênios / faturamento**
 - Lote de guias por convênio e competência
-- Envio, glosa, reconciliação
+- Envio, glosa e reconciliação (marca as cobranças do lote como pagas ao encerrar)
 
 **Comissões**
 - Cálculo por profissional/período a partir dos atendimentos
-- Aprovação e pagamento
+- Aprovação, fechamento de folha e pagamento (gera despesa na categoria Comissões)
 
-O perfil **Profissional de saúde** não acessa o módulo financeiro geral; no paciente, saldo e pendências só fazem sentido quando as cobranças existirem.
+**Formas de pagamento** em `/configuracoes/pagamentos` ficam no banco (canais e taxas). Clínicas novas já nascem com o conjunto padrão.
 
-Formas de pagamento em `/configuracoes/pagamentos` também são lista fixa no front — devem ir para o banco junto deste módulo.
+O perfil **Profissional de saúde** não acessa o módulo financeiro geral; no paciente, saldo e pendências usam as cobranças reais.
 
 ## 5. Dashboard
 
@@ -138,20 +143,22 @@ Falta alimentar com dados reais, respeitando o perfil: o profissional de saúde 
 - Produtividade por profissional
 - Comissões
 
-Depende de agenda, financeiro e profissionais prontos.
+Depende de agenda, financeiro e profissionais prontos — os três já estão no banco.
 
-## 7. Configurações que ainda são mock
+## 7. Dados da clínica e unidades
 
-Usuários, perfis e procedimentos já gravam no banco.
+Tela `/configuracoes/clinica` grava no banco: identificação, endereço, logo e unidades.
 
-Ainda falta:
+Já persiste:
 
-| Tela | O que falta |
-|---|---|
-| Dados da clínica | Editar nome, CNPJ, contato, logo, endereço; CRUD de unidades (hoje nascem só no setup) |
-| Formas de pagamento | Ver seção 4 |
-| Modelos de mensagem | Templates de lembrete (SMS/WhatsApp/e-mail) — previsto na especificação, sem tela ainda |
-| Integrações | Gateway, WhatsApp, calendário externo — fora do núcleo |
+- Nome fantasia, razão social, CNPJ, telefone e e-mail
+- Endereço (CEP com consulta ViaCEP, logradouro, número, complemento, bairro, cidade, UF)
+- Logo (JPG/PNG/WebP até 2 MB no banco)
+- Unidades: cadastro, edição, inativar/reativar (a clínica precisa ficar com ao menos uma ativa)
+
+Unidades novas são liberadas automaticamente para o administrador que cadastrou e para os demais administradores ativos. O seletor da topbar e o nome no menu lateral usam esses registros.
+
+Ainda mock nesta área: **modelos de mensagem** e **integrações** (gateway, WhatsApp, calendário externo).
 
 ## 8. Estoque
 
@@ -166,15 +173,15 @@ Pode ficar por último.
 
 ## 9. O que falta **dentro** de Pacientes
 
-Cadastro, agenda, histórico, prontuário e documentos clínicos já gravam no banco.
+Cadastro, agenda, histórico, prontuário, documentos clínicos e financeiro do paciente já gravam no banco.
 
 | Aba | Situação |
 |---|---|
-| Visão geral (próximos e visitas) | Pronto (saldo continua zerado até o financeiro) |
+| Visão geral (próximos e visitas) | Pronto (saldo usa cobranças reais) |
 | Acompanhamento / prontuário | Pronto (evolução, queixa, conduta, alta; log de acesso LGPD) |
 | Histórico | Pronto (agendamentos persistidos) |
 | Documentos | Pronto (PDF/JPG/PNG até 10 MB no banco) |
-| Financeiro do paciente | Falta (cobranças) |
+| Financeiro do paciente | Pronto (cobranças, baixa e gerar cobrança) |
 | Comunicação | Opcional (histórico de lembretes) |
 
 Recepção e Financeiro não veem prontuário nem documentos clínicos.
@@ -197,12 +204,11 @@ Segue a seção 17 da especificação, ajustada ao que já existe:
 2. ~~Profissionais~~ — feito
 3. ~~Agenda~~ — feito
 4. ~~Prontuário e documentos do paciente~~ — feito
-5. **Financeiro** — cobrança a partir do atendimento; extrato do paciente
-6. **Dashboard** com números reais
-7. **Relatórios**
-8. **Dados da clínica**, unidades, formas de pagamento
+5. ~~Financeiro~~ — feito (cobrança a partir do atendimento; extrato do paciente)
+6. ~~Dados da clínica~~ — feito (identidade, endereço, logo e CRUD de unidades)
+7. **Dashboard** com números reais
+8. **Relatórios**
 9. **Estoque**, se o negócio precisar
 10. Recuperação de senha, lembretes e notificações
 
 Cada módulo deve seguir o padrão já usado: Model → Controller → View na API, e `src/services` no painel sem mock.
-

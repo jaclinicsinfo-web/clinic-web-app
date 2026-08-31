@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
 
 import { DataTable } from "@/components/shared/data-table";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -15,9 +14,11 @@ import type { LoteConvenio } from "@/types";
 interface LotesConvenioTableProps {
   lotes: LoteConvenio[];
   convenios: { id: string; nome: string }[];
+  onEnviar: (lote: LoteConvenio) => Promise<void> | void;
+  onConciliar: (lote: LoteConvenio, valorGlosado: number, valorRecebido: number) => Promise<void> | void;
 }
 
-export function LotesConvenioTable({ lotes, convenios }: LotesConvenioTableProps) {
+export function LotesConvenioTable({ lotes, convenios, onEnviar, onConciliar }: LotesConvenioTableProps) {
   const [convenio, setConvenio] = React.useState("todos");
   const [status, setStatus] = React.useState("todos");
   const [detalhando, setDetalhando] = React.useState<LoteConvenio | null>(null);
@@ -38,7 +39,7 @@ export function LotesConvenioTable({ lotes, convenios }: LotesConvenioTableProps
         cell: ({ row }) => (
           <div className="min-w-0">
             <p className="truncate font-medium text-foreground">{row.original.convenioNome}</p>
-            <p className="text-xs text-muted-foreground">Lote {row.original.id.replace("lote-", "")}</p>
+            <p className="text-xs text-muted-foreground">Lote {row.original.id.slice(0, 8)}</p>
           </div>
         ),
       },
@@ -150,10 +151,12 @@ export function LotesConvenioTable({ lotes, convenios }: LotesConvenioTableProps
       <LoteDetalheDialog
         lote={detalhando}
         onOpenChange={(aberto) => !aberto && setDetalhando(null)}
-        onConciliar={(lote) => {
-          toast.success("Recebimento conciliado", {
-            description: `${lote.convenioNome} · competência ${formatCompetencia(lote.competencia)}`,
-          });
+        onEnviar={async (lote) => {
+          await onEnviar(lote);
+          setDetalhando(null);
+        }}
+        onConciliar={async (lote, valorGlosado, valorRecebido) => {
+          await onConciliar(lote, valorGlosado, valorRecebido);
           setDetalhando(null);
         }}
       />

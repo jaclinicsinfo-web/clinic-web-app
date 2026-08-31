@@ -77,7 +77,9 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
           </span>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">J.A. Clinics</p>
+              <p className="truncate text-sm font-semibold text-white">
+                {sessao?.clinicaNome || "J.A. Clinics"}
+              </p>
               <p className="truncate text-xs text-sidebar-muted">Gestão de clínicas</p>
             </div>
           )}

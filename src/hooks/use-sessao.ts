@@ -21,6 +21,7 @@ function montarSessao(
   usoUsuarios: UsoUsuarios | null,
   planoEvento: SessaoUsuario["planoEvento"],
   permissoes: Permissao[] | null,
+  clinicaNome: string | null,
 ): SessaoUsuario {
   return {
     id: usuario.id,
@@ -32,6 +33,7 @@ function montarSessao(
     unidadeAtualId,
     unidadesAcesso: usuario.unidadesAcesso,
     unidades,
+    clinicaNome,
     plano,
     usoUsuarios,
     planoEvento,
@@ -88,6 +90,7 @@ function lerStorage(): SessaoUsuario | null {
       plano: parsed.plano ?? null,
       usoUsuarios: parsed.usoUsuarios ?? null,
       planoEvento: resolverEvento(null, parsed.plano, parsed.usoUsuarios),
+      clinicaNome: parsed.clinicaNome ?? null,
     };
   } catch {
     return null;
@@ -125,17 +128,21 @@ interface SessaoState {
     plano?: PlanoAtual | null,
     usoUsuarios?: UsoUsuarios | null,
     permissoes?: Permissao[] | null,
+    clinicaNome?: string | null,
   ) => void;
   aplicarContextoPlano: (input: {
     usuario?: Usuario;
     unidades?: Unidade[];
     unidadeAtualId?: string | null;
+    clinicaNome?: string | null;
     plano: PlanoAtual | null;
     usoUsuarios: UsoUsuarios | null;
     permissoes?: Permissao[] | null;
     perfilId?: string;
   }) => void;
   atualizarUso: (usoUsuarios: UsoUsuarios) => void;
+  atualizarClinicaNome: (clinicaNome: string) => void;
+  atualizarUnidadesSessao: (unidades: Unidade[]) => void;
   dispensarAvisoUpgrade: () => void;
   setUnidade: (unidadeAtualId: string) => Promise<void>;
   encerrarSessao: () => void;
@@ -156,7 +163,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
     }
     set({ sessao: lerStorage(), hidratado: true, lembrar: persistida });
   },
-  iniciarSessao: (usuario, unidadeAtualId, unidades, lembrar, plano = null, usoUsuarios = null, permissoes = null) => {
+  iniciarSessao: (usuario, unidadeAtualId, unidades, lembrar, plano = null, usoUsuarios = null, permissoes = null, clinicaNome = null) => {
     const evento = resolverEvento(null, plano, usoUsuarios);
     const sessao = montarSessao(
       usuario,
@@ -166,6 +173,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       usoUsuarios,
       evento,
       permissoes == null ? null : normalizarPermissoes(permissoes),
+      clinicaNome,
     );
     if (plano && evento !== "upgrade") gravarPlanoVisto(plano.codigo);
     gravarStorage(sessao, lembrar);
@@ -183,6 +191,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       perfilId: input.perfilId ?? input.usuario?.perfilId ?? atual.perfilId,
       permissoes: input.permissoes !== undefined ? normalizarPermissoes(input.permissoes) : atual.permissoes,
       unidades: input.unidades ?? atual.unidades,
+      clinicaNome: input.clinicaNome ?? atual.clinicaNome,
       unidadeAtualId: input.unidadeAtualId ?? atual.unidadeAtualId,
       plano: input.plano,
       usoUsuarios: input.usoUsuarios,
@@ -198,6 +207,24 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
     const evento = resolverEvento(atual.plano, atual.plano, usoUsuarios);
     const sessao = { ...atual, usoUsuarios, planoEvento: evento };
     if (evento !== "downgrade" && atual.plano) gravarPlanoVisto(atual.plano.codigo);
+    gravarStorage(sessao, get().lembrar);
+    set({ sessao });
+  },
+  atualizarClinicaNome: (clinicaNome) => {
+    const atual = get().sessao;
+    if (!atual) return;
+    const sessao = { ...atual, clinicaNome };
+    gravarStorage(sessao, get().lembrar);
+    set({ sessao });
+  },
+  atualizarUnidadesSessao: (unidades) => {
+    const atual = get().sessao;
+    if (!atual) return;
+    const sessao = {
+      ...atual,
+      unidades,
+      unidadesAcesso: unidades.map((item) => item.id),
+    };
     gravarStorage(sessao, get().lembrar);
     set({ sessao });
   },

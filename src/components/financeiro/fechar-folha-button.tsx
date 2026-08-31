@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { FileCheck2 } from "lucide-react";
-import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -13,9 +12,10 @@ interface FecharFolhaButtonProps {
   competencia: string;
   total: number;
   profissionais: number;
+  onFechar: () => Promise<void> | void;
 }
 
-export function FecharFolhaButton({ competencia, total, profissionais }: FecharFolhaButtonProps) {
+export function FecharFolhaButton({ competencia, total, profissionais, onFechar }: FecharFolhaButtonProps) {
   const [confirmando, setConfirmando] = React.useState(false);
   const rotuloCompetencia = formatCompetencia(competencia);
 
@@ -33,10 +33,8 @@ export function FecharFolhaButton({ competencia, total, profissionais }: FecharF
         title={`Fechar a folha de ${rotuloCompetencia}?`}
         description={`${profissionais} profissionais e ${formatCurrency(total)} em comissões serão aprovados de uma vez. Depois do fechamento, novos atendimentos da competência não entram mais neste cálculo.`}
         confirmLabel="Fechar folha"
-        onConfirm={() => {
-          toast.success("Folha de comissões fechada", {
-            description: `${rotuloCompetencia} · ${formatCurrency(total)} aprovados`,
-          });
+        onConfirm={async () => {
+          await onFechar();
           setConfirmando(false);
         }}
       />

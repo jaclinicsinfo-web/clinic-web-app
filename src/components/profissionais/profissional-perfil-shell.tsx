@@ -15,7 +15,7 @@ import { ApiError } from "@/lib/api";
 import { formatPhone, getInitials } from "@/lib/format";
 import { tipoVinculoLabels } from "@/lib/status";
 import { obterProfissionalApi } from "@/services/profissionais";
-import type { Agendamento, Profissional } from "@/types";
+import type { Agendamento, Comissao, Profissional } from "@/types";
 import type { IndicadoresProfissional, PacienteDoProfissional } from "@/services/profissionais";
 
 const ProfissionalPerfilContext = React.createContext<{
@@ -24,6 +24,7 @@ const ProfissionalPerfilContext = React.createContext<{
   pacientesAtendidos: PacienteDoProfissional[];
   agenda: Agendamento[];
   procedimentosHabilitados: { id: string; nome: string }[];
+  comissoes: Comissao[];
 } | null>(null);
 
 export function useProfissionalPerfil() {
@@ -59,6 +60,7 @@ export function ProfissionalPerfilShell({
           pacientesAtendidos: data.pacientesAtendidos,
           agenda: data.agenda,
           procedimentosHabilitados: data.procedimentosHabilitados,
+          comissoes: data.comissoes ?? [],
         });
       } catch (error) {
         if (!ativo) return;
