@@ -8,10 +8,14 @@ import { PlanoBanner } from "@/components/layout/plano-banner";
 import { PlanoSync } from "@/components/layout/plano-sync";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { GuardaModulo } from "@/components/auth/guarda-modulo";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
   const [collapsed, setCollapsed] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
@@ -49,7 +53,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <main className="flex-1 overflow-y-auto scrollbar-thin">
-          <div className="mx-auto w-full max-w-[1600px] p-4 lg:p-6">{children}</div>
+          <div className="mx-auto w-full max-w-[1600px] p-4 lg:p-6">
+            {permissoes === null ? (
+              <div className="flex min-h-[40vh] items-center justify-center">
+                <Loader2 className="size-5 animate-spin text-primary" aria-label="Carregando permissões" />
+              </div>
+            ) : (
+              <GuardaModulo>{children}</GuardaModulo>
+            )}
+          </div>
         </main>
       </div>
     </div>

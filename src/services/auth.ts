@@ -1,5 +1,6 @@
 import { api, ApiError, clearToken, setToken } from "@/lib/api";
-import type { PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
+import { normalizarPermissoes } from "@/lib/permissoes";
+import type { PerfilSessao, Permissao, PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
 
 export type ResultadoLogin =
   | {
@@ -9,6 +10,8 @@ export type ResultadoLogin =
       unidadeAtualId: string | null;
       plano: PlanoAtual | null;
       usoUsuarios: UsoUsuarios | null;
+      permissoes: Permissao[] | null;
+      perfilId: string;
     }
   | { ok: false; erro: string };
 
@@ -18,10 +21,13 @@ export interface ContextoAuth {
   unidadeAtualId: string | null;
   plano: PlanoAtual | null;
   usoUsuarios: UsoUsuarios | null;
+  permissoes: Permissao[] | null;
+  perfilId: string;
 }
 
 export interface SessaoApi extends ContextoAuth {
   token: string;
+  perfil?: PerfilSessao;
 }
 
 interface SelecionarUnidadeResponse {
@@ -56,6 +62,12 @@ function lerUso(raw: Partial<SessaoApi> | null | undefined): UsoUsuarios | null 
   };
 }
 
+function lerPermissoes(raw: Partial<SessaoApi> | null | undefined): Permissao[] | null {
+  const bruto = raw?.perfil?.permissoes ?? raw?.permissoes;
+  if (bruto == null) return null;
+  return normalizarPermissoes(bruto);
+}
+
 export function persistirSessao(data: SessaoApi, lembrar: boolean): Extract<ResultadoLogin, { ok: true }> {
   setToken(data.token, lembrar);
   return {
@@ -65,6 +77,8 @@ export function persistirSessao(data: SessaoApi, lembrar: boolean): Extract<Resu
     unidadeAtualId: data.unidadeAtualId,
     plano: lerPlano(data),
     usoUsuarios: lerUso(data),
+    permissoes: lerPermissoes(data),
+    perfilId: data.perfil?.id ?? data.usuario.perfilId,
   };
 }
 
@@ -94,6 +108,8 @@ export async function obterSessaoAtual(): Promise<ContextoAuth | null> {
       unidadeAtualId: data.unidadeAtualId,
       plano: lerPlano(data),
       usoUsuarios: lerUso(data),
+      permissoes: lerPermissoes(data),
+      perfilId: data.perfil?.id ?? data.usuario.perfilId,
     };
   } catch (error) {
     if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {

@@ -233,13 +233,15 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{sessao?.email}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/configuracoes/usuarios">
-                <User />
-                Meu perfil
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            {sessao?.perfil === "Administrador" && (
+              <DropdownMenuItem asChild>
+                <Link href="/configuracoes/usuarios">
+                  <User />
+                  Meu perfil
+                </Link>
+              </DropdownMenuItem>
+            )}
+            {sessao?.perfil === "Administrador" && <DropdownMenuSeparator />}
             <DropdownMenuItem
               destructive
               onSelect={() => {

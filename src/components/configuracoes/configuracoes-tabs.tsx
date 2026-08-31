@@ -3,27 +3,30 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useSessaoStore } from "@/hooks/use-sessao";
+import { isAdministrador } from "@/lib/plano";
 import { cn } from "@/lib/utils";
 
 const abas = [
   { label: "Dados da clínica", href: "/configuracoes/clinica" },
-  { label: "Usuários", href: "/configuracoes/usuarios" },
-  { label: "Perfis e permissões", href: "/configuracoes/permissoes" },
+  { label: "Usuários", href: "/configuracoes/usuarios", admin: true },
+  { label: "Perfis e permissões", href: "/configuracoes/permissoes", admin: true },
   { label: "Procedimentos", href: "/configuracoes/procedimentos" },
   { label: "Pagamentos", href: "/configuracoes/pagamentos" },
-  { label: "Mensagens", href: "/configuracoes/mensagens" },
-  { label: "Integrações", href: "/configuracoes/integracoes" },
 ];
 
 export function ConfiguracoesTabs() {
   const pathname = usePathname();
+  const perfil = useSessaoStore((state) => state.sessao?.perfil);
+  const admin = isAdministrador(perfil);
+  const visiveis = abas.filter((aba) => !aba.admin || admin);
 
   return (
     <nav
       aria-label="Seções de configurações"
       className="flex w-full items-center gap-1 overflow-x-auto border-b border-border scrollbar-thin"
     >
-      {abas.map((aba) => {
+      {visiveis.map((aba) => {
         const ativa = pathname === aba.href;
         return (
           <Link

@@ -6,7 +6,10 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, HeartPulse, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import { navGroups, type NavItem } from "@/lib/navigation";
+import { temPermissao } from "@/lib/permissoes";
+import { isAdministrador } from "@/lib/plano";
 import { cn } from "@/lib/utils";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SidebarProps {
@@ -23,10 +26,31 @@ function isItemActive(pathname: string, item: NavItem) {
 
 export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProps) {
   const pathname = usePathname();
+  const sessao = useSessaoStore((state) => state.sessao);
+  const permissoes = sessao?.permissoes;
+  const admin = isAdministrador(sessao?.perfil);
+
+  const gruposVisiveis = navGroups
+    .map((grupo) => ({
+      ...grupo,
+      items: grupo.items
+        .filter((item) => temPermissao(permissoes, item.modulo))
+        .map((item) => {
+          if (!item.children) return item;
+          const children = item.children.filter((child) => {
+            if (child.href.startsWith("/configuracoes/usuarios") || child.href.startsWith("/configuracoes/permissoes")) {
+              return admin;
+            }
+            return true;
+          });
+          return { ...item, href: children[0]?.href ?? item.href, children };
+        }),
+    }))
+    .filter((grupo) => grupo.items.length > 0);
 
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    navGroups.forEach((group) =>
+    gruposVisiveis.forEach((group) =>
       group.items.forEach((item) => {
         if (item.children) initial[item.label] = isItemActive(pathname, item);
       }),
@@ -60,7 +84,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2 py-4 scrollbar-thin">
-          {navGroups.map((group) => (
+          {gruposVisiveis.map((group) => (
             <div key={group.title} className="mb-5 last:mb-0">
               {!collapsed && (
                 <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted">

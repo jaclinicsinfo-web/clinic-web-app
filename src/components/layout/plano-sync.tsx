@@ -16,7 +16,11 @@ export function PlanoSync() {
     obterSessaoAtual()
       .then((contexto) => {
         if (cancelado || !contexto) return;
-        aplicarContextoPlano(contexto);
+        aplicarContextoPlano({
+          ...contexto,
+          perfilId: contexto.perfilId,
+          permissoes: contexto.permissoes,
+        });
       })
       .catch((error) => {
         if (cancelado) return;

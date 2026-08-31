@@ -367,6 +367,8 @@ export interface Permissao {
   excluir: boolean;
 }
 
+export type AcaoPermissao = keyof Omit<Permissao, "modulo">;
+
 export interface PerfilAcesso {
   id: string;
   nome: string;
@@ -400,12 +402,20 @@ export interface UsoUsuarios {
   podeAdicionar: boolean;
 }
 
+export interface PerfilSessao {
+  id: string;
+  nome: string;
+  permissoes: Permissao[];
+}
+
 /** Sessão do painel autenticado. */
 export interface SessaoUsuario {
   id: string;
   nome: string;
   email: string;
   perfil: string;
+  perfilId: string;
+  permissoes: Permissao[] | null;
   unidadeAtualId: string;
   unidadesAcesso: string[];
   unidades: Unidade[];

@@ -13,6 +13,7 @@ import {
   Wallet,
 } from "lucide-react";
 
+import { Pode } from "@/components/auth/pode";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -58,15 +59,19 @@ export default function DashboardPage() {
         description="Visão consolidada da operação da clínica no dia e no mês corrente."
         actions={
           <>
-            <Button variant="outline" asChild>
-              <Link href="/relatorios">Ver relatórios</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/agenda">
-                <CalendarDays />
-                Abrir agenda
-              </Link>
-            </Button>
+            <Pode modulo="relatorios">
+              <Button variant="outline" asChild>
+                <Link href="/relatorios">Ver relatórios</Link>
+              </Button>
+            </Pode>
+            <Pode modulo="agenda">
+              <Button asChild>
+                <Link href="/agenda">
+                  <CalendarDays />
+                  Abrir agenda
+                </Link>
+              </Button>
+            </Pode>
           </>
         }
       />
@@ -78,12 +83,14 @@ export default function DashboardPage() {
           icon={CalendarCheck}
           hint={`${dia.confirmados} confirmados · ${dia.agendados} agendados · ${dia.cancelados} cancelados`}
         />
-        <StatCard
-          label="Faturamento do mês"
-          value={formatCurrency(indicadores.faturamentoMes)}
-          icon={DollarSign}
-          variation={indicadores.variacaoFaturamento}
-        />
+        <Pode modulo="financeiro">
+          <StatCard
+            label="Faturamento do mês"
+            value={formatCurrency(indicadores.faturamentoMes)}
+            icon={DollarSign}
+            variation={indicadores.variacaoFaturamento}
+          />
+        </Pode>
         <StatCard
           label="Taxa de ocupação"
           value={formatPercent(indicadores.taxaOcupacao)}
@@ -105,32 +112,40 @@ export default function DashboardPage() {
           icon={UserPlus}
           variation={indicadores.variacaoNovosPacientes}
         />
-        <StatCard
-          label="Previsto para hoje"
-          value={formatCurrency(indicadores.faturamentoDia)}
-          icon={Wallet}
-          hint="Soma dos atendimentos ativos do dia"
-        />
-        <StatCard
-          label="A receber em 7 dias"
-          value={formatCurrency(indicadores.contasAReceber.vencendo7Dias)}
-          icon={ArrowRight}
-          hint={`${indicadores.contasAReceber.quantidadeVencendo7Dias} cobranças · ${formatCurrency(indicadores.contasAReceber.totalAtrasado)} em atraso`}
-        />
-        <StatCard
-          label="A pagar em 7 dias"
-          value={formatCurrency(indicadores.contasAPagar.vencendo7Dias)}
-          icon={AlertTriangle}
-          hint={`${indicadores.contasAPagar.quantidadeVencendo7Dias} despesas · ${formatCurrency(indicadores.contasAPagar.totalVencido)} vencidas`}
-        />
+        <Pode modulo="financeiro">
+          <StatCard
+            label="Previsto para hoje"
+            value={formatCurrency(indicadores.faturamentoDia)}
+            icon={Wallet}
+            hint="Soma dos atendimentos ativos do dia"
+          />
+        </Pode>
+        <Pode modulo="financeiro">
+          <StatCard
+            label="A receber em 7 dias"
+            value={formatCurrency(indicadores.contasAReceber.vencendo7Dias)}
+            icon={ArrowRight}
+            hint={`${indicadores.contasAReceber.quantidadeVencendo7Dias} cobranças · ${formatCurrency(indicadores.contasAReceber.totalAtrasado)} em atraso`}
+          />
+        </Pode>
+        <Pode modulo="financeiro">
+          <StatCard
+            label="A pagar em 7 dias"
+            value={formatCurrency(indicadores.contasAPagar.vencendo7Dias)}
+            icon={AlertTriangle}
+            hint={`${indicadores.contasAPagar.quantidadeVencendo7Dias} despesas · ${formatCurrency(indicadores.contasAPagar.totalVencido)} vencidas`}
+          />
+        </Pode>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="xl:col-span-2">
-          <FaturamentoChart diario={getFaturamentoUltimos30Dias()} mensal={getFaturamentoUltimos12Meses()} />
+      <Pode modulo="financeiro">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <div className="xl:col-span-2">
+            <FaturamentoChart diario={getFaturamentoUltimos30Dias()} mensal={getFaturamentoUltimos12Meses()} />
+          </div>
+          <OrigemAtendimentoChart dados={getDistribuicaoConvenioParticular()} />
         </div>
-        <OrigemAtendimentoChart dados={getDistribuicaoConvenioParticular()} />
-      </div>
+      </Pode>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <AtendimentosPorProfissionalChart dados={getAtendimentosPorProfissional()} />
@@ -177,14 +192,16 @@ export default function DashboardPage() {
                         {agendamento.sala ? ` · ${agendamento.sala}` : ""}
                       </p>
                     </div>
-                    <div className="hidden shrink-0 text-right sm:block">
-                      <p className="text-sm font-medium tabular-nums text-foreground">
-                        {formatCurrency(agendamento.valor)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {agendamento.particular ? "Particular" : "Convênio"}
-                      </p>
-                    </div>
+                    <Pode modulo="financeiro">
+                      <div className="hidden shrink-0 text-right sm:block">
+                        <p className="text-sm font-medium tabular-nums text-foreground">
+                          {formatCurrency(agendamento.valor)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {agendamento.particular ? "Particular" : "Convênio"}
+                        </p>
+                      </div>
+                    </Pode>
                     <StatusBadge domain="agendamento" status={agendamento.status} />
                   </li>
                 ))}
@@ -194,14 +211,15 @@ export default function DashboardPage() {
         </Card>
 
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="size-4 text-warning" />
-                Alertas
-              </CardTitle>
-              <CardDescription>Pontos que exigem atenção da gestão</CardDescription>
-            </CardHeader>
+          <Pode modulo="financeiro">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="size-4 text-warning" />
+                  Alertas
+                </CardTitle>
+                <CardDescription>Pontos que exigem atenção da gestão</CardDescription>
+              </CardHeader>
             <CardContent className="px-0 pb-0">
               {alertas.length === 0 ? (
                 <p className="px-5 pb-5 text-sm text-muted-foreground">Nenhum alerta ativo.</p>
@@ -221,7 +239,8 @@ export default function DashboardPage() {
                 </ul>
               )}
             </CardContent>
-          </Card>
+            </Card>
+          </Pode>
 
           <Card>
             <CardHeader>

@@ -1,4 +1,4 @@
-import type { Clinica, Paciente, PerfilAcesso, Profissional } from "@/types";
+import type { Clinica, Paciente, Profissional } from "@/types";
 
 export const clinica: Clinica = {
   id: "clin-1",
@@ -575,94 +575,6 @@ export const pacientes: Paciente[] = [
     saldoDevedor: 145,
     criadoEm: "2024-01-16T10:00:00Z",
     atualizadoEm: "2026-02-11T10:00:00Z",
-  },
-];
-
-export const perfisAcesso: PerfilAcesso[] = [
-  {
-    id: "perfil-1",
-    nome: "Administrador",
-    descricao: "Acesso total ao sistema, incluindo configurações e financeiro completo.",
-    sistema: true,
-    permissoes: [
-      { modulo: "dashboard", visualizar: true, criar: true, editar: true, excluir: true },
-      { modulo: "pacientes", visualizar: true, criar: true, editar: true, excluir: true },
-      { modulo: "agenda", visualizar: true, criar: true, editar: true, excluir: true },
-      { modulo: "profissionais", visualizar: true, criar: true, editar: true, excluir: true },
-      { modulo: "financeiro", visualizar: true, criar: true, editar: true, excluir: true },
-      { modulo: "convenios", visualizar: true, criar: true, editar: true, excluir: true },
-      { modulo: "estoque", visualizar: true, criar: true, editar: true, excluir: true },
-      { modulo: "relatorios", visualizar: true, criar: true, editar: true, excluir: true },
-      { modulo: "configuracoes", visualizar: true, criar: true, editar: true, excluir: true },
-    ],
-  },
-  {
-    id: "perfil-2",
-    nome: "Gestor",
-    descricao: "Relatórios, financeiro, agenda e profissionais, sem configuração sistêmica.",
-    sistema: true,
-    permissoes: [
-      { modulo: "dashboard", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "pacientes", visualizar: true, criar: true, editar: true, excluir: false },
-      { modulo: "agenda", visualizar: true, criar: true, editar: true, excluir: true },
-      { modulo: "profissionais", visualizar: true, criar: true, editar: true, excluir: false },
-      { modulo: "financeiro", visualizar: true, criar: true, editar: true, excluir: false },
-      { modulo: "convenios", visualizar: true, criar: true, editar: true, excluir: false },
-      { modulo: "estoque", visualizar: true, criar: true, editar: true, excluir: false },
-      { modulo: "relatorios", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "configuracoes", visualizar: false, criar: false, editar: false, excluir: false },
-    ],
-  },
-  {
-    id: "perfil-3",
-    nome: "Recepção",
-    descricao: "Agenda, cadastro de pacientes, check-in e recebimentos básicos.",
-    sistema: true,
-    permissoes: [
-      { modulo: "dashboard", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "pacientes", visualizar: true, criar: true, editar: true, excluir: false },
-      { modulo: "agenda", visualizar: true, criar: true, editar: true, excluir: false },
-      { modulo: "profissionais", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "financeiro", visualizar: true, criar: true, editar: false, excluir: false },
-      { modulo: "convenios", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "estoque", visualizar: false, criar: false, editar: false, excluir: false },
-      { modulo: "relatorios", visualizar: false, criar: false, editar: false, excluir: false },
-      { modulo: "configuracoes", visualizar: false, criar: false, editar: false, excluir: false },
-    ],
-  },
-  {
-    id: "perfil-4",
-    nome: "Profissional de saúde",
-    descricao: "Própria agenda e prontuário dos seus pacientes, sem financeiro geral.",
-    sistema: true,
-    permissoes: [
-      { modulo: "dashboard", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "pacientes", visualizar: true, criar: false, editar: true, excluir: false },
-      { modulo: "agenda", visualizar: true, criar: true, editar: true, excluir: false },
-      { modulo: "profissionais", visualizar: false, criar: false, editar: false, excluir: false },
-      { modulo: "financeiro", visualizar: false, criar: false, editar: false, excluir: false },
-      { modulo: "convenios", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "estoque", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "relatorios", visualizar: false, criar: false, editar: false, excluir: false },
-      { modulo: "configuracoes", visualizar: false, criar: false, editar: false, excluir: false },
-    ],
-  },
-  {
-    id: "perfil-5",
-    nome: "Financeiro",
-    descricao: "Módulo financeiro completo, sem acesso a prontuário clínico.",
-    sistema: true,
-    permissoes: [
-      { modulo: "dashboard", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "pacientes", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "agenda", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "profissionais", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "financeiro", visualizar: true, criar: true, editar: true, excluir: true },
-      { modulo: "convenios", visualizar: true, criar: true, editar: true, excluir: false },
-      { modulo: "estoque", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "relatorios", visualizar: true, criar: false, editar: false, excluir: false },
-      { modulo: "configuracoes", visualizar: false, criar: false, editar: false, excluir: false },
-    ],
   },
 ];
 

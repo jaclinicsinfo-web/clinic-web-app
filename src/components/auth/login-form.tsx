@@ -19,7 +19,7 @@ import { consultarSetup } from "@/services/setup";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
-import type { PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
+import type { Permissao, PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Informe seu e-mail.").email("E-mail inválido."),
@@ -35,6 +35,7 @@ interface LoginPendente {
   lembrar: boolean;
   plano: PlanoAtual | null;
   usoUsuarios: UsoUsuarios | null;
+  permissoes: Permissao[] | null;
 }
 
 export function LoginForm() {
@@ -95,8 +96,9 @@ export function LoginForm() {
     unidades: Unidade[],
     plano: PlanoAtual | null,
     usoUsuarios: UsoUsuarios | null,
+    permissoes: Permissao[] | null,
   ) {
-    iniciarSessao(usuario, unidadeAtualId, unidades, lembrar, plano, usoUsuarios);
+    iniciarSessao(usuario, unidadeAtualId, unidades, lembrar, plano, usoUsuarios, permissoes);
     toast.success(`Olá, ${usuario.nome.split(" ")[0]}!`, {
       description: `${usuario.perfilNome} · sessão iniciada`,
     });
@@ -125,6 +127,7 @@ export function LoginForm() {
         resultado.unidades,
         resultado.plano,
         resultado.usoUsuarios,
+        resultado.permissoes,
       );
       return;
     }
@@ -136,6 +139,7 @@ export function LoginForm() {
       lembrar: values.lembrar,
       plano: resultado.plano,
       usoUsuarios: resultado.usoUsuarios,
+      permissoes: resultado.permissoes,
     });
   }
 
@@ -153,6 +157,7 @@ export function LoginForm() {
         pendente.unidades,
         pendente.plano,
         pendente.usoUsuarios,
+        pendente.permissoes,
       );
     } catch (error) {
       setConfirmandoUnidade(false);

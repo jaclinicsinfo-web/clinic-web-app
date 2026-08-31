@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 
-import { PermissoesMatrix } from "@/components/configuracoes/permissoes-matrix";
+import { PermissoesWorkspace } from "@/components/configuracoes/permissoes-workspace";
 import { PageHeader } from "@/components/shared/page-header";
-import { listPerfisAcesso } from "@/services/configuracoes";
 
 export const metadata: Metadata = {
   title: "Perfis e permissões",
@@ -13,9 +12,9 @@ export default function PermissoesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Perfis e permissões"
-        description="Matriz de acesso por módulo: visualizar, criar, editar e excluir. Perfis customizados podem ser criados a partir dos padrões do sistema."
+        description="Matriz de acesso por módulo: visualizar, criar, editar e excluir. As regras vêm do perfil real do usuário na clínica."
       />
-      <PermissoesMatrix perfis={listPerfisAcesso()} />
+      <PermissoesWorkspace />
     </div>
   );
 }

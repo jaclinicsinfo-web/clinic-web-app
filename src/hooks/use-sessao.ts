@@ -6,7 +6,8 @@ import { create } from "zustand";
 import { clearToken, getToken } from "@/lib/api";
 import { comparouPlanos, LIMITES_PLANO, planoEstaAcimaDoTeto } from "@/lib/plano";
 import { encerrarSessaoApi, selecionarUnidade } from "@/services/auth";
-import type { CodigoPlano, PlanoAtual, SessaoUsuario, Unidade, UsoUsuarios, Usuario } from "@/types";
+import { normalizarPermissoes } from "@/lib/permissoes";
+import type { CodigoPlano, Permissao, PlanoAtual, SessaoUsuario, Unidade, UsoUsuarios, Usuario } from "@/types";
 
 const STORAGE_LOCAL = "clinicerp.sessao";
 const STORAGE_TEMP = "clinicerp.sessao.temp";
@@ -19,12 +20,15 @@ function montarSessao(
   plano: PlanoAtual | null,
   usoUsuarios: UsoUsuarios | null,
   planoEvento: SessaoUsuario["planoEvento"],
+  permissoes: Permissao[] | null,
 ): SessaoUsuario {
   return {
     id: usuario.id,
     nome: usuario.nome,
     email: usuario.email,
     perfil: usuario.perfilNome,
+    perfilId: usuario.perfilId,
+    permissoes,
     unidadeAtualId,
     unidadesAcesso: usuario.unidadesAcesso,
     unidades,
@@ -79,6 +83,8 @@ function lerStorage(): SessaoUsuario | null {
     if (!parsed?.id || !Array.isArray(parsed.unidades)) return null;
     return {
       ...parsed,
+      perfilId: parsed.perfilId ?? "",
+      permissoes: Array.isArray(parsed.permissoes) ? normalizarPermissoes(parsed.permissoes) : null,
       plano: parsed.plano ?? null,
       usoUsuarios: parsed.usoUsuarios ?? null,
       planoEvento: resolverEvento(null, parsed.plano, parsed.usoUsuarios),
@@ -118,6 +124,7 @@ interface SessaoState {
     lembrar: boolean,
     plano?: PlanoAtual | null,
     usoUsuarios?: UsoUsuarios | null,
+    permissoes?: Permissao[] | null,
   ) => void;
   aplicarContextoPlano: (input: {
     usuario?: Usuario;
@@ -125,6 +132,8 @@ interface SessaoState {
     unidadeAtualId?: string | null;
     plano: PlanoAtual | null;
     usoUsuarios: UsoUsuarios | null;
+    permissoes?: Permissao[] | null;
+    perfilId?: string;
   }) => void;
   atualizarUso: (usoUsuarios: UsoUsuarios) => void;
   dispensarAvisoUpgrade: () => void;
@@ -147,9 +156,17 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
     }
     set({ sessao: lerStorage(), hidratado: true, lembrar: persistida });
   },
-  iniciarSessao: (usuario, unidadeAtualId, unidades, lembrar, plano = null, usoUsuarios = null) => {
+  iniciarSessao: (usuario, unidadeAtualId, unidades, lembrar, plano = null, usoUsuarios = null, permissoes = null) => {
     const evento = resolverEvento(null, plano, usoUsuarios);
-    const sessao = montarSessao(usuario, unidadeAtualId, unidades, plano, usoUsuarios, evento);
+    const sessao = montarSessao(
+      usuario,
+      unidadeAtualId,
+      unidades,
+      plano,
+      usoUsuarios,
+      evento,
+      permissoes == null ? null : normalizarPermissoes(permissoes),
+    );
     if (plano && evento !== "upgrade") gravarPlanoVisto(plano.codigo);
     gravarStorage(sessao, lembrar);
     set({ sessao, lembrar });
@@ -163,6 +180,8 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       nome: input.usuario?.nome ?? atual.nome,
       email: input.usuario?.email ?? atual.email,
       perfil: input.usuario?.perfilNome ?? atual.perfil,
+      perfilId: input.perfilId ?? input.usuario?.perfilId ?? atual.perfilId,
+      permissoes: input.permissoes !== undefined ? normalizarPermissoes(input.permissoes) : atual.permissoes,
       unidades: input.unidades ?? atual.unidades,
       unidadeAtualId: input.unidadeAtualId ?? atual.unidadeAtualId,
       plano: input.plano,

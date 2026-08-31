@@ -177,6 +177,7 @@ export function SetupForm() {
       true,
       resultado.plano,
       resultado.usoUsuarios,
+      resultado.permissoes,
     );
     toast.success("Clínica configurada", {
       description: `${resultado.usuario.nome.split(" ")[0]}, você é o administrador geral.`,
