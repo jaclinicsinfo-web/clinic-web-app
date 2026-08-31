@@ -43,7 +43,7 @@ interface BloqueioDialogProps {
   profissionais: Profissional[];
   dataPadrao: string;
   profissionalPadrao?: string;
-  onSave: (bloqueio: Omit<BloqueioAgenda, "id">) => void;
+  onSave: (bloqueio: Omit<BloqueioAgenda, "id">) => void | Promise<void>;
 }
 
 export function BloqueioDialog({
@@ -93,8 +93,8 @@ export function BloqueioDialog({
         </DialogHeader>
 
         <form
-          onSubmit={handleSubmit((form) => {
-            onSave({
+          onSubmit={handleSubmit(async (form) => {
+            await onSave({
               profissionalId: form.profissionalId,
               data: form.data,
               horaInicio: form.horaInicio,

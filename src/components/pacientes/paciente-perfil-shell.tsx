@@ -16,6 +16,7 @@ import type { Paciente } from "@/types";
 const PacientePerfilContext = React.createContext<{
   paciente: Paciente;
   detalhe: DetalhePacienteResponse;
+  atualizarDetalhe: (parcial: Partial<DetalhePacienteResponse>) => void;
 } | null>(null);
 
 export function usePacientePerfil() {
@@ -92,14 +93,25 @@ export function PacientePerfilShell({
 
   const tabs = [
     { label: "Visão geral", href: `/pacientes/${pacienteId}` },
-    { label: "Acompanhamento", href: `/pacientes/${pacienteId}/prontuario` },
+    ...(detalhe.podeVerProntuario
+      ? [{ label: "Acompanhamento", href: `/pacientes/${pacienteId}/prontuario` }]
+      : []),
     { label: "Histórico", href: `/pacientes/${pacienteId}/historico` },
-    { label: "Documentos", href: `/pacientes/${pacienteId}/documentos` },
+    ...(detalhe.podeVerProntuario
+      ? [{ label: "Documentos", href: `/pacientes/${pacienteId}/documentos` }]
+      : []),
     { label: "Financeiro", href: `/pacientes/${pacienteId}/financeiro` },
   ];
 
   return (
-    <PacientePerfilContext.Provider value={{ paciente: detalhe.paciente, detalhe }}>
+    <PacientePerfilContext.Provider
+      value={{
+        paciente: detalhe.paciente,
+        detalhe,
+        atualizarDetalhe: (parcial) =>
+          setDetalhe((atual) => (atual ? { ...atual, ...parcial } : atual)),
+      }}
+    >
       <div className="space-y-5">
         <PacienteHeader paciente={detalhe.paciente} />
         <EntityTabsNav items={tabs} />

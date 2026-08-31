@@ -21,8 +21,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormField } from "@/components/shared/form-section";
+import { ApiError } from "@/lib/api";
 import { formatDate, formatNumber } from "@/lib/format";
-import type { DocumentoPaciente } from "@/services/pacientes";
+import {
+  baixarDocumentoApi,
+  enviarDocumentoApi,
+  excluirDocumentoApi,
+  type DocumentoPaciente,
+} from "@/services/pacientes";
 
 const tiposDocumento = [
   "Exame laboratorial",
@@ -35,23 +41,76 @@ const tiposDocumento = [
 ];
 
 export function DocumentosView({
-  documentos,
+  documentos: documentosIniciais,
+  pacienteId,
   pacienteNome,
+  podeRegistrar = false,
+  onAtualizado,
 }: {
   documentos: DocumentoPaciente[];
+  pacienteId: string;
   pacienteNome: string;
+  podeRegistrar?: boolean;
+  onAtualizado?: (documentos: DocumentoPaciente[]) => void;
 }) {
+  const [documentos, setDocumentos] = React.useState(documentosIniciais);
   const [uploadAberto, setUploadAberto] = React.useState(false);
   const [tipo, setTipo] = React.useState(tiposDocumento[0]);
+  const [arquivo, setArquivo] = React.useState<File | null>(null);
   const [enviando, setEnviando] = React.useState(false);
   const [aRemover, setARemover] = React.useState<DocumentoPaciente | null>(null);
 
+  React.useEffect(() => {
+    setDocumentos(documentosIniciais);
+  }, [documentosIniciais]);
+
   async function enviar() {
+    if (!arquivo) {
+      toast.error("Selecione um arquivo PDF, JPG ou PNG.");
+      return;
+    }
     setEnviando(true);
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    setEnviando(false);
-    setUploadAberto(false);
-    toast.success("Documento anexado", { description: `${tipo} — ${pacienteNome}` });
+    try {
+      const criado = await enviarDocumentoApi(pacienteId, arquivo, tipo);
+      const lista = [criado, ...documentos];
+      setDocumentos(lista);
+      onAtualizado?.(lista);
+      setUploadAberto(false);
+      setArquivo(null);
+      toast.success("Documento anexado", { description: `${tipo} — ${pacienteNome}` });
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível enviar o documento.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function baixar(documento: DocumentoPaciente) {
+    try {
+      const blob = await baixarDocumentoApi(pacienteId, documento.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = documento.nome;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível baixar o arquivo.");
+    }
+  }
+
+  async function excluir() {
+    if (!aRemover) return;
+    try {
+      await excluirDocumentoApi(pacienteId, aRemover.id);
+      const lista = documentos.filter((item) => item.id !== aRemover.id);
+      setDocumentos(lista);
+      onAtualizado?.(lista);
+      toast.success("Documento excluído", { description: aRemover.nome });
+      setARemover(null);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível excluir o documento.");
+    }
   }
 
   return (
@@ -64,10 +123,12 @@ export function DocumentosView({
               {documentos.length} {documentos.length === 1 ? "arquivo vinculado" : "arquivos vinculados"} ao paciente
             </CardDescription>
           </div>
-          <Button onClick={() => setUploadAberto(true)}>
-            <Upload />
-            Anexar documento
-          </Button>
+          {podeRegistrar && (
+            <Button onClick={() => setUploadAberto(true)}>
+              <Upload />
+              Anexar documento
+            </Button>
+          )}
         </CardHeader>
         <CardContent className={documentos.length === 0 ? undefined : "px-0 pb-0"}>
           {documentos.length === 0 ? (
@@ -76,10 +137,12 @@ export function DocumentosView({
               description="Envie exames, laudos e termos assinados para manter o histórico completo."
               icon={FileText}
               action={
-                <Button onClick={() => setUploadAberto(true)}>
-                  <Upload />
-                  Anexar documento
-                </Button>
+                podeRegistrar ? (
+                  <Button onClick={() => setUploadAberto(true)}>
+                    <Upload />
+                    Anexar documento
+                  </Button>
+                ) : undefined
               }
             />
           ) : (
@@ -107,19 +170,24 @@ export function DocumentosView({
                     </span>
 
                     <div className="flex shrink-0 items-center gap-1">
-                      <Button variant="ghost" size="icon-sm" asChild aria-label={`Baixar ${documento.nome}`}>
-                        <a href={documento.url} download>
-                          <Download />
-                        </a>
-                      </Button>
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        onClick={() => setARemover(documento)}
-                        aria-label={`Excluir ${documento.nome}`}
+                        onClick={() => void baixar(documento)}
+                        aria-label={`Baixar ${documento.nome}`}
                       >
-                        <Trash2 />
+                        <Download />
                       </Button>
+                      {podeRegistrar && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setARemover(documento)}
+                          aria-label={`Excluir ${documento.nome}`}
+                        >
+                          <Trash2 />
+                        </Button>
+                      )}
                     </div>
                   </li>
                 );
@@ -129,7 +197,13 @@ export function DocumentosView({
         </CardContent>
       </Card>
 
-      <Dialog open={uploadAberto} onOpenChange={setUploadAberto}>
+      <Dialog
+        open={uploadAberto}
+        onOpenChange={(aberto) => {
+          setUploadAberto(aberto);
+          if (!aberto) setArquivo(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Anexar documento</DialogTitle>
@@ -153,7 +227,11 @@ export function DocumentosView({
             </FormField>
 
             <FormField label="Arquivo" required hint="PDF, JPG ou PNG de até 10 MB.">
-              <Input type="file" accept=".pdf,.jpg,.jpeg,.png" />
+              <Input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(event) => setArquivo(event.target.files?.[0] ?? null)}
+              />
             </FormField>
           </DialogBody>
 
@@ -161,7 +239,7 @@ export function DocumentosView({
             <Button variant="outline" onClick={() => setUploadAberto(false)} disabled={enviando}>
               Cancelar
             </Button>
-            <Button onClick={enviar} loading={enviando}>
+            <Button onClick={() => void enviar()} loading={enviando} disabled={!arquivo}>
               Enviar
             </Button>
           </DialogFooter>
@@ -175,10 +253,7 @@ export function DocumentosView({
         description={`O arquivo "${aRemover?.nome}" será removido permanentemente do prontuário do paciente.`}
         confirmLabel="Excluir"
         destructive
-        onConfirm={() => {
-          toast.success("Documento excluído", { description: aRemover?.nome });
-          setARemover(null);
-        }}
+        onConfirm={() => void excluir()}
       />
     </>
   );

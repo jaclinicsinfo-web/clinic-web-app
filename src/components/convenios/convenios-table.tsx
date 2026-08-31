@@ -21,9 +21,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatPhone } from "@/lib/format";
+import { ApiError } from "@/lib/api";
 import type { Convenio } from "@/types";
 
-export function ConveniosTable({ convenios }: { convenios: Convenio[] }) {
+interface ConveniosTableProps {
+  convenios: Convenio[];
+  onInativar?: (convenio: Convenio) => Promise<void> | void;
+}
+
+export function ConveniosTable({ convenios, onInativar }: ConveniosTableProps) {
   const router = useRouter();
   const [status, setStatus] = React.useState("todos");
   const [autorizacao, setAutorizacao] = React.useState("todas");
@@ -198,9 +204,15 @@ export function ConveniosTable({ convenios }: { convenios: Convenio[] }) {
         title="Inativar convênio?"
         description={`${inativando?.nome ?? ""} deixará de aparecer na criação de agendamentos e no vínculo de pacientes. Os lotes já enviados continuam no faturamento.`}
         confirmLabel="Inativar"
-        onConfirm={() => {
-          toast.success("Convênio inativado", { description: inativando?.nome });
-          setInativando(null);
+        onConfirm={async () => {
+          if (!inativando) return;
+          try {
+            if (onInativar) await onInativar(inativando);
+            toast.success("Convênio inativado", { description: inativando.nome });
+            setInativando(null);
+          } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : "Não foi possível inativar o convênio.");
+          }
         }}
       />
     </>

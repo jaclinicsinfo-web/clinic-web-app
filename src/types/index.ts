@@ -85,11 +85,15 @@ export interface GradeHorario {
 
 export interface Profissional {
   id: string;
+  usuarioId?: string | null;
+  usuarioNome?: string | null;
   nome: string;
   cpf: string;
+  rg?: string | null;
   fotoUrl?: string;
   email: string;
   telefone: string;
+  comissaoPorProcedimento?: boolean;
   especialidades: string[];
   conselho: string;
   registroConselho: string;
@@ -127,6 +131,7 @@ export interface Agendamento {
   horaFim: string;
   sala?: string;
   convenioId: string | null;
+  convenioNome?: string | null;
   particular: boolean;
   valor: number;
   status: AgendamentoStatus;

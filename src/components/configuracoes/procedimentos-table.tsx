@@ -32,7 +32,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatMinutes } from "@/lib/format";
+import { ApiError } from "@/lib/api";
 import type { Procedimento } from "@/types";
+import { criarProcedimentoApi, inativarProcedimentoApi } from "@/services/procedimentos";
 
 const schema = z.object({
   nome: z.string().min(3, "Informe o nome do procedimento."),
@@ -50,19 +52,24 @@ export function ProcedimentosTable({
   procedimentos: Procedimento[];
   categorias: readonly string[];
 }) {
+  const [lista, setLista] = React.useState(procedimentos);
   const [status, setStatus] = React.useState("todos");
   const [categoria, setCategoria] = React.useState("todas");
   const [aberto, setAberto] = React.useState(false);
   const [inativando, setInativando] = React.useState<Procedimento | null>(null);
 
+  React.useEffect(() => {
+    setLista(procedimentos);
+  }, [procedimentos]);
+
   const dados = React.useMemo(
     () =>
-      procedimentos.filter((procedimento) => {
+      lista.filter((procedimento) => {
         if (status !== "todos" && procedimento.status !== status) return false;
         if (categoria !== "todas" && procedimento.categoria !== categoria) return false;
         return true;
       }),
-    [procedimentos, status, categoria],
+    [lista, procedimentos, status, categoria],
   );
 
   const {
@@ -194,10 +201,15 @@ export function ProcedimentosTable({
           </DialogHeader>
           <form
             onSubmit={handleSubmit(async (values) => {
-              await new Promise((resolve) => setTimeout(resolve, 500));
-              toast.success("Procedimento cadastrado", { description: values.nome });
-              reset();
-              setAberto(false);
+              try {
+                const criado = await criarProcedimentoApi(values);
+                setLista((atual) => [...atual, criado]);
+                toast.success("Procedimento cadastrado", { description: values.nome });
+                reset();
+                setAberto(false);
+              } catch (error) {
+                toast.error(error instanceof ApiError ? error.message : "Não foi possível cadastrar o procedimento.");
+              }
             })}
           >
             <DialogBody className="space-y-4">
@@ -253,9 +265,16 @@ export function ProcedimentosTable({
         title="Inativar procedimento?"
         description={`${inativando?.nome ?? ""} deixará de aparecer na criação de agendamentos.`}
         confirmLabel="Inativar"
-        onConfirm={() => {
-          toast.success("Procedimento inativado", { description: inativando?.nome });
-          setInativando(null);
+        onConfirm={async () => {
+          if (!inativando) return;
+          try {
+            const atualizado = await inativarProcedimentoApi(inativando.id);
+            setLista((atual) => atual.map((item) => (item.id === atualizado.id ? atualizado : item)));
+            toast.success("Procedimento inativado", { description: inativando.nome });
+            setInativando(null);
+          } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : "Não foi possível inativar o procedimento.");
+          }
         }}
       />
     </>

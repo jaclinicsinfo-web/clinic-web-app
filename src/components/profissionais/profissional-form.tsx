@@ -18,7 +18,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { formatCpf, formatCurrency, formatMinutes, formatPhone } from "@/lib/format";
+import { ApiError } from "@/lib/api";
 import { diasSemana, formaRemuneracaoLabels, tipoVinculoLabels } from "@/lib/status";
+import { atualizarProfissionalApi, criarProfissionalApi, type UsuarioVinculo } from "@/services/profissionais";
+import type { Profissional } from "@/types";
 
 const conselhos = ["CRM", "CRO", "CREFITO", "CRN", "CRP", "COREN"];
 
@@ -45,6 +48,7 @@ const profissionalSchema = z
     percentualComissao: z.number().min(0, "O percentual não pode ser negativo.").max(100, "O percentual máximo é 100%."),
     comissaoPorProcedimento: z.boolean(),
     gradeHorarios: z.array(gradeSchema).length(7),
+    usuarioId: z.string(),
     procedimentosHabilitados: z.array(z.string()).min(1, "Habilite ao menos um procedimento."),
   })
   .superRefine((values, ctx) => {
@@ -80,6 +84,8 @@ type ProfissionalFormValues = z.infer<typeof profissionalSchema>;
 interface ProfissionalFormProps {
   especialidades: string[];
   procedimentos: { id: string; nome: string; categoria: string; duracaoPadraoMin: number; valorParticular: number }[];
+  usuarios?: UsuarioVinculo[];
+  profissional?: Profissional;
 }
 
 const gradePadrao: ProfissionalFormValues["gradeHorarios"] = diasSemana.map((_, index) => ({
@@ -88,18 +94,9 @@ const gradePadrao: ProfissionalFormValues["gradeHorarios"] = diasSemana.map((_, 
   horaFim: "18:00",
 }));
 
-export function ProfissionalForm({ especialidades, procedimentos }: ProfissionalFormProps) {
-  const router = useRouter();
-
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm<ProfissionalFormValues>({
-    resolver: zodResolver(profissionalSchema),
-    defaultValues: {
+function valoresIniciais(profissional?: Profissional): ProfissionalFormValues {
+  if (!profissional) {
+    return {
       nome: "",
       cpf: "",
       rg: "",
@@ -116,8 +113,57 @@ export function ProfissionalForm({ especialidades, procedimentos }: Profissional
       comissaoPorProcedimento: false,
       gradeHorarios: gradePadrao,
       procedimentosHabilitados: [],
-    },
+      usuarioId: "",
+    };
+  }
+
+  return {
+    nome: profissional.nome,
+    cpf: formatCpf(profissional.cpf),
+    rg: profissional.rg ?? "",
+    email: profissional.email,
+    telefone: formatPhone(profissional.telefone),
+    fotoUrl: profissional.fotoUrl ?? "",
+    especialidades: profissional.especialidades,
+    conselho: profissional.conselho,
+    registroConselho: profissional.registroConselho,
+    tipoVinculo: profissional.tipoVinculo,
+    dataAdmissao: profissional.dataAdmissao,
+    formaRemuneracao: profissional.formaRemuneracao,
+    percentualComissao: profissional.percentualComissao,
+    comissaoPorProcedimento: profissional.comissaoPorProcedimento ?? false,
+    gradeHorarios: diasSemana.map((_, index) => {
+      const grade = profissional.gradeHorarios.find((item) => item.diaSemana === index);
+      return {
+        ativo: Boolean(grade),
+        horaInicio: grade?.horaInicio ?? "08:00",
+        horaFim: grade?.horaFim ?? "18:00",
+      };
+    }),
+    procedimentosHabilitados: profissional.procedimentosHabilitados,
+    usuarioId: profissional.usuarioId ?? "",
+  };
+}
+
+export function ProfissionalForm({ especialidades, procedimentos, usuarios = [], profissional }: ProfissionalFormProps) {
+  const router = useRouter();
+  const edicao = Boolean(profissional);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ProfissionalFormValues>({
+    resolver: zodResolver(profissionalSchema),
+    defaultValues: valoresIniciais(profissional),
   });
+
+  React.useEffect(() => {
+    reset(valoresIniciais(profissional));
+  }, [profissional, reset]);
 
   const especialidadesSelecionadas = watch("especialidades");
   const procedimentosSelecionados = watch("procedimentosHabilitados");
@@ -149,12 +195,53 @@ export function ProfissionalForm({ especialidades, procedimentos }: Profissional
   }
 
   async function onSubmit(values: ProfissionalFormValues) {
-    // TODO: substituir pela chamada de criação real quando a API estiver disponível.
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    toast.success("Profissional cadastrado", {
-      description: `${values.nome} já pode receber agendamentos.`,
-    });
-    router.push("/profissionais");
+    const payload = {
+      nome: values.nome,
+      cpf: values.cpf,
+      rg: values.rg.trim() ? values.rg.trim() : null,
+      email: values.email,
+      telefone: values.telefone,
+      fotoUrl: values.fotoUrl.trim() ? values.fotoUrl.trim() : null,
+      especialidades: values.especialidades,
+      conselho: values.conselho,
+      registroConselho: values.registroConselho,
+      tipoVinculo: values.tipoVinculo,
+      dataAdmissao: values.dataAdmissao,
+      formaRemuneracao: values.formaRemuneracao,
+      percentualComissao: values.percentualComissao,
+      comissaoPorProcedimento: values.comissaoPorProcedimento,
+      procedimentosHabilitados: values.procedimentosHabilitados,
+      gradeHorarios: values.gradeHorarios
+        .map((grade, diaSemana) => ({
+          diaSemana,
+          horaInicio: grade.horaInicio,
+          horaFim: grade.horaFim,
+          ativo: grade.ativo,
+        }))
+        .filter((grade) => grade.ativo)
+        .map(({ diaSemana, horaInicio, horaFim }) => ({
+          diaSemana: diaSemana as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+          horaInicio,
+          horaFim,
+        })),
+      usuarioId: values.usuarioId ? values.usuarioId : null,
+    };
+
+    try {
+      if (profissional) {
+        await atualizarProfissionalApi(profissional.id, payload);
+        toast.success("Profissional atualizado", { description: values.nome });
+        router.push(`/profissionais/${profissional.id}`);
+      } else {
+        const criado = await criarProfissionalApi(payload);
+        toast.success("Profissional cadastrado", {
+          description: `${values.nome} já pode receber agendamentos.`,
+        });
+        router.push(`/profissionais/${criado.id}`);
+      }
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível salvar o profissional.");
+    }
   }
 
   return (
@@ -209,6 +296,31 @@ export function ProfissionalForm({ especialidades, procedimentos }: Profissional
                 onChange: (event) => setValue("telefone", formatPhone(event.target.value)),
               })}
             />
+          </FormField>
+
+          <FormField
+            label="Conta de login"
+            hint="Opcional. Vincula o cadastro clínico ao usuário com perfil de profissional de saúde."
+            full
+          >
+            <Select
+              value={watch("usuarioId") || "nenhuma"}
+              onValueChange={(valor) => setValue("usuarioId", valor === "nenhuma" ? "" : valor)}
+            >
+              <SelectTrigger aria-label="Conta de login">
+                <SelectValue placeholder="Sem vínculo de login" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nenhuma">Sem vínculo de login</SelectItem>
+                {usuarios
+                  .filter((item) => !item.ocupado || item.id === profissional?.usuarioId)
+                  .map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.nome} · {item.email}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </FormField>
 
           <FormField
@@ -487,7 +599,7 @@ export function ProfissionalForm({ especialidades, procedimentos }: Profissional
           <Link href="/profissionais">Cancelar</Link>
         </Button>
         <Button type="submit" loading={isSubmitting}>
-          Salvar profissional
+          {edicao ? "Salvar alterações" : "Salvar profissional"}
         </Button>
       </div>
     </form>

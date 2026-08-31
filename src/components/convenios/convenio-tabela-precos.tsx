@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { salvarTabelaConvenioApi } from "@/services/convenios";
 import { toast } from "sonner";
 
 import { MoneyInput } from "@/components/shared/money-input";
@@ -8,14 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/format";
+import { ApiError } from "@/lib/api";
 import type { Convenio, Procedimento } from "@/types";
 
 interface ConvenioTabelaPrecosProps {
   convenio: Convenio;
   procedimentos: Procedimento[];
+  onSalvo?: () => void;
 }
 
-export function ConvenioTabelaPrecos({ convenio, procedimentos }: ConvenioTabelaPrecosProps) {
+export function ConvenioTabelaPrecos({ convenio, procedimentos, onSalvo }: ConvenioTabelaPrecosProps) {
   const [valores, setValores] = React.useState<Record<string, number>>(() => {
     const inicial: Record<string, number> = {};
     convenio.tabelaPrecos.forEach((item) => {
@@ -35,8 +38,17 @@ export function ConvenioTabelaPrecos({ convenio, procedimentos }: ConvenioTabela
         </div>
         <Button
           size="sm"
-          onClick={() => {
-            toast.success("Tabela atualizada", { description: convenio.nome });
+          onClick={async () => {
+            const precos = Object.entries(valores)
+              .filter(([, valor]) => valor > 0)
+              .map(([procedimentoId, valor]) => ({ procedimentoId, valor }));
+            try {
+              await salvarTabelaConvenioApi(convenio.id, precos);
+              toast.success("Tabela atualizada", { description: convenio.nome });
+              onSalvo?.();
+            } catch (error) {
+              toast.error(error instanceof ApiError ? error.message : "Não foi possível salvar a tabela.");
+            }
           }}
         >
           Salvar tabela

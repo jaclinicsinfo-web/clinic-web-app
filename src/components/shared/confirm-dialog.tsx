@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,18 @@ export function ConfirmDialog({
   loading = false,
   onConfirm,
 }: ConfirmDialogProps) {
+  const [pendente, setPendente] = useState(false);
+  const ocupado = loading || pendente;
+
+  async function confirmar() {
+    setPendente(true);
+    try {
+      await onConfirm();
+    } finally {
+      setPendente(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm">
@@ -47,10 +60,10 @@ export function ConfirmDialog({
           </div>
         </div>
         <DialogFooter className="border-t-0 pt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={ocupado}>
             {cancelLabel}
           </Button>
-          <Button variant={destructive ? "destructive" : "default"} onClick={onConfirm} loading={loading}>
+          <Button variant={destructive ? "destructive" : "default"} onClick={() => void confirmar()} loading={ocupado}>
             {confirmLabel}
           </Button>
         </DialogFooter>

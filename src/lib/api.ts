@@ -92,6 +92,69 @@ async function request<TResponse>(endpoint: string, options: RequestOptions = {}
   return payload as TResponse;
 }
 
+async function requestForm<TResponse>(endpoint: string, formData: FormData): Promise<TResponse> {
+  if (!API_BASE_URL) {
+    throw new ApiError("URL da API não configurada.", 0);
+  }
+
+  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  const token = getToken();
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+  } catch {
+    throw new ApiError("Não foi possível conectar ao servidor. Tente novamente.", 0);
+  }
+
+  const isJson = response.headers.get("content-type")?.includes("application/json");
+  const payload = isJson ? await response.json() : undefined;
+
+  if (!response.ok) {
+    const message =
+      (payload as { message?: string | string[] })?.message ?? response.statusText ?? "Falha na requisição";
+    throw new ApiError(Array.isArray(message) ? message.join(", ") : message, response.status, payload);
+  }
+
+  return payload as TResponse;
+}
+
+async function requestBlob(endpoint: string): Promise<Blob> {
+  if (!API_BASE_URL) {
+    throw new ApiError("URL da API não configurada.", 0);
+  }
+
+  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  const token = getToken();
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+  } catch {
+    throw new ApiError("Não foi possível conectar ao servidor. Tente novamente.", 0);
+  }
+
+  if (!response.ok) {
+    const isJson = response.headers.get("content-type")?.includes("application/json");
+    const payload = isJson ? await response.json() : undefined;
+    const message =
+      (payload as { message?: string | string[] })?.message ?? response.statusText ?? "Falha na requisição";
+    throw new ApiError(Array.isArray(message) ? message.join(", ") : message, response.status, payload);
+  }
+
+  return response.blob();
+}
+
 export const api = {
   get: <TResponse>(endpoint: string, options?: Omit<RequestOptions, "method" | "body">) =>
     request<TResponse>(endpoint, { ...options, method: "GET" }),
@@ -107,4 +170,8 @@ export const api = {
 
   delete: <TResponse>(endpoint: string, options?: Omit<RequestOptions, "method" | "body">) =>
     request<TResponse>(endpoint, { ...options, method: "DELETE" }),
+
+  upload: <TResponse>(endpoint: string, formData: FormData) => requestForm<TResponse>(endpoint, formData),
+
+  blob: (endpoint: string) => requestBlob(endpoint),
 };

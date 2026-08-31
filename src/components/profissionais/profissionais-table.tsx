@@ -22,15 +22,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatPercent, getInitials } from "@/lib/format";
+import { ApiError } from "@/lib/api";
 import { formaRemuneracaoLabels, tipoVinculoLabels } from "@/lib/status";
 import type { Profissional } from "@/types";
 
 interface ProfissionaisTableProps {
   profissionais: Profissional[];
   especialidades: string[];
+  onInativar?: (profissional: Profissional) => Promise<void> | void;
 }
 
-export function ProfissionaisTable({ profissionais, especialidades }: ProfissionaisTableProps) {
+export function ProfissionaisTable({ profissionais, especialidades, onInativar }: ProfissionaisTableProps) {
   const router = useRouter();
   const [status, setStatus] = React.useState("todos");
   const [especialidade, setEspecialidade] = React.useState("todas");
@@ -228,9 +230,15 @@ export function ProfissionaisTable({ profissionais, especialidades }: Profission
         title="Inativar profissional?"
         description={`${inativando?.nome ?? ""} deixará de receber novos agendamentos. Os atendimentos já realizados e as comissões continuam no histórico.`}
         confirmLabel="Inativar"
-        onConfirm={() => {
-          toast.success("Profissional inativado", { description: inativando?.nome });
-          setInativando(null);
+        onConfirm={async () => {
+          if (!inativando) return;
+          try {
+            if (onInativar) await onInativar(inativando);
+            toast.success("Profissional inativado", { description: inativando.nome });
+            setInativando(null);
+          } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : "Não foi possível inativar o profissional.");
+          }
         }}
       />
     </>

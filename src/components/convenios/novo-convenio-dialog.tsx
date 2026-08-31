@@ -24,6 +24,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { formatPhone } from "@/lib/format";
+import { ApiError } from "@/lib/api";
+import { criarConvenioApi } from "@/services/convenios";
 
 const convenioSchema = z.object({
   nome: z.string().min(3, "Informe o nome do convênio."),
@@ -41,7 +43,7 @@ const convenioSchema = z.object({
 
 type ConvenioFormValues = z.infer<typeof convenioSchema>;
 
-export function NovoConvenioDialog() {
+export function NovoConvenioDialog({ onCriado }: { onCriado?: () => void }) {
   const [aberto, setAberto] = React.useState(false);
 
   const {
@@ -66,13 +68,21 @@ export function NovoConvenioDialog() {
   });
 
   async function onSubmit(values: ConvenioFormValues) {
-    // TODO: substituir pela chamada de criação real quando a API estiver disponível.
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    toast.success("Convênio cadastrado", {
-      description: `${values.nome} já pode ser vinculado a pacientes e agendamentos.`,
-    });
-    reset();
-    setAberto(false);
+    try {
+      await criarConvenioApi({
+        ...values,
+        contatoTelefone: values.contatoTelefone.replace(/\D/g, ""),
+        portalUrl: values.portalUrl.trim() ? values.portalUrl.trim() : null,
+      });
+      toast.success("Convênio cadastrado", {
+        description: `${values.nome} já pode ser vinculado a pacientes e agendamentos.`,
+      });
+      reset();
+      setAberto(false);
+      onCriado?.();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível cadastrar o convênio.");
+    }
   }
 
   return (

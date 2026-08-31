@@ -35,8 +35,10 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { formatDate, formatISODate, formatNumber } from "@/lib/format";
+import { ApiError } from "@/lib/api";
+import { formatDate, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { registrarEvolucaoApi } from "@/services/pacientes";
 import type {
   AcompanhamentoClinico,
   Atendimento,
@@ -45,12 +47,29 @@ import type {
 } from "@/types";
 
 interface ProntuarioViewProps {
+  pacienteId: string;
   acompanhamentos: AcompanhamentoClinico[];
   atendimentos: Atendimento[];
   procedimentos: { id: string; nome: string }[];
   profissionais: { id: string; nome: string }[];
   pacienteNome: string;
+  podeRegistrar?: boolean;
+  onAtualizado?: (dados: { acompanhamentos: AcompanhamentoClinico[]; atendimentos: Atendimento[] }) => void;
 }
+
+type EvolucaoPayload = {
+  tipoRegistro: TipoRegistroClinico;
+  procedimentoId: string | null;
+  procedimentoRealizado: string;
+  profissionalId: string;
+  queixaPrincipal: string | null;
+  quadroClinico: string;
+  evolucao: string;
+  conduta: string | null;
+  respostaAoTratamento: RespostaTratamento | null;
+  escalaDor: number | null;
+  proximoRetornoSugerido: string | null;
+};
 
 const iconeRegistro = {
   avaliacao_inicial: ClipboardList,
@@ -67,16 +86,24 @@ const tomTimeline = {
 } as const;
 
 export function ProntuarioView({
+  pacienteId,
   acompanhamentos: acompanhamentosIniciais,
   atendimentos: atendimentosIniciais,
   procedimentos,
   profissionais,
   pacienteNome,
+  podeRegistrar = false,
+  onAtualizado,
 }: ProntuarioViewProps) {
   const [acompanhamentos, setAcompanhamentos] = React.useState(acompanhamentosIniciais);
   const [atendimentos, setAtendimentos] = React.useState(atendimentosIniciais);
   const [selecionadoId, setSelecionadoId] = React.useState(acompanhamentosIniciais[0]?.id);
   const [aberto, setAberto] = React.useState(false);
+
+  React.useEffect(() => {
+    setAcompanhamentos(acompanhamentosIniciais);
+    setAtendimentos(atendimentosIniciais);
+  }, [acompanhamentosIniciais, atendimentosIniciais]);
 
   const selecionado = acompanhamentos.find((item) => item.id === selecionadoId) ?? acompanhamentos[0];
   const evolucoes = React.useMemo(() => {
@@ -100,18 +127,29 @@ export function ProntuarioView({
   const ultima = evolucoes[evolucoes.length - 1];
   const escalas = evolucoes.filter((item) => typeof item.escalaDor === "number");
 
-  function registrar(registro: Atendimento, alta?: { resumo: string }) {
-    setAtendimentos((atual) => [...atual, registro]);
-    if (alta && selecionado) {
-      setAcompanhamentos((atual) =>
-        atual.map((item) =>
-          item.id === selecionado.id
-            ? { ...item, status: "alta", altaEm: registro.data, resumoAlta: alta.resumo }
-            : item,
-        ),
-      );
-    }
-    toast.success(registro.tipoRegistro === "alta" ? "Alta registrada" : "Evolução registrada", {
+  async function registrar(payload: EvolucaoPayload) {
+    const resultado = await registrarEvolucaoApi(pacienteId, {
+      acompanhamentoId: selecionado?.id ?? null,
+      profissionalId: payload.profissionalId,
+      procedimentoId: payload.procedimentoId,
+      procedimentoRealizado: payload.procedimentoRealizado,
+      tipoRegistro: payload.tipoRegistro,
+      queixaPrincipal: payload.queixaPrincipal,
+      quadroClinico: payload.quadroClinico,
+      evolucao: payload.evolucao,
+      conduta: payload.conduta,
+      respostaAoTratamento: payload.respostaAoTratamento,
+      escalaDor: payload.escalaDor,
+      proximoRetornoSugerido: payload.proximoRetornoSugerido,
+      titulo: payload.procedimentoRealizado,
+    });
+    setAcompanhamentos(resultado.acompanhamentos);
+    setAtendimentos(resultado.atendimentos);
+    onAtualizado?.({
+      acompanhamentos: resultado.acompanhamentos,
+      atendimentos: resultado.atendimentos,
+    });
+    toast.success(payload.tipoRegistro === "alta" ? "Alta registrada" : "Evolução registrada", {
       description: pacienteNome,
     });
   }
@@ -157,10 +195,12 @@ export function ProntuarioView({
                 {evolucoes.length} {evolucoes.length === 1 ? "registro" : "registros"}
               </CardDescription>
             </div>
-            <Button onClick={() => setAberto(true)} disabled={selecionado.status === "alta"}>
-              <Plus />
-              {selecionado.status === "alta" ? "Acompanhamento encerrado" : "Nova evolução"}
-            </Button>
+            {podeRegistrar && (
+              <Button onClick={() => setAberto(true)} disabled={selecionado.status === "alta"}>
+                <Plus />
+                {selecionado.status === "alta" ? "Acompanhamento encerrado" : "Nova evolução"}
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-5">
             <ol className="flex flex-wrap items-center gap-2 text-xs font-medium">
@@ -259,10 +299,12 @@ export function ProntuarioView({
               <CardTitle>Linha do tempo clínica</CardTitle>
               <CardDescription>Ainda não há um acompanhamento formal. Os atendimentos avulsos aparecem abaixo.</CardDescription>
             </div>
-            <Button onClick={() => setAberto(true)}>
-              <Plus />
-              Nova evolução
-            </Button>
+            {podeRegistrar && (
+              <Button onClick={() => setAberto(true)}>
+                <Plus />
+                Nova evolução
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             {atendimentos.length === 0 ? (
@@ -304,6 +346,7 @@ export function ProntuarioView({
         acompanhamento={selecionado}
         procedimentos={procedimentos}
         profissionais={profissionais}
+        podeRegistrar={podeRegistrar}
         onSave={registrar}
       />
     </div>
@@ -352,7 +395,7 @@ function paraItemTimeline(atendimento: Atendimento): TimelineItem {
       </>
     ),
     footer:
-      atendimento.anexos.length > 0 ? (
+      atendimento.anexos && atendimento.anexos.length > 0 ? (
         <ul className="flex flex-wrap gap-2">
           {atendimento.anexos.map((anexo) => (
             <li key={anexo.id}>
@@ -378,6 +421,7 @@ function EvolucaoDialog({
   acompanhamento,
   procedimentos,
   profissionais,
+  podeRegistrar = false,
   onSave,
 }: {
   open: boolean;
@@ -386,10 +430,11 @@ function EvolucaoDialog({
   acompanhamento?: AcompanhamentoClinico;
   procedimentos: { id: string; nome: string }[];
   profissionais: { id: string; nome: string }[];
-  onSave: (registro: Atendimento, alta?: { resumo: string }) => void;
+  podeRegistrar?: boolean;
+  onSave: (payload: EvolucaoPayload) => Promise<void>;
 }) {
   const [tipo, setTipo] = React.useState<TipoRegistroClinico>(
-    acompanhamento && !acompanhamento ? "avaliacao_inicial" : "evolucao",
+    acompanhamento ? "evolucao" : "avaliacao_inicial",
   );
   const [procedimento, setProcedimento] = React.useState(procedimentos[0]?.id ?? "");
   const [profissional, setProfissional] = React.useState(acompanhamento?.profissionalId ?? profissionais[0]?.id ?? "");
@@ -406,6 +451,7 @@ function EvolucaoDialog({
     if (!open) return;
     const inicial = acompanhamento ? "evolucao" : "avaliacao_inicial";
     setTipo(inicial);
+    setProcedimento(procedimentos[0]?.id ?? "");
     setProfissional(acompanhamento?.profissionalId ?? profissionais[0]?.id ?? "");
     setQueixa("");
     setQuadro("");
@@ -414,38 +460,38 @@ function EvolucaoDialog({
     setResposta(inicial === "avaliacao_inicial" ? "estavel" : "melhorou");
     setDor("");
     setRetorno("");
-  }, [open, acompanhamento, profissionais]);
+  }, [open, acompanhamento, profissionais, procedimentos]);
 
   async function salvar() {
-    const procedimentoNome = procedimentos.find((item) => item.id === procedimento)?.nome ?? "Atendimento";
-    const profissionalNome = profissionais.find((item) => item.id === profissional)?.nome ?? "";
-    const hojeIso = formatISODate(new Date());
-    const registro: Atendimento = {
-      id: `at-local-${Date.now()}`,
-      agendamentoId: `ag-local-${Date.now()}`,
-      pacienteId: acompanhamento?.pacienteId ?? "",
-      profissionalId: profissional,
-      profissionalNome,
-      data: hojeIso,
-      procedimentoRealizado: procedimentoNome,
-      evolucao: evolucao.trim(),
-      anexos: [],
-      proximoRetornoSugerido: tipo === "alta" ? undefined : retorno || undefined,
-      criadoEm: new Date().toISOString(),
-      acompanhamentoId: acompanhamento?.id,
-      tipoRegistro: tipo,
-      queixaPrincipal: queixa.trim() || undefined,
-      quadroClinico: quadro.trim() || undefined,
-      conduta: conduta.trim() || undefined,
-      respostaAoTratamento: tipo === "alta" ? "resolvido" : resposta,
-      escalaDor: dor === "" ? undefined : Number(dor),
-    };
+    if (!podeRegistrar) return;
+    if (!profissional) {
+      toast.error("Cadastre um profissional clínico antes de registrar a evolução.");
+      return;
+    }
+    const procedimentoNome =
+      procedimentos.find((item) => item.id === procedimento)?.nome ?? "Atendimento clínico";
 
     setSalvando(true);
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    onSave(registro, tipo === "alta" ? { resumo: quadro.trim() || evolucao.trim() } : undefined);
-    setSalvando(false);
-    onOpenChange(false);
+    try {
+      await onSave({
+        tipoRegistro: tipo,
+        procedimentoId: procedimento || null,
+        procedimentoRealizado: procedimentoNome,
+        profissionalId: profissional,
+        queixaPrincipal: queixa.trim() || null,
+        quadroClinico: quadro.trim(),
+        evolucao: evolucao.trim(),
+        conduta: conduta.trim() || null,
+        respostaAoTratamento: tipo === "alta" ? "resolvido" : resposta,
+        escalaDor: dor === "" ? null : Number(dor),
+        proximoRetornoSugerido: tipo === "alta" ? null : retorno || null,
+      });
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível salvar a evolução.");
+    } finally {
+      setSalvando(false);
+    }
   }
 
   return (
@@ -475,12 +521,17 @@ function EvolucaoDialog({
           </FormField>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField label="Procedimento realizado" required>
-              <Select value={procedimento} onValueChange={setProcedimento}>
+            <FormField
+              label="Procedimento realizado"
+              required
+              hint={procedimentos.length === 0 ? "Cadastre procedimentos em Configurações para vinculá-los aqui." : undefined}
+            >
+              <Select value={procedimento || "avulso"} onValueChange={(valor) => setProcedimento(valor === "avulso" ? "" : valor)}>
                 <SelectTrigger aria-label="Procedimento realizado">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="avulso">Atendimento clínico</SelectItem>
                   {procedimentos.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
                       {item.nome}
@@ -490,10 +541,18 @@ function EvolucaoDialog({
               </Select>
             </FormField>
 
-            <FormField label="Profissional responsável" required>
-              <Select value={profissional} onValueChange={setProfissional}>
+            <FormField
+              label="Profissional responsável"
+              required
+              hint={profissionais.length === 0 ? "Cadastre um profissional clínico e vincule a conta de login." : undefined}
+            >
+              <Select
+                value={profissional || undefined}
+                onValueChange={setProfissional}
+                disabled={profissionais.length === 0}
+              >
                 <SelectTrigger aria-label="Profissional responsável">
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
                   {profissionais.map((item) => (
@@ -599,9 +658,6 @@ function EvolucaoDialog({
                 <Input id="retorno" type="date" value={retorno} onChange={(event) => setRetorno(event.target.value)} />
               </FormField>
             )}
-            <FormField label="Anexos" hint="Exames, laudos e imagens do atendimento.">
-              <Input type="file" multiple />
-            </FormField>
           </div>
         </DialogBody>
 
@@ -610,9 +666,9 @@ function EvolucaoDialog({
             Cancelar
           </Button>
           <Button
-            onClick={salvar}
+            onClick={() => void salvar()}
             loading={salvando}
-            disabled={evolucao.trim().length < 10 || quadro.trim().length < 8}
+            disabled={!podeRegistrar || !profissional || evolucao.trim().length < 10 || quadro.trim().length < 8}
           >
             {tipo === "alta" ? "Confirmar alta" : "Salvar evolução"}
           </Button>

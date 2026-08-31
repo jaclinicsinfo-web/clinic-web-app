@@ -25,34 +25,39 @@ import {
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { formatCurrency, formatMinutes, formatPhone } from "@/lib/format";
+import { formatCurrency, formatMinutes } from "@/lib/format";
 import { getStatusMeta } from "@/lib/status";
 import { duracaoEmMinutos, proximosStatus, somarMinutos } from "@/services/agenda";
 import type { Agendamento, AgendamentoStatus, Procedimento, Profissional } from "@/types";
 
 import type { SlotSelecionado } from "./calendar-view";
 
-const schema = z.object({
-  pacienteId: z.string().min(1, "Selecione o paciente."),
-  profissionalId: z.string().min(1, "Selecione o profissional."),
-  procedimentoId: z.string().min(1, "Selecione o procedimento."),
-  data: z.string().min(1, "Informe a data."),
-  horaInicio: z.string().min(1, "Informe o horário."),
-  horaFim: z.string().min(1, "Informe o término."),
-  sala: z.string(),
-  particular: z.boolean(),
-  convenioId: z.string().nullable(),
-  observacoes: z.string(),
-  status: z.enum([
-    "agendado",
-    "confirmado",
-    "check_in",
-    "em_atendimento",
-    "atendido",
-    "cancelado",
-    "faltou",
-  ]),
-});
+const schema = z
+  .object({
+    pacienteId: z.string().min(1, "Selecione o paciente."),
+    profissionalId: z.string().min(1, "Selecione o profissional."),
+    procedimentoId: z.string().min(1, "Selecione o procedimento."),
+    data: z.string().min(1, "Informe a data."),
+    horaInicio: z.string().min(1, "Informe o horário."),
+    horaFim: z.string().min(1, "Informe o término."),
+    sala: z.string(),
+    particular: z.boolean(),
+    convenioId: z.string().nullable(),
+    observacoes: z.string(),
+    status: z.enum([
+      "agendado",
+      "confirmado",
+      "check_in",
+      "em_atendimento",
+      "atendido",
+      "cancelado",
+      "faltou",
+    ]),
+  })
+  .refine((values) => values.particular || Boolean(values.convenioId), {
+    message: "Informe o convênio ou marque como particular.",
+    path: ["convenioId"],
+  });
 
 type FormValues = z.infer<typeof schema>;
 
@@ -90,7 +95,7 @@ interface AppointmentSheetProps {
   procedimentos: Procedimento[];
   convenios: { id: string; nome: string }[];
   salas: string[];
-  onSave: (draft: AgendamentoDraft) => void;
+  onSave: (draft: AgendamentoDraft) => void | Promise<void>;
   onChangeStatus?: (id: string, status: AgendamentoStatus) => void;
   onNovoPaciente?: (paciente: PacienteAgenda) => void;
 }
@@ -111,9 +116,6 @@ export function AppointmentSheet({
   onNovoPaciente,
 }: AppointmentSheetProps) {
   const [busca, setBusca] = React.useState("");
-  const [cadastroRapido, setCadastroRapido] = React.useState(false);
-  const [novoNome, setNovoNome] = React.useState("");
-  const [novoTelefone, setNovoTelefone] = React.useState("");
 
   const edicao = Boolean(agendamento);
 
@@ -131,9 +133,6 @@ export function AppointmentSheet({
   React.useEffect(() => {
     if (!open) {
       setBusca("");
-      setCadastroRapido(false);
-      setNovoNome("");
-      setNovoTelefone("");
       return;
     }
     reset(valoresIniciais(agendamento, slot, pacienteInicialId));
@@ -195,35 +194,14 @@ export function AppointmentSheet({
     }
   }
 
-  function criarPacienteRapido() {
-    if (novoNome.trim().length < 3 || novoTelefone.replace(/\D/g, "").length < 10) {
-      toast.error("Informe nome e telefone válidos para o cadastro rápido.");
-      return;
-    }
-    const criado: PacienteAgenda = {
-      id: `pac-local-${Date.now()}`,
-      nome: novoNome.trim(),
-      telefone: novoTelefone.replace(/\D/g, ""),
-      convenioId: null,
-    };
-    onNovoPaciente?.(criado);
-    selecionarPaciente(criado);
-    setCadastroRapido(false);
-    setNovoNome("");
-    setNovoTelefone("");
-    toast.success("Paciente adicionado à agenda", {
-      description: "Complete o cadastro depois em Pacientes.",
-    });
-  }
-
-  function onSubmit(form: FormValues) {
+  async function onSubmit(form: FormValues) {
     if (duracaoEmMinutos(form.horaInicio, form.horaFim) <= 0) {
       toast.error("O horário final deve ser posterior ao inicial.");
       return;
     }
     if (!paciente || !profissional || !procedimento) return;
 
-    onSave({
+    await onSave({
       id: agendamento?.id,
       pacienteId: paciente.id,
       pacienteNome: paciente.nome,
@@ -330,35 +308,22 @@ export function AppointmentSheet({
                     )}
                   </div>
                   {errors.pacienteId && <p className="text-xs text-destructive">{errors.pacienteId.message}</p>}
-                  <Button type="button" variant="outline" size="sm" onClick={() => setCadastroRapido((v) => !v)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      onNovoPaciente?.({
+                        id: "",
+                        nome: "",
+                        telefone: "",
+                        convenioId: null,
+                      })
+                    }
+                  >
                     <UserPlus />
                     Cadastrar novo
                   </Button>
-                  {cadastroRapido && (
-                    <div className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-2">
-                      <FormField label="Nome" htmlFor="novo-nome" required>
-                        <Input
-                          id="novo-nome"
-                          value={novoNome}
-                          onChange={(event) => setNovoNome(event.target.value)}
-                          placeholder="Nome completo"
-                        />
-                      </FormField>
-                      <FormField label="Telefone" htmlFor="novo-telefone" required>
-                        <Input
-                          id="novo-telefone"
-                          value={novoTelefone}
-                          onChange={(event) => setNovoTelefone(formatPhone(event.target.value))}
-                          placeholder="(00) 00000-0000"
-                        />
-                      </FormField>
-                      <div className="sm:col-span-2">
-                        <Button type="button" size="sm" onClick={criarPacienteRapido}>
-                          Adicionar à agenda
-                        </Button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </FormSection>
@@ -464,8 +429,8 @@ export function AppointmentSheet({
                   className="mt-0.5"
                   checked={values.particular}
                   onCheckedChange={(checked) => {
-                    setValue("particular", checked);
-                    if (checked) setValue("convenioId", null);
+                    setValue("particular", checked, { shouldValidate: true });
+                    if (checked) setValue("convenioId", null, { shouldValidate: true });
                   }}
                 />
                 <div>
@@ -477,10 +442,10 @@ export function AppointmentSheet({
               </div>
 
               {!values.particular && (
-                <FormField label="Convênio" required>
+                <FormField label="Convênio" required error={errors.convenioId?.message}>
                   <Select
                     value={values.convenioId || undefined}
-                    onValueChange={(valor) => setValue("convenioId", valor)}
+                    onValueChange={(valor) => setValue("convenioId", valor, { shouldValidate: true })}
                   >
                     <SelectTrigger aria-label="Convênio">
                       <SelectValue placeholder="Selecione o convênio" />

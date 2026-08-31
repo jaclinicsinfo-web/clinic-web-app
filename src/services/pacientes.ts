@@ -50,6 +50,8 @@ export interface DetalhePacienteResponse {
   agendamentos: Agendamento[];
   cobrancas: Cobranca[];
   documentos: DocumentoPaciente[];
+  podeVerProntuario?: boolean;
+  podeRegistrarProntuario?: boolean;
 }
 
 export interface PacientePayload {
@@ -134,4 +136,52 @@ export async function atualizarPacienteApi(id: string, payload: PacientePayload)
 export async function arquivarPacienteApi(id: string) {
   const data = await api.patch<{ paciente: Paciente }>(`/pacientes/${id}/arquivar`);
   return normalizarPaciente(data.paciente);
+}
+
+export async function opcoesClinicasPacienteApi(id: string) {
+  return api.get<{ profissionais: OpcaoPaciente[]; procedimentos: OpcaoPaciente[] }>(
+    `/pacientes/${id}/opcoes-clinicas`,
+  );
+}
+
+export async function registrarEvolucaoApi(
+  pacienteId: string,
+  payload: {
+    acompanhamentoId: string | null;
+    profissionalId: string;
+    procedimentoId: string | null;
+    procedimentoRealizado: string;
+    tipoRegistro: Atendimento["tipoRegistro"];
+    queixaPrincipal: string | null;
+    quadroClinico: string;
+    evolucao: string;
+    conduta: string | null;
+    respostaAoTratamento: Atendimento["respostaAoTratamento"] | null;
+    escalaDor: number | null;
+    proximoRetornoSugerido: string | null;
+    titulo?: string | null;
+    especialidade?: string | null;
+  },
+) {
+  return api.post<{
+    atendimento: Atendimento;
+    acompanhamentos: AcompanhamentoClinico[];
+    atendimentos: Atendimento[];
+  }>(`/pacientes/${pacienteId}/atendimentos`, payload);
+}
+
+export async function enviarDocumentoApi(pacienteId: string, arquivo: File, origem: string) {
+  const form = new FormData();
+  form.append("arquivo", arquivo);
+  form.append("origem", origem);
+  const data = await api.upload<{ documento: DocumentoPaciente }>(`/pacientes/${pacienteId}/documentos`, form);
+  return data.documento;
+}
+
+export async function baixarDocumentoApi(pacienteId: string, documentoId: string) {
+  return api.blob(`/pacientes/${pacienteId}/documentos/${documentoId}/arquivo`);
+}
+
+export async function excluirDocumentoApi(pacienteId: string, documentoId: string) {
+  await api.delete(`/pacientes/${pacienteId}/documentos/${documentoId}`);
 }

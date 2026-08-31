@@ -1,22 +1,33 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { addDays, format, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarPlus, ChevronLeft, ChevronRight, Lock, Users } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight, Loader2, Lock, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shared/page-header";
+import { EmptyState } from "@/components/shared/empty-state";
 import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ApiError } from "@/lib/api";
 import { formatCurrency, formatISODate, parseLocalDate } from "@/lib/format";
 import { getStatusMeta } from "@/lib/status";
 import { cn } from "@/lib/utils";
-import { duracaoEmMinutos, somarMinutos } from "@/services/agenda";
-import { listarPacientesApi } from "@/services/pacientes";
+import {
+  alterarStatusAgendamentoApi,
+  atualizarAgendamentoApi,
+  criarAgendamentoApi,
+  criarBloqueioApi,
+  duracaoEmMinutos,
+  encaixarEsperaApi,
+  obterAgendaApi,
+  reagendarAgendamentoApi,
+  somarMinutos,
+} from "@/services/agenda";
 import type { Agendamento, AgendamentoStatus, BloqueioAgenda, ListaEsperaItem, Procedimento, Profissional } from "@/types";
 
 import { AppointmentSheet, type AgendamentoDraft, type PacienteAgenda } from "./appointment-sheet";
@@ -26,18 +37,7 @@ import { ListaEsperaDialog } from "./lista-espera-dialog";
 import { classesBlocoStatus } from "./agenda-utils";
 
 interface AgendaWorkspaceProps {
-  dataInicial: string;
-  pacienteInicialId?: string;
-  profissionalInicialId?: string;
-  abrirNovo?: boolean;
-  agendamentosIniciais: Agendamento[];
-  bloqueiosIniciais: BloqueioAgenda[];
-  listaEsperaInicial: ListaEsperaItem[];
-  profissionais: Profissional[];
-  procedimentos: Procedimento[];
-  pacientes: PacienteAgenda[];
-  convenios: { id: string; nome: string }[];
-  salas: string[];
+  dataInicial?: string;
 }
 
 const visoes: { id: VisaoAgenda; label: string }[] = [
@@ -56,62 +56,85 @@ const statusFiltro: AgendamentoStatus[] = [
   "faltou",
 ];
 
-export function AgendaWorkspace({
-  dataInicial,
-  pacienteInicialId,
-  profissionalInicialId,
-  abrirNovo = false,
-  agendamentosIniciais,
-  bloqueiosIniciais,
-  listaEsperaInicial,
-  profissionais,
-  procedimentos,
-  pacientes: pacientesIniciais,
-  convenios,
-  salas,
-}: AgendaWorkspaceProps) {
+export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pacienteInicialId = searchParams.get("paciente") ?? undefined;
+  const profissionalInicialId = searchParams.get("profissional") ?? undefined;
+  const abrirNovo = searchParams.get("novo") === "1" || Boolean(pacienteInicialId);
+  const dataQuery = searchParams.get("data") ?? dataInicial ?? formatISODate(new Date());
 
-  const [dataIso, setDataIso] = React.useState(dataInicial);
+  const [dataIso, setDataIso] = React.useState(dataQuery);
   const [visao, setVisao] = React.useState<VisaoAgenda>("dia");
   const [profissionalFiltro, setProfissionalFiltro] = React.useState(profissionalInicialId ?? "todos");
   const [salaFiltro, setSalaFiltro] = React.useState("todas");
   const [statusFiltroAtual, setStatusFiltroAtual] = React.useState("todos");
 
-  const [agendamentos, setAgendamentos] = React.useState(agendamentosIniciais);
-  const [bloqueios, setBloqueios] = React.useState(bloqueiosIniciais);
-  const [listaEspera, setListaEspera] = React.useState(listaEsperaInicial);
-  const [pacientes, setPacientes] = React.useState(pacientesIniciais);
-  const [conveniosAgenda, setConveniosAgenda] = React.useState(convenios);
+  const [agendamentos, setAgendamentos] = React.useState<Agendamento[]>([]);
+  const [bloqueios, setBloqueios] = React.useState<BloqueioAgenda[]>([]);
+  const [listaEspera, setListaEspera] = React.useState<ListaEsperaItem[]>([]);
+  const [pacientes, setPacientes] = React.useState<PacienteAgenda[]>([]);
+  const [conveniosAgenda, setConveniosAgenda] = React.useState<{ id: string; nome: string }[]>([]);
+  const [profissionais, setProfissionais] = React.useState<Profissional[]>([]);
+  const [procedimentos, setProcedimentos] = React.useState<Procedimento[]>([]);
+  const [salas, setSalas] = React.useState<string[]>([]);
+  const [somenteProprios, setSomenteProprios] = React.useState(false);
+  const [carregando, setCarregando] = React.useState(true);
+  const [erro, setErro] = React.useState<string | null>(null);
+  const pedidoAgenda = React.useRef(0);
+
+  const carregar = React.useCallback(async (referencia: string, visaoAtual: VisaoAgenda) => {
+    const requisicao = ++pedidoAgenda.current;
+    const data = parseLocalDate(referencia);
+    let de = referencia;
+    let ate = referencia;
+    if (visaoAtual === "semana") {
+      const inicio = startOfWeek(data, { weekStartsOn: 1 });
+      de = formatISODate(inicio);
+      ate = formatISODate(addDays(inicio, 6));
+    } else if (visaoAtual === "mes") {
+      de = `${referencia.slice(0, 7)}-01`;
+      ate = formatISODate(new Date(data.getFullYear(), data.getMonth() + 1, 0));
+    }
+
+    try {
+      const payload = await obterAgendaApi(de, ate);
+      if (requisicao !== pedidoAgenda.current) return;
+      setAgendamentos(payload.agendamentos);
+      setBloqueios(payload.bloqueios);
+      setListaEspera(payload.listaEspera);
+      setPacientes(
+        payload.pacientes.map((paciente) => ({
+          id: paciente.id,
+          nome: paciente.nome,
+          telefone: paciente.telefone,
+          cpf: paciente.cpf,
+          dataNascimento: paciente.dataNascimento,
+          convenioId: paciente.convenioId,
+          alergias: paciente.alergias,
+          status: paciente.status,
+        })),
+      );
+      setConveniosAgenda(payload.convenios);
+      setProfissionais(payload.profissionais);
+      setProcedimentos(payload.procedimentos);
+      setSalas(payload.salas);
+      setSomenteProprios(payload.somenteProprios);
+      if (payload.somenteProprios) {
+        setProfissionalFiltro(payload.meuProfissionalId ?? "");
+      }
+      setErro(null);
+    } catch (error) {
+      if (requisicao !== pedidoAgenda.current) return;
+      setErro(error instanceof ApiError ? error.message : "Não foi possível carregar a agenda.");
+    } finally {
+      setCarregando(false);
+    }
+  }, []);
 
   React.useEffect(() => {
-    let ativo = true;
-    void listarPacientesApi()
-      .then((data) => {
-        if (!ativo) return;
-        setPacientes(
-          data.pacientes.map((paciente) => ({
-            id: paciente.id,
-            nome: paciente.nome,
-            telefone: paciente.telefone,
-            cpf: paciente.cpf,
-            dataNascimento: paciente.dataNascimento,
-            convenioId: paciente.convenioId,
-            alergias: paciente.alergias,
-            status: paciente.status,
-          })),
-        );
-        if (data.convenios.length > 0) {
-          setConveniosAgenda(data.convenios);
-        }
-      })
-      .catch(() => {
-        /* agenda segue com a lista recebida nas props se a API falhar */
-      });
-    return () => {
-      ativo = false;
-    };
-  }, []);
+    void carregar(dataIso, visao);
+  }, [carregar, dataIso, visao]);
 
   const [agendamentoAberto, setAgendamentoAberto] = React.useState<Agendamento | null>(null);
   const [slotAberto, setSlotAberto] = React.useState<SlotSelecionado | null>(null);
@@ -187,52 +210,66 @@ export function AgendaWorkspace({
     setSheetAberto(true);
   }
 
-  function salvarAgendamento(draft: AgendamentoDraft) {
-    const agora = new Date().toISOString();
-    if (draft.id) {
+  async function salvarAgendamento(draft: AgendamentoDraft) {
+    const payload = {
+      pacienteId: draft.pacienteId,
+      profissionalId: draft.profissionalId,
+      procedimentoId: draft.procedimentoId,
+      data: draft.data,
+      horaInicio: draft.horaInicio,
+      horaFim: draft.horaFim,
+      sala: draft.sala ?? null,
+      particular: draft.particular,
+      convenioId: draft.convenioId,
+      observacoes: draft.observacoes ?? null,
+      status: draft.status,
+    };
+
+    try {
+      const salvo = draft.id
+        ? await atualizarAgendamentoApi(draft.id, payload)
+        : await criarAgendamentoApi(payload);
       setAgendamentos((atual) =>
-        atual.map((item) => (item.id === draft.id ? { ...item, ...draft, id: draft.id } : item)),
+        draft.id ? atual.map((item) => (item.id === salvo.id ? salvo : item)) : [...atual, salvo],
       );
-      toast.success("Agendamento atualizado", { description: `${draft.pacienteNome} · ${draft.horaInicio}` });
-    } else {
-      const novo: Agendamento = {
-        ...draft,
-        id: `ag-local-${Date.now()}`,
-        lembreteEnviado: false,
-        criadoPor: "Aline Ferreira",
-        criadoEm: agora,
-      };
-      setAgendamentos((atual) => [...atual, novo]);
-      toast.success("Horário agendado", { description: `${draft.pacienteNome} · ${draft.horaInicio}` });
+      toast.success(draft.id ? "Agendamento atualizado" : "Horário agendado", {
+        description: `${salvo.pacienteNome} · ${salvo.horaInicio}`,
+      });
+      setSheetAberto(false);
+      setAgendamentoAberto(null);
+      setSlotAberto(null);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível salvar o agendamento.");
     }
-    setSheetAberto(false);
-    setAgendamentoAberto(null);
-    setSlotAberto(null);
   }
 
-  function mudarStatus(id: string, status: AgendamentoStatus) {
-    setAgendamentos((atual) => atual.map((item) => (item.id === id ? { ...item, status } : item)));
-    setAgendamentoAberto((atual) => (atual && atual.id === id ? { ...atual, status } : atual));
-    toast.success(`Status: ${getStatusMeta("agendamento", status).label}`);
+  async function mudarStatus(id: string, status: AgendamentoStatus) {
+    try {
+      const atualizado = await alterarStatusAgendamentoApi(id, status);
+      setAgendamentos((atual) => atual.map((item) => (item.id === id ? atualizado : item)));
+      setAgendamentoAberto((atual) => (atual && atual.id === id ? atualizado : atual));
+      toast.success(`Status: ${getStatusMeta("agendamento", status).label}`);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível alterar o status.");
+    }
   }
 
-  function reagendar(id: string, slot: SlotSelecionado) {
-    setAgendamentos((atual) =>
-      atual.map((item) => {
-        if (item.id !== id) return item;
-        const duracao = duracaoEmMinutos(item.horaInicio, item.horaFim) || 30;
-        const profissional = profissionais.find((prof) => prof.id === (slot.profissionalId ?? item.profissionalId));
-        return {
-          ...item,
-          data: slot.data,
-          horaInicio: slot.horaInicio,
-          horaFim: somarMinutos(slot.horaInicio, duracao),
-          profissionalId: slot.profissionalId ?? item.profissionalId,
-          profissionalNome: profissional?.nome ?? item.profissionalNome,
-        };
-      }),
-    );
-    toast.success("Agendamento reagendado");
+  async function reagendar(id: string, slot: SlotSelecionado) {
+    const atual = agendamentos.find((item) => item.id === id);
+    if (!atual) return;
+    const duracao = duracaoEmMinutos(atual.horaInicio, atual.horaFim) || 30;
+    try {
+      const atualizado = await reagendarAgendamentoApi(id, {
+        data: slot.data,
+        horaInicio: slot.horaInicio,
+        horaFim: somarMinutos(slot.horaInicio, duracao),
+        profissionalId: slot.profissionalId,
+      });
+      setAgendamentos((lista) => lista.map((item) => (item.id === id ? atualizado : item)));
+      toast.success("Agendamento reagendado");
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível reagendar.");
+    }
   }
 
   function irParaHoje() {
@@ -247,6 +284,19 @@ export function AgendaWorkspace({
 
   return (
     <div className="space-y-6">
+      {carregando ? (
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <Loader2 className="size-5 animate-spin text-primary" aria-label="Carregando agenda" />
+        </div>
+      ) : erro ? (
+        <EmptyState title="Não foi possível carregar a agenda" description={erro} />
+      ) : somenteProprios && profissionaisAtivos.length === 0 ? (
+        <EmptyState
+          title="Cadastro clínico não vinculado"
+          description="Peça a um administrador para criar o profissional na clínica e vincular esta conta de login. Sem isso a agenda e os pacientes ficam vazios."
+        />
+      ) : (
+        <>
       <PageHeader
         title="Agenda"
         description="Grade por profissional, confirmações, check-in e encaixes da clínica."
@@ -312,12 +362,16 @@ export function AgendaWorkspace({
               ))}
             </div>
 
-            <Select value={profissionalFiltro} onValueChange={setProfissionalFiltro}>
+            <Select
+              value={profissionalFiltro || profissionaisAtivos[0]?.id}
+              onValueChange={setProfissionalFiltro}
+              disabled={somenteProprios}
+            >
               <SelectTrigger className="w-48" aria-label="Filtrar por profissional">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos os profissionais</SelectItem>
+                {!somenteProprios && <SelectItem value="todos">Todos os profissionais</SelectItem>}
                 {profissionaisAtivos.map((profissional) => (
                   <SelectItem key={profissional.id} value={profissional.id}>
                     {profissional.nome}
@@ -405,7 +459,7 @@ export function AgendaWorkspace({
         salas={salas}
         onSave={salvarAgendamento}
         onChangeStatus={mudarStatus}
-        onNovoPaciente={(paciente) => setPacientes((atual) => [paciente, ...atual])}
+        onNovoPaciente={() => router.push("/pacientes/novo")}
       />
 
       <BloqueioDialog
@@ -414,10 +468,15 @@ export function AgendaWorkspace({
         profissionais={profissionaisAtivos}
         dataPadrao={dataIso}
         profissionalPadrao={profissionalFiltro === "todos" ? undefined : profissionalFiltro}
-        onSave={(bloqueio) => {
-          setBloqueios((atual) => [...atual, { ...bloqueio, id: `blq-local-${Date.now()}` }]);
-          setBloqueioAberto(false);
-          toast.success("Horário bloqueado", { description: bloqueio.motivo });
+        onSave={async (bloqueio) => {
+          try {
+            const criado = await criarBloqueioApi(bloqueio);
+            setBloqueios((atual) => [...atual, criado]);
+            setBloqueioAberto(false);
+            toast.success("Horário bloqueado", { description: bloqueio.motivo });
+          } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : "Não foi possível bloquear o horário.");
+          }
         }}
       />
 
@@ -425,20 +484,30 @@ export function AgendaWorkspace({
         open={esperaAberta}
         onOpenChange={setEsperaAberta}
         itens={listaEspera}
+        pacientes={pacientes}
         profissionais={profissionaisAtivos}
-        onEncaixar={(item) => {
-          setListaEspera((atual) => atual.filter((espera) => espera.id !== item.id));
-          setEsperaAberta(false);
-          abrirCriacao(
-            {
-              data: dataIso,
-              horaInicio: item.preferenciaPeriodo === "tarde" ? "14:00" : "09:00",
-              profissionalId: item.profissionalId,
-            },
-            item.pacienteId,
-          );
+        procedimentos={procedimentos}
+        onCriado={(item) => setListaEspera((atual) => [item, ...atual])}
+        onEncaixar={async (item) => {
+          try {
+            await encaixarEsperaApi(item.id);
+            setListaEspera((atual) => atual.filter((espera) => espera.id !== item.id));
+            setEsperaAberta(false);
+            abrirCriacao(
+              {
+                data: dataIso,
+                horaInicio: item.preferenciaPeriodo === "tarde" ? "14:00" : "09:00",
+                profissionalId: item.profissionalId,
+              },
+              item.pacienteId,
+            );
+          } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : "Não foi possível encaixar o paciente.");
+          }
         }}
       />
+        </>
+      )}
     </div>
   );
 }

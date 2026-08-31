@@ -1,6 +1,7 @@
 import { endOfWeek, format, isSameDay, parseISO, startOfWeek } from "date-fns";
 
-import type { Agendamento, AgendamentoStatus } from "@/types";
+import { api } from "@/lib/api";
+import type { Agendamento, AgendamentoStatus, BloqueioAgenda, ListaEsperaItem, Procedimento, Profissional } from "@/types";
 import { agendamentos, bloqueiosAgenda, hoje, listaEspera } from "./mock/agenda";
 
 export { hoje };
@@ -163,4 +164,107 @@ export function getTaxaFaltas(referencia: Date = hoje) {
 
 export function isHoje(data: string) {
   return isSameDay(parseISO(data), hoje);
+}
+
+export interface PacienteAgendaApi {
+  id: string;
+  nome: string;
+  telefone: string;
+  cpf: string;
+  dataNascimento: string;
+  convenioId: string | null;
+  alergias: string[];
+  status: string;
+}
+
+export interface AgendaResponse {
+  agendamentos: Agendamento[];
+  bloqueios: BloqueioAgenda[];
+  listaEspera: ListaEsperaItem[];
+  profissionais: Profissional[];
+  procedimentos: Procedimento[];
+  convenios: { id: string; nome: string }[];
+  pacientes: PacienteAgendaApi[];
+  salas: string[];
+  somenteProprios: boolean;
+  meuProfissionalId: string | null;
+}
+
+export async function obterAgendaApi(de?: string, ate?: string) {
+  return api.get<AgendaResponse>("/agenda", { params: { de, ate } });
+}
+
+export async function criarAgendamentoApi(payload: {
+  pacienteId: string;
+  profissionalId: string;
+  procedimentoId: string;
+  data: string;
+  horaInicio: string;
+  horaFim: string;
+  sala: string | null;
+  particular: boolean;
+  convenioId: string | null;
+  observacoes: string | null;
+  status: AgendamentoStatus;
+}) {
+  const data = await api.post<{ agendamento: Agendamento }>("/agenda", payload);
+  return data.agendamento;
+}
+
+export async function atualizarAgendamentoApi(
+  id: string,
+  payload: {
+    pacienteId: string;
+    profissionalId: string;
+    procedimentoId: string;
+    data: string;
+    horaInicio: string;
+    horaFim: string;
+    sala: string | null;
+    particular: boolean;
+    convenioId: string | null;
+    observacoes: string | null;
+    status: AgendamentoStatus;
+  },
+) {
+  const data = await api.patch<{ agendamento: Agendamento }>(`/agenda/${id}`, payload);
+  return data.agendamento;
+}
+
+export async function alterarStatusAgendamentoApi(id: string, status: AgendamentoStatus) {
+  const data = await api.patch<{ agendamento: Agendamento }>(`/agenda/${id}/status`, { status });
+  return data.agendamento;
+}
+
+export async function reagendarAgendamentoApi(
+  id: string,
+  payload: { data: string; horaInicio: string; horaFim: string; profissionalId?: string },
+) {
+  const data = await api.patch<{ agendamento: Agendamento }>(`/agenda/${id}/reagendar`, payload);
+  return data.agendamento;
+}
+
+export async function marcarLembreteApi(id: string) {
+  const data = await api.patch<{ agendamento: Agendamento }>(`/agenda/${id}/lembrete`);
+  return data.agendamento;
+}
+
+export async function criarBloqueioApi(payload: Omit<BloqueioAgenda, "id">) {
+  const data = await api.post<{ bloqueio: BloqueioAgenda }>("/agenda/bloqueios", payload);
+  return data.bloqueio;
+}
+
+export async function criarEsperaApi(payload: {
+  pacienteId: string;
+  profissionalId: string | null;
+  procedimentoId: string | null;
+  preferenciaPeriodo: ListaEsperaItem["preferenciaPeriodo"];
+}) {
+  const data = await api.post<{ item: ListaEsperaItem }>("/agenda/espera", payload);
+  return data.item;
+}
+
+export async function encaixarEsperaApi(id: string) {
+  const data = await api.patch<{ item: ListaEsperaItem }>(`/agenda/espera/${id}/encaixar`);
+  return data.item;
 }

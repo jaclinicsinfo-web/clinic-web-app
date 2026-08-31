@@ -8,8 +8,12 @@ import { DataTable } from "@/components/shared/data-table";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { getConvenioNome } from "@/services/catalogo";
 import type { Agendamento } from "@/types";
+
+function origemAgendamento(agendamento: Agendamento) {
+  if (agendamento.particular) return "Particular";
+  return agendamento.convenioNome ?? (agendamento.convenioId ? "Convênio" : "Particular");
+}
 
 type Periodo = "todos" | "30d" | "6m" | "12m";
 
@@ -53,7 +57,7 @@ export function HistoricoTable({ agendamentos }: { agendamentos: Agendamento[] }
       { accessorKey: "profissionalNome", header: "Profissional" },
       {
         id: "origem",
-        accessorFn: (row) => (row.particular ? "Particular" : getConvenioNome(row.convenioId)),
+        accessorFn: (row) => origemAgendamento(row),
         header: "Origem",
         cell: ({ getValue }) => <span className="text-muted-foreground">{getValue() as string}</span>,
       },

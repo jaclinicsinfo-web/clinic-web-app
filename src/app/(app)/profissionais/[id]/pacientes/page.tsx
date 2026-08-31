@@ -1,35 +1,21 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+"use client";
 
+import { useProfissionalPerfil } from "@/components/profissionais/profissional-perfil-shell";
 import { ProfissionalPacientesTable } from "@/components/profissionais/profissional-pacientes-table";
-import { getConvenioNome } from "@/services/catalogo";
-import { getPacientesDoProfissional, getProfissionalById } from "@/services/profissionais";
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
-  const profissional = getProfissionalById(id);
-  return { title: profissional ? `Pacientes de ${profissional.nome}` : "Pacientes" };
-}
-
-export default async function ProfissionalPacientesPage({ params }: PageProps) {
-  const { id } = await params;
-  const profissional = getProfissionalById(id);
-
-  if (!profissional) notFound();
-
-  const pacientes = getPacientesDoProfissional(id).map(({ paciente, atendimentos, ultimaVisita }) => ({
-    id: paciente.id,
-    nome: paciente.nome,
-    telefone: paciente.telefone,
-    convenio: getConvenioNome(paciente.convenioId),
-    status: paciente.status,
-    atendimentos,
-    ultimaVisita,
-  }));
-
-  return <ProfissionalPacientesTable pacientes={pacientes} />;
+export default function ProfissionalPacientesPage() {
+  const { pacientesAtendidos } = useProfissionalPerfil();
+  return (
+    <ProfissionalPacientesTable
+      pacientes={pacientesAtendidos.map((item) => ({
+        id: item.id,
+        nome: item.nome,
+        telefone: item.telefone,
+        convenio: item.convenio,
+        status: item.status as "ativo" | "inativo" | "arquivado",
+        atendimentos: item.atendimentos,
+        ultimaVisita: item.ultimaVisita ?? undefined,
+      }))}
+    />
+  );
 }

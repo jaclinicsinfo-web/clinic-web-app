@@ -20,6 +20,7 @@ function nomeConvenio(convenioId: string | null, convenioNome?: string | null) {
 export function PacienteVisaoGeral() {
   const { paciente, detalhe } = usePacientePerfil();
   const id = paciente.id;
+  const podeVerProntuario = Boolean(detalhe.podeVerProntuario);
 
   const proximos = detalhe.proximosAgendamentos.slice(0, 4);
   const ultimasVisitas = detalhe.atendimentos.slice(0, 4);
@@ -83,7 +84,9 @@ export function PacienteVisaoGeral() {
                         {formatCurrency(agendamento.valor)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {agendamento.particular ? "Particular" : "Convênio"}
+                        {agendamento.particular
+                          ? "Particular"
+                          : (agendamento.convenioNome ?? "Convênio")}
                       </p>
                     </div>
                     <StatusBadge domain="agendamento" status={agendamento.status} />
@@ -94,7 +97,7 @@ export function PacienteVisaoGeral() {
           </CardContent>
         </Card>
 
-        {acompanhamentoAtivo && (
+        {podeVerProntuario && acompanhamentoAtivo && (
           <Card>
             <CardHeader className="flex-row items-center justify-between">
               <div>
@@ -136,44 +139,46 @@ export function PacienteVisaoGeral() {
           </Card>
         )}
 
-        <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Stethoscope className="size-4 text-primary" />
-                Últimas visitas
-              </CardTitle>
-              <CardDescription>Evoluções registradas no prontuário</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href={`/pacientes/${id}/prontuario`}>Abrir prontuário</Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="px-0 pb-0">
-            {ultimasVisitas.length === 0 ? (
-              <EmptyState
-                title="Nenhum atendimento registrado"
-                description="As evoluções clínicas aparecem aqui após o primeiro atendimento."
-                icon={Stethoscope}
-              />
-            ) : (
-              <ul className="divide-y divide-border">
-                {ultimasVisitas.map((atendimento) => (
-                  <li key={atendimento.id} className="px-5 py-3">
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <p className="text-sm font-medium text-foreground">{atendimento.procedimentoRealizado}</p>
-                      <span className="text-xs tabular-nums text-muted-foreground">
-                        {formatDate(atendimento.data)}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{atendimento.profissionalNome}</p>
-                    <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{atendimento.evolucao}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+        {podeVerProntuario && (
+          <Card>
+            <CardHeader className="flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Stethoscope className="size-4 text-primary" />
+                  Últimas visitas
+                </CardTitle>
+                <CardDescription>Evoluções registradas no prontuário</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={`/pacientes/${id}/prontuario`}>Abrir prontuário</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="px-0 pb-0">
+              {ultimasVisitas.length === 0 ? (
+                <EmptyState
+                  title="Nenhum atendimento registrado"
+                  description="As evoluções clínicas aparecem aqui após o primeiro atendimento."
+                  icon={Stethoscope}
+                />
+              ) : (
+                <ul className="divide-y divide-border">
+                  {ultimasVisitas.map((atendimento) => (
+                    <li key={atendimento.id} className="px-5 py-3">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="text-sm font-medium text-foreground">{atendimento.procedimentoRealizado}</p>
+                        <span className="text-xs tabular-nums text-muted-foreground">
+                          {formatDate(atendimento.data)}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{atendimento.profissionalNome}</p>
+                      <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{atendimento.evolucao}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <div className="space-y-4">

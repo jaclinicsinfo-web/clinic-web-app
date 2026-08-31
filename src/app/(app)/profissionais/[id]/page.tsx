@@ -1,36 +1,17 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+"use client";
+
 import { CalendarCheck, Percent, TrendingUp, Users } from "lucide-react";
 
+import { useProfissionalPerfil } from "@/components/profissionais/profissional-perfil-shell";
 import { GradeHorarios } from "@/components/profissionais/grade-horarios";
 import { StatCard } from "@/components/shared/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDate, formatPercent } from "@/lib/format";
 import { formaRemuneracaoLabels, tipoVinculoLabels } from "@/lib/status";
-import { listProcedimentos } from "@/services/catalogo";
-import { getIndicadoresProfissional, getProfissionalById } from "@/services/profissionais";
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
-  const profissional = getProfissionalById(id);
-  return { title: profissional?.nome ?? "Profissional não encontrado" };
-}
-
-export default async function ProfissionalVisaoGeralPage({ params }: PageProps) {
-  const { id } = await params;
-  const profissional = getProfissionalById(id);
-
-  if (!profissional) notFound();
-
-  const indicadores = getIndicadoresProfissional(id);
-  const procedimentos = listProcedimentos().filter((procedimento) =>
-    profissional.procedimentosHabilitados.includes(procedimento.id),
-  );
+export default function ProfissionalVisaoGeralPage() {
+  const { profissional, indicadores, procedimentosHabilitados } = useProfissionalPerfil();
 
   return (
     <div className="space-y-4">
@@ -78,11 +59,11 @@ export default async function ProfissionalVisaoGeralPage({ params }: PageProps) 
           <CardTitle>Procedimentos habilitados</CardTitle>
         </CardHeader>
         <CardContent>
-          {procedimentos.length === 0 ? (
+          {procedimentosHabilitados.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum procedimento habilitado.</p>
           ) : (
             <div className="flex flex-wrap gap-1.5">
-              {procedimentos.map((procedimento) => (
+              {procedimentosHabilitados.map((procedimento) => (
                 <Badge key={procedimento.id} tone="outline">
                   {procedimento.nome}
                 </Badge>
