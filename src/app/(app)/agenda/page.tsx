@@ -4,7 +4,6 @@ import { format } from "date-fns";
 import { AgendaWorkspace } from "@/components/agenda/agenda-workspace";
 import { listConvenios, listProcedimentos, salas } from "@/services/catalogo";
 import { getBloqueios, getListaEspera, hoje, listAgendamentos } from "@/services/agenda";
-import { listPacientes } from "@/services/pacientes";
 import { listProfissionais } from "@/services/profissionais";
 
 export const metadata: Metadata = {
@@ -30,16 +29,7 @@ export default async function AgendaPage({
       listaEsperaInicial={getListaEspera()}
       profissionais={listProfissionais()}
       procedimentos={listProcedimentos()}
-      pacientes={listPacientes().map((paciente) => ({
-        id: paciente.id,
-        nome: paciente.nome,
-        telefone: paciente.telefone,
-        cpf: paciente.cpf,
-        dataNascimento: paciente.dataNascimento,
-        convenioId: paciente.convenioId,
-        alergias: paciente.alergias,
-        status: paciente.status,
-      }))}
+      pacientes={[]}
       convenios={listConvenios().map(({ id, nome }) => ({ id, nome }))}
       salas={salas}
     />

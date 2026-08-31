@@ -20,25 +20,45 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useSessaoStore } from "@/hooks/use-sessao";
+import { ApiError } from "@/lib/api";
 import { calculateAge, formatCurrency, formatDate, formatPhone } from "@/lib/format";
-import { getConvenioNome } from "@/services/catalogo";
+import { temPermissao } from "@/lib/permissoes";
 import type { Paciente } from "@/types";
 
 interface PacientesTableProps {
   pacientes: Paciente[];
   convenios: { id: string; nome: string }[];
   profissionais: { id: string; nome: string }[];
+  carregando?: boolean;
+  somenteProprios?: boolean;
+  onArquivar: (paciente: Paciente) => Promise<void>;
 }
 
 type FaixaEtaria = "todas" | "crianca" | "adulto" | "idoso";
 
-export function PacientesTable({ pacientes, convenios, profissionais }: PacientesTableProps) {
+function nomeConvenio(paciente: Paciente) {
+  if (paciente.convenioNome) return paciente.convenioNome;
+  return paciente.convenioId ? "Convênio" : "Particular";
+}
+
+export function PacientesTable({
+  pacientes,
+  convenios,
+  profissionais,
+  carregando,
+  somenteProprios,
+  onArquivar,
+}: PacientesTableProps) {
   const router = useRouter();
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const podeEditar = temPermissao(permissoes, "pacientes", "editar");
   const [status, setStatus] = React.useState("todos");
   const [convenio, setConvenio] = React.useState("todos");
   const [profissional, setProfissional] = React.useState("todos");
   const [faixa, setFaixa] = React.useState<FaixaEtaria>("todas");
   const [arquivando, setArquivando] = React.useState<Paciente | null>(null);
+  const [arquivandoEnvio, setArquivandoEnvio] = React.useState(false);
 
   const dados = React.useMemo(() => {
     return pacientes.filter((paciente) => {
@@ -92,7 +112,7 @@ export function PacientesTable({ pacientes, convenios, profissionais }: Paciente
       },
       {
         id: "convenio",
-        accessorFn: (row) => getConvenioNome(row.convenioId),
+        accessorFn: (row) => nomeConvenio(row),
         header: "Convênio",
         cell: ({ getValue }) => {
           const nome = getValue() as string;
@@ -163,15 +183,21 @@ export function PacientesTable({ pacientes, convenios, profissionais }: Paciente
                     <CalendarPlus />
                     Agendar
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => router.push(`/pacientes/${paciente.id}/editar`)}>
-                    <Pencil />
-                    Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem destructive onSelect={() => setArquivando(paciente)}>
-                    <Archive />
-                    Arquivar
-                  </DropdownMenuItem>
+                  {podeEditar && (
+                    <DropdownMenuItem onSelect={() => router.push(`/pacientes/${paciente.id}/editar`)}>
+                      <Pencil />
+                      Editar
+                    </DropdownMenuItem>
+                  )}
+                  {podeEditar && paciente.status !== "arquivado" && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem destructive onSelect={() => setArquivando(paciente)}>
+                        <Archive />
+                        Arquivar
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -179,7 +205,7 @@ export function PacientesTable({ pacientes, convenios, profissionais }: Paciente
         },
       },
     ],
-    [router],
+    [router, podeEditar],
   );
 
   return (
@@ -191,8 +217,14 @@ export function PacientesTable({ pacientes, convenios, profissionais }: Paciente
         onRowClick={(paciente) => router.push(`/pacientes/${paciente.id}`)}
         exportFileName="pacientes"
         pageSize={10}
-        emptyTitle="Nenhum paciente encontrado"
-        emptyDescription="Ajuste os filtros ou cadastre um novo paciente."
+        emptyTitle={carregando ? "Carregando pacientes..." : "Nenhum paciente encontrado"}
+        emptyDescription={
+          carregando
+            ? "Buscando os registros da clínica."
+            : somenteProprios
+              ? "Somente pacientes com você como profissional preferido aparecem nesta lista."
+              : "Ajuste os filtros ou cadastre um novo paciente."
+        }
         toolbar={
           <>
             <Select value={status} onValueChange={setStatus}>
@@ -222,19 +254,21 @@ export function PacientesTable({ pacientes, convenios, profissionais }: Paciente
               </SelectContent>
             </Select>
 
-            <Select value={profissional} onValueChange={setProfissional}>
-              <SelectTrigger className="w-44" aria-label="Filtrar por profissional">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todo profissional</SelectItem>
-                {profissionais.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {!somenteProprios && (
+              <Select value={profissional} onValueChange={setProfissional}>
+                <SelectTrigger className="w-44" aria-label="Filtrar por profissional">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todo profissional</SelectItem>
+                  {profissionais.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             <Select value={faixa} onValueChange={(valor) => setFaixa(valor as FaixaEtaria)}>
               <SelectTrigger className="w-36" aria-label="Filtrar por faixa etária">
@@ -257,9 +291,21 @@ export function PacientesTable({ pacientes, convenios, profissionais }: Paciente
         title="Arquivar paciente?"
         description={`${arquivando?.nome ?? ""} deixará de aparecer nas listagens ativas, mas o histórico e o prontuário serão preservados.`}
         confirmLabel="Arquivar"
-        onConfirm={() => {
-          toast.success("Paciente arquivado", { description: arquivando?.nome });
-          setArquivando(null);
+        loading={arquivandoEnvio}
+        onConfirm={async () => {
+          if (!arquivando) return;
+          setArquivandoEnvio(true);
+          try {
+            await onArquivar(arquivando);
+            toast.success("Paciente arquivado", { description: arquivando.nome });
+            setArquivando(null);
+          } catch (error) {
+            toast.error(
+              error instanceof ApiError ? error.message : "Não foi possível arquivar o paciente.",
+            );
+          } finally {
+            setArquivandoEnvio(false);
+          }
         }}
       />
     </>

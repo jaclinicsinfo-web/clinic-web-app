@@ -5,30 +5,33 @@ import { usePathname } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 
 import { segmentLabels } from "@/lib/navigation";
-import { getPacienteById } from "@/services/pacientes";
-import { getProfissionalById } from "@/services/profissionais";
-import { getConvenioById } from "@/services/catalogo";
+import { useEntidadeLabelsStore } from "@/hooks/use-entidade-labels";
 
 /** Resolve rótulos de segmentos dinâmicos ([id]) para o nome da entidade. */
-function resolveDynamicLabel(segments: string[], index: number) {
+function resolveDynamicLabel(
+  segments: string[],
+  index: number,
+  nomes: { pacientes: Record<string, string>; profissionais: Record<string, string>; convenios: Record<string, string> },
+) {
   const segment = segments[index];
   const parent = segments[index - 1];
 
-  if (parent === "pacientes") return getPacienteById(segment)?.nome;
-  if (parent === "profissionais") return getProfissionalById(segment)?.nome;
-  if (parent === "convenios") return getConvenioById(segment)?.nome;
+  if (parent === "pacientes") return nomes.pacientes[segment];
+  if (parent === "profissionais") return nomes.profissionais[segment];
+  if (parent === "convenios") return nomes.convenios[segment];
   return undefined;
 }
 
 export function Breadcrumbs() {
   const pathname = usePathname();
+  const nomes = useEntidadeLabelsStore();
   const segments = pathname.split("/").filter(Boolean);
 
   if (segments.length === 0) return null;
 
   const crumbs = segments.map((segment, index) => {
     const href = `/${segments.slice(0, index + 1).join("/")}`;
-    const label = segmentLabels[segment] ?? resolveDynamicLabel(segments, index) ?? segment;
+    const label = segmentLabels[segment] ?? resolveDynamicLabel(segments, index, nomes) ?? segment;
     return { href, label, isLast: index === segments.length - 1 };
   });
 

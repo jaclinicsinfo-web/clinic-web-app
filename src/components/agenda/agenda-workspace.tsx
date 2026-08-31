@@ -16,6 +16,7 @@ import { formatCurrency, formatISODate, parseLocalDate } from "@/lib/format";
 import { getStatusMeta } from "@/lib/status";
 import { cn } from "@/lib/utils";
 import { duracaoEmMinutos, somarMinutos } from "@/services/agenda";
+import { listarPacientesApi } from "@/services/pacientes";
 import type { Agendamento, AgendamentoStatus, BloqueioAgenda, ListaEsperaItem, Procedimento, Profissional } from "@/types";
 
 import { AppointmentSheet, type AgendamentoDraft, type PacienteAgenda } from "./appointment-sheet";
@@ -81,6 +82,36 @@ export function AgendaWorkspace({
   const [bloqueios, setBloqueios] = React.useState(bloqueiosIniciais);
   const [listaEspera, setListaEspera] = React.useState(listaEsperaInicial);
   const [pacientes, setPacientes] = React.useState(pacientesIniciais);
+  const [conveniosAgenda, setConveniosAgenda] = React.useState(convenios);
+
+  React.useEffect(() => {
+    let ativo = true;
+    void listarPacientesApi()
+      .then((data) => {
+        if (!ativo) return;
+        setPacientes(
+          data.pacientes.map((paciente) => ({
+            id: paciente.id,
+            nome: paciente.nome,
+            telefone: paciente.telefone,
+            cpf: paciente.cpf,
+            dataNascimento: paciente.dataNascimento,
+            convenioId: paciente.convenioId,
+            alergias: paciente.alergias,
+            status: paciente.status,
+          })),
+        );
+        if (data.convenios.length > 0) {
+          setConveniosAgenda(data.convenios);
+        }
+      })
+      .catch(() => {
+        /* agenda segue com a lista recebida nas props se a API falhar */
+      });
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   const [agendamentoAberto, setAgendamentoAberto] = React.useState<Agendamento | null>(null);
   const [slotAberto, setSlotAberto] = React.useState<SlotSelecionado | null>(null);
@@ -370,7 +401,7 @@ export function AgendaWorkspace({
         pacientes={pacientes}
         profissionais={profissionaisAtivos}
         procedimentos={procedimentos}
-        convenios={convenios}
+        convenios={conveniosAgenda}
         salas={salas}
         onSave={salvarAgendamento}
         onChangeStatus={mudarStatus}

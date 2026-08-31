@@ -1,131 +1,137 @@
 /**
- * Acesso a dados de pacientes.
- * Hoje resolve a partir dos mocks; a troca para a API real deve acontecer aqui.
+ * Acesso a dados de pacientes via API.
  */
-import { compareDesc, isAfter, isBefore, parseISO } from "date-fns";
-
-import type { Anexo, Paciente } from "@/types";
-import { agendamentos, atendimentos, acompanhamentos, hoje } from "./mock/agenda";
-import { cobrancas, getSaldoDevedorPaciente } from "./mock/financeiro";
-import { pacientes } from "./mock/pessoas";
-
-export function listPacientes(): Paciente[] {
-  return pacientes.map((paciente) => ({
-    ...paciente,
-    saldoDevedor: getSaldoDevedorPaciente(paciente.id),
-    ultimoAtendimento: getUltimoAtendimento(paciente.id),
-    proximoAgendamento: getProximoAgendamento(paciente.id),
-  }));
-}
-
-export function getPacienteById(id: string): Paciente | undefined {
-  const paciente = pacientes.find((item) => item.id === id);
-  if (!paciente) return undefined;
-
-  return {
-    ...paciente,
-    saldoDevedor: getSaldoDevedorPaciente(paciente.id),
-    ultimoAtendimento: getUltimoAtendimento(paciente.id),
-    proximoAgendamento: getProximoAgendamento(paciente.id),
-  };
-}
-
-function getUltimoAtendimento(pacienteId: string) {
-  return agendamentos
-    .filter(
-      (agendamento) =>
-        agendamento.pacienteId === pacienteId &&
-        agendamento.status === "atendido" &&
-        isBefore(parseISO(agendamento.data), hoje),
-    )
-    .sort((a, b) => compareDesc(parseISO(a.data), parseISO(b.data)))[0]?.data;
-}
-
-function getProximoAgendamento(pacienteId: string) {
-  return agendamentos
-    .filter(
-      (agendamento) =>
-        agendamento.pacienteId === pacienteId &&
-        (agendamento.status === "agendado" || agendamento.status === "confirmado") &&
-        !isBefore(parseISO(agendamento.data), hoje),
-    )
-    .sort((a, b) => parseISO(a.data).getTime() - parseISO(b.data).getTime())[0]?.data;
-}
-
-export function getResumoPacientes() {
-  const lista = listPacientes();
-
-  return {
-    total: lista.length,
-    ativos: lista.filter((paciente) => paciente.status === "ativo").length,
-    inativos: lista.filter((paciente) => paciente.status === "inativo").length,
-    arquivados: lista.filter((paciente) => paciente.status === "arquivado").length,
-    comPendencia: lista.filter((paciente) => paciente.saldoDevedor > 0).length,
-    valorEmAberto: lista.reduce((total, paciente) => total + paciente.saldoDevedor, 0),
-  };
-}
-
-export function getAgendamentosDoPaciente(pacienteId: string) {
-  return agendamentos
-    .filter((agendamento) => agendamento.pacienteId === pacienteId)
-    .sort((a, b) => parseISO(b.data).getTime() - parseISO(a.data).getTime());
-}
-
-export function getProximosAgendamentosDoPaciente(pacienteId: string) {
-  return agendamentos
-    .filter(
-      (agendamento) =>
-        agendamento.pacienteId === pacienteId &&
-        isAfter(parseISO(agendamento.data), hoje) &&
-        agendamento.status !== "cancelado",
-    )
-    .sort((a, b) => parseISO(a.data).getTime() - parseISO(b.data).getTime());
-}
-
-export function getAtendimentosDoPaciente(pacienteId: string) {
-  return atendimentos
-    .filter((atendimento) => atendimento.pacienteId === pacienteId)
-    .sort((a, b) => compareDesc(parseISO(a.data), parseISO(b.data)));
-}
-
-export function getAcompanhamentosDoPaciente(pacienteId: string) {
-  return acompanhamentos
-    .filter((item) => item.pacienteId === pacienteId)
-    .sort((a, b) => {
-      if (a.status !== b.status) return a.status === "em_andamento" ? -1 : 1;
-      return compareDesc(parseISO(a.inicioEm), parseISO(b.inicioEm));
-    });
-}
-
-export function getEvolucoesDoAcompanhamento(acompanhamentoId: string) {
-  return atendimentos
-    .filter((atendimento) => atendimento.acompanhamentoId === acompanhamentoId)
-    .sort((a, b) => parseISO(a.data).getTime() - parseISO(b.data).getTime());
-}
-
-export function getCobrancasDoPaciente(pacienteId: string) {
-  return cobrancas
-    .filter((cobranca) => cobranca.pacienteId === pacienteId)
-    .sort((a, b) => compareDesc(parseISO(a.vencimento), parseISO(b.vencimento)));
-}
+import { api } from "@/lib/api";
+import type {
+  AcompanhamentoClinico,
+  Agendamento,
+  Anexo,
+  Atendimento,
+  Cobranca,
+  Paciente,
+} from "@/types";
 
 export interface DocumentoPaciente extends Anexo {
   origem: string;
 }
 
-export function getDocumentosDoPaciente(pacienteId: string): DocumentoPaciente[] {
-  return getAtendimentosDoPaciente(pacienteId).flatMap((atendimento) =>
-    atendimento.anexos.map((anexo) => ({
-      ...anexo,
-      origem: `${atendimento.procedimentoRealizado} — ${atendimento.profissionalNome}`,
-    })),
-  );
+export interface ResumoPacientes {
+  total: number;
+  ativos: number;
+  inativos: number;
+  arquivados: number;
+  comPendencia: number;
+  valorEmAberto: number;
 }
 
-export function getAniversariantesDoMes() {
-  const mesAtual = hoje.getMonth();
+export interface OpcaoPaciente {
+  id: string;
+  nome: string;
+}
 
-  return pacientes
-    .filter((paciente) => parseISO(paciente.dataNascimento).getMonth() === mesAtual)
-    .sort((a, b) => parseISO(a.dataNascimento).getDate() - parseISO(b.dataNascimento).getDate());
+export interface ListaPacientesResponse {
+  pacientes: Paciente[];
+  resumo: ResumoPacientes;
+  convenios: OpcaoPaciente[];
+  profissionais: OpcaoPaciente[];
+  somenteProprios: boolean;
+}
+
+export interface OpcoesPacientesResponse {
+  convenios: OpcaoPaciente[];
+  profissionais: OpcaoPaciente[];
+}
+
+export interface DetalhePacienteResponse {
+  paciente: Paciente;
+  proximosAgendamentos: Agendamento[];
+  atendimentos: Atendimento[];
+  acompanhamentos: AcompanhamentoClinico[];
+  agendamentos: Agendamento[];
+  cobrancas: Cobranca[];
+  documentos: DocumentoPaciente[];
+}
+
+export interface PacientePayload {
+  nome: string;
+  cpf: string;
+  rg?: string | null;
+  dataNascimento: string;
+  sexo: Paciente["sexo"];
+  estadoCivil?: Paciente["estadoCivil"] | null;
+  profissao?: string | null;
+  telefone: string;
+  whatsapp?: string | null;
+  email?: string | null;
+  endereco: Paciente["endereco"];
+  convenioId: string | null;
+  numeroCarteirinha?: string | null;
+  validadeCarteirinha?: string | null;
+  responsavel: Paciente["responsavel"] | null;
+  alergias: string[];
+  condicoesPreexistentes: string[];
+  medicacoesEmUso: string[];
+  profissionalPreferidoId: string | null;
+  formaContatoPreferida?: Paciente["formaContatoPreferida"] | null;
+  observacoes?: string | null;
+  consentimentoLgpd: boolean;
+  autorizacaoImagem: boolean;
+}
+
+function normalizarPaciente(paciente: Paciente): Paciente {
+  return {
+    ...paciente,
+    rg: paciente.rg ?? undefined,
+    estadoCivil: paciente.estadoCivil ?? undefined,
+    profissao: paciente.profissao ?? undefined,
+    whatsapp: paciente.whatsapp ?? undefined,
+    email: paciente.email ?? undefined,
+    numeroCarteirinha: paciente.numeroCarteirinha ?? undefined,
+    validadeCarteirinha: paciente.validadeCarteirinha ?? undefined,
+    responsavel: paciente.responsavel ?? undefined,
+    profissionalPreferidoId: paciente.profissionalPreferidoId ?? undefined,
+    formaContatoPreferida: paciente.formaContatoPreferida ?? undefined,
+    observacoes: paciente.observacoes ?? undefined,
+    ultimoAtendimento: paciente.ultimoAtendimento ?? undefined,
+    proximoAgendamento: paciente.proximoAgendamento ?? undefined,
+    alergias: paciente.alergias ?? [],
+    condicoesPreexistentes: paciente.condicoesPreexistentes ?? [],
+    medicacoesEmUso: paciente.medicacoesEmUso ?? [],
+    saldoDevedor: paciente.saldoDevedor ?? 0,
+  };
+}
+
+export async function listarPacientesApi() {
+  const data = await api.get<ListaPacientesResponse>("/pacientes");
+  return {
+    ...data,
+    pacientes: data.pacientes.map(normalizarPaciente),
+  };
+}
+
+export async function opcoesPacientesApi() {
+  return api.get<OpcoesPacientesResponse>("/pacientes/opcoes");
+}
+
+export async function obterPacienteApi(id: string) {
+  const data = await api.get<DetalhePacienteResponse>(`/pacientes/${id}`);
+  return {
+    ...data,
+    paciente: normalizarPaciente(data.paciente),
+  };
+}
+
+export async function criarPacienteApi(payload: PacientePayload) {
+  const data = await api.post<{ paciente: Paciente }>("/pacientes", payload);
+  return normalizarPaciente(data.paciente);
+}
+
+export async function atualizarPacienteApi(id: string, payload: PacientePayload) {
+  const data = await api.patch<{ paciente: Paciente }>(`/pacientes/${id}`, payload);
+  return normalizarPaciente(data.paciente);
+}
+
+export async function arquivarPacienteApi(id: string) {
+  const data = await api.patch<{ paciente: Paciente }>(`/pacientes/${id}/arquivar`);
+  return normalizarPaciente(data.paciente);
 }

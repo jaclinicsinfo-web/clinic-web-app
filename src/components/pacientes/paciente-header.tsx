@@ -6,12 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { Pode } from "@/components/auth/pode";
 import { calculateAge, formatCurrency, formatPhone, getInitials, maskCpf } from "@/lib/format";
-import { getConvenioNome } from "@/services/catalogo";
 import type { Paciente } from "@/types";
 
 export function PacienteHeader({ paciente }: { paciente: Paciente }) {
-  const convenio = getConvenioNome(paciente.convenioId);
+  const convenio = paciente.convenioNome ?? (paciente.convenioId ? "Convênio" : "Particular");
 
   return (
     <Card className="p-5">
@@ -68,12 +68,14 @@ export function PacienteHeader({ paciente }: { paciente: Paciente }) {
         </div>
 
         <div className="flex shrink-0 flex-wrap gap-2">
-          <Button variant="outline" asChild>
-            <Link href={`/pacientes/${paciente.id}/editar`}>
-              <Pencil />
-              Editar
-            </Link>
-          </Button>
+          <Pode modulo="pacientes" acao="editar">
+            <Button variant="outline" asChild>
+              <Link href={`/pacientes/${paciente.id}/editar`}>
+                <Pencil />
+                Editar
+              </Link>
+            </Button>
+          </Pode>
           <Button asChild>
             <Link href={`/agenda?paciente=${paciente.id}`}>
               <CalendarPlus />

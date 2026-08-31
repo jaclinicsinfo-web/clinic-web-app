@@ -20,6 +20,13 @@ import { FormField, FormSection } from "@/components/shared/form-section";
 import { TagsInput } from "@/components/shared/tags-input";
 import { estadoCivilLabels, sexoLabels } from "@/lib/status";
 import { formatCep, formatCpf, formatPhone } from "@/lib/format";
+import { cpfValido } from "@/lib/validacao";
+import { ApiError } from "@/lib/api";
+import {
+  atualizarPacienteApi,
+  criarPacienteApi,
+  type PacientePayload,
+} from "@/services/pacientes";
 import type { Paciente } from "@/types";
 
 const enderecoSchema = z.object({
@@ -35,7 +42,10 @@ const enderecoSchema = z.object({
 const pacienteSchema = z
   .object({
     nome: z.string().min(5, "Informe o nome completo."),
-    cpf: z.string().min(14, "CPF incompleto."),
+    cpf: z
+      .string()
+      .min(14, "CPF incompleto.")
+      .refine((valor) => cpfValido(valor), "CPF inválido."),
     rg: z.string().optional(),
     dataNascimento: z.string().min(1, "Informe a data de nascimento."),
     sexo: z.enum(["masculino", "feminino", "outro"]),
@@ -213,10 +223,63 @@ export function PacienteForm({ convenios, profissionais, paciente }: PacienteFor
   }
 
   async function onSubmit(values: PacienteFormValues) {
-    // TODO: enviar para a API via src/services/pacientes quando o backend estiver disponível.
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    toast.success(edicao ? "Paciente atualizado" : "Paciente cadastrado", { description: values.nome });
-    router.push(paciente ? `/pacientes/${paciente.id}` : "/pacientes");
+    const payload: PacientePayload = {
+      nome: values.nome,
+      cpf: values.cpf,
+      rg: values.rg || null,
+      dataNascimento: values.dataNascimento,
+      sexo: values.sexo,
+      estadoCivil: values.estadoCivil ?? null,
+      profissao: values.profissao || null,
+      telefone: values.telefone,
+      whatsapp: values.whatsapp || null,
+      email: values.email || null,
+      endereco: {
+        cep: values.endereco.cep,
+        rua: values.endereco.rua,
+        numero: values.endereco.numero,
+        complemento: values.endereco.complemento || undefined,
+        bairro: values.endereco.bairro,
+        cidade: values.endereco.cidade,
+        uf: values.endereco.uf,
+      },
+      convenioId: values.convenioId === "particular" ? null : values.convenioId,
+      numeroCarteirinha: values.convenioId === "particular" ? null : values.numeroCarteirinha || null,
+      validadeCarteirinha:
+        values.convenioId === "particular" ? null : values.validadeCarteirinha || null,
+      responsavel: values.temResponsavel
+        ? {
+            nome: values.responsavelNome ?? "",
+            cpf: values.responsavelCpf ?? "",
+            parentesco: values.responsavelParentesco ?? "",
+            telefone: values.responsavelTelefone ?? "",
+          }
+        : null,
+      alergias: values.alergias,
+      condicoesPreexistentes: values.condicoesPreexistentes,
+      medicacoesEmUso: values.medicacoesEmUso,
+      profissionalPreferidoId:
+        values.profissionalPreferidoId === "nenhum" ? null : values.profissionalPreferidoId,
+      formaContatoPreferida: values.formaContatoPreferida,
+      observacoes: values.observacoes || null,
+      consentimentoLgpd: values.consentimentoLgpd,
+      autorizacaoImagem: values.autorizacaoImagem,
+    };
+
+    try {
+      if (paciente) {
+        await atualizarPacienteApi(paciente.id, payload);
+        toast.success("Paciente atualizado", { description: values.nome });
+        router.push(`/pacientes/${paciente.id}`);
+        return;
+      }
+
+      const criado = await criarPacienteApi(payload);
+      toast.success("Paciente cadastrado", { description: values.nome });
+      router.push(`/pacientes/${criado.id}`);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível salvar o paciente.");
+    }
   }
 
   return (

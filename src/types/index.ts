@@ -50,6 +50,7 @@ export interface Paciente {
   email?: string;
   endereco: Endereco;
   convenioId: string | null;
+  convenioNome?: string | null;
   numeroCarteirinha?: string;
   validadeCarteirinha?: string;
   responsavel?: Responsavel;
@@ -57,6 +58,7 @@ export interface Paciente {
   condicoesPreexistentes: string[];
   medicacoesEmUso: string[];
   profissionalPreferidoId?: string;
+  profissionalPreferidoNome?: string | null;
   formaContatoPreferida?: "whatsapp" | "telefone" | "email";
   observacoes?: string;
   consentimentoLgpd: boolean;

@@ -1,12 +1,12 @@
 import { format, isSameMonth, parseISO, subMonths } from "date-fns";
 
+import type { Paciente } from "@/types";
 import { agendamentos, hoje } from "./mock/agenda";
 import { cobrancas } from "./mock/financeiro";
 import { pacientes, profissionais } from "./mock/pessoas";
 import { produtos } from "./mock/estoque";
 import { getResumoContasAPagar, getResumoContasAReceber } from "./financeiro";
 import { getFunilAgendamentos, getResumoDoDia, getTaxaFaltas, getTaxaOcupacao } from "./agenda";
-import { getAniversariantesDoMes } from "./pacientes";
 
 export function getIndicadoresDashboard() {
   const resumoDia = getResumoDoDia(hoje);
@@ -168,6 +168,6 @@ export function getAlertas() {
   return alertas;
 }
 
-export function getAniversariantes() {
-  return getAniversariantesDoMes().slice(0, 5);
+export function getAniversariantes(): Paciente[] {
+  return [];
 }

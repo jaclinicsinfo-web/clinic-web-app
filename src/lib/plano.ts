@@ -47,3 +47,7 @@ export function comparouPlanos(
 export function isAdministrador(perfil: string | undefined) {
   return perfil === "Administrador";
 }
+
+export function isProfissionalSaude(perfil: string | undefined) {
+  return perfil === "Profissional de saúde";
+}
