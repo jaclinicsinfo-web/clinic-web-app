@@ -125,22 +125,28 @@ export function AtendimentosPorProfissionalChart({
         <CardDescription>Atendimentos realizados no mês corrente</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={dados} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} {...gridStyle} />
-            <XAxis type="number" tick={axisStyle} tickLine={false} axisLine={false} allowDecimals={false} />
-            <YAxis
-              type="category"
-              dataKey="profissional"
-              tick={axisStyle}
-              tickLine={false}
-              axisLine={false}
-              width={110}
-            />
-            <Tooltip contentStyle={tooltipStyle} formatter={(valor: number) => [valor, "Atendimentos"]} />
-            <Bar dataKey="atendimentos" fill="#0d5c6b" radius={[0, 6, 6, 0]} barSize={16} name="Atendimentos" />
-          </BarChart>
-        </ResponsiveContainer>
+        {dados.length === 0 ? (
+          <p className="flex h-[260px] items-center justify-center text-sm text-muted-foreground">
+            Nenhum profissional ativo neste período.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={dados} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} {...gridStyle} />
+              <XAxis type="number" tick={axisStyle} tickLine={false} axisLine={false} allowDecimals={false} />
+              <YAxis
+                type="category"
+                dataKey="profissional"
+                tick={axisStyle}
+                tickLine={false}
+                axisLine={false}
+                width={110}
+              />
+              <Tooltip contentStyle={tooltipStyle} formatter={(valor: number) => [valor, "Atendimentos"]} />
+              <Bar dataKey="atendimentos" fill="#0d5c6b" radius={[0, 6, 6, 0]} barSize={16} name="Atendimentos" />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   );
@@ -156,23 +162,29 @@ export function OrigemAtendimentoChart({ dados }: { dados: { nome: string; valor
         <CardDescription>Distribuição dos atendimentos do mês</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={260}>
-          <PieChart>
-            <Pie data={dados} dataKey="valor" nameKey="nome" cx="50%" cy="45%" innerRadius={58} outerRadius={88}>
-              {dados.map((item, index) => (
-                <Cell key={item.nome} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={tooltipStyle}
-              formatter={(valor: number, nome: string) => [
-                `${valor} (${total > 0 ? Math.round((valor / total) * 100) : 0}%)`,
-                nome,
-              ]}
-            />
-            <Legend verticalAlign="bottom" height={28} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-          </PieChart>
-        </ResponsiveContainer>
+        {total === 0 ? (
+          <p className="flex h-[260px] items-center justify-center text-sm text-muted-foreground">
+            Nenhum atendimento realizado neste mês.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={260}>
+            <PieChart>
+              <Pie data={dados} dataKey="valor" nameKey="nome" cx="50%" cy="45%" innerRadius={58} outerRadius={88}>
+                {dados.map((item, index) => (
+                  <Cell key={item.nome} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={tooltipStyle}
+                formatter={(valor: number, nome: string) => [
+                  `${valor} (${Math.round((valor / total) * 100)}%)`,
+                  nome,
+                ]}
+              />
+              <Legend verticalAlign="bottom" height={28} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   );

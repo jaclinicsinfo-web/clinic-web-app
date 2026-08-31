@@ -22,6 +22,7 @@ A especificação completa está em [`especificacao-erp-clinicas.md`](./especifi
 | Estoque | Pronto |
 | Recuperação de senha | Pronto |
 | Notificações (sino) | Pronto |
+| Dashboard | Pronto |
 
 O profissional de saúde vê **só a própria agenda** e os pacientes em que é preferido **ou** já teve agendamento. O vínculo de preferência aponta para o cadastro clínico em `profissionais`, não mais para a conta de usuário.
 
@@ -40,8 +41,8 @@ O profissional de saúde vê **só a própria agenda** e os pacientes em que é 
 | Estoque | Integrada | Pronto | — |
 | Recuperação de senha | Integrada | Pronto | — |
 | Notificações | Integrada (sino) | Pronto | — |
-| Dashboard | Mock | Falta | 1 |
-| Relatórios | Mock | Falta | 2 |
+| Dashboard | Integrada | Pronto | — |
+| Relatórios | Mock | Falta | 1 |
 
 ---
 
@@ -131,9 +132,20 @@ O perfil **Profissional de saúde** não acessa o módulo financeiro geral; no p
 
 ## 5. Dashboard
 
-`/dashboard` ainda monta cards e gráficos com mocks (agenda, faturamento, ocupação, faltas, novos pacientes). Aniversariantes já não usam a lista fake de pacientes.
+Tela `/dashboard` usa a API. Cards, gráficos, próximos atendimentos, alertas e aniversariantes vêm do banco.
 
-Falta alimentar com dados reais, respeitando o perfil: o profissional de saúde não vê faturamento, contas a pagar/receber nem alertas de gestão.
+Já persiste / já lê:
+
+- Atendimentos de hoje (total, confirmados, agendados, cancelados)
+- Faturamento do mês (recebido, com variação em relação ao mês anterior) e previsto do dia
+- Taxa de ocupação (grade semanal × agendamentos do mês, descontando bloqueios)
+- Taxa de faltas do mês
+- Novos pacientes no mês
+- Contas a receber e a pagar nos próximos 7 dias
+- Gráficos: faturamento 30 dias / 12 meses, convênio × particular, atendimentos por profissional, funil
+- Próximos atendimentos do dia, alertas de gestão e aniversariantes do mês
+
+O profissional de saúde vê só a própria agenda e os próprios pacientes. Sem permissão financeira, a API omite faturamento, contas, gráficos financeiros e alertas de gestão.
 
 ## 6. Relatórios
 
@@ -213,7 +225,7 @@ Segue a seção 17 da especificação, ajustada ao que já existe:
 6. ~~Dados da clínica~~ — feito (identidade, endereço, logo e CRUD de unidades)
 7. ~~Estoque~~ — feito (produtos, movimentações, consumo e alerta de mínimo)
 8. ~~Recuperação de senha e notificações~~ — feito
-9. **Dashboard** com números reais
+9. ~~Dashboard~~ — feito (números reais; recorte por perfil)
 10. **Relatórios**
 
 Cada módulo deve seguir o padrão já usado: Model → Controller → View na API, e `src/services` no painel sem mock.

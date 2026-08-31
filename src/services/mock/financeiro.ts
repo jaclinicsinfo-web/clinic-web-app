@@ -311,7 +311,7 @@ export function getPacientesInadimplentes() {
     .sort((a, b) => b.valorEmAberto - a.valorEmAberto);
 }
 
-/** Usado pelo dashboard enquanto ele ainda é mock. */
+/** Usado pelos relatórios enquanto o módulo ainda é mock. */
 export function getResumoContasAReceber() {
   const emAberto = cobrancas.filter((cobranca) => cobranca.status === "pendente" || cobranca.status === "parcelado");
   const atrasadas = cobrancas.filter((cobranca) => cobranca.status === "atrasado");
