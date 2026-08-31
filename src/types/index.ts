@@ -342,6 +342,7 @@ export interface Produto {
   estoqueMinimo: number;
   custoUnitario: number;
   fornecedor: string;
+  ativo?: boolean;
   atualizadoEm: string;
 }
 
@@ -353,7 +354,27 @@ export interface MovimentacaoEstoque {
   quantidade: number;
   motivo: string;
   responsavel: string;
+  procedimentoId?: string | null;
+  procedimentoNome?: string | null;
   data: string;
+}
+
+export interface ConsumoEstoque {
+  produtoId: string;
+  produtoNome: string;
+  quantidade: number;
+  ocorrencias: number;
+}
+
+export interface Notificacao {
+  id: string;
+  tipo: string;
+  titulo: string;
+  descricao: string;
+  href: string | null;
+  severidade: "alta" | "media" | "baixa";
+  lida: boolean;
+  criadoEm: string;
 }
 
 // ------------------------------------------------------- Usuários e permissões

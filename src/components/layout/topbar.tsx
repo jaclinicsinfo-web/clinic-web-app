@@ -22,7 +22,8 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { getAlertas } from "@/services/dashboard";
+import { listarNotificacoesApi, marcarNotificacaoLidaApi, marcarNotificacoesLidasApi } from "@/services/notificacoes";
+import type { Notificacao } from "@/types";
 import { toast } from "sonner";
 
 interface TopbarProps {
@@ -36,7 +37,50 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
   const encerrarSessao = useSessaoStore((state) => state.encerrarSessao);
 
   const unidades = sessao?.unidades ?? [];
-  const alertas = React.useMemo(() => getAlertas(), []);
+  const [notificacoes, setNotificacoes] = React.useState<Notificacao[]>([]);
+  const [naoLidas, setNaoLidas] = React.useState(0);
+
+  const carregar = React.useCallback(() => {
+    listarNotificacoesApi()
+      .then((data) => {
+        setNotificacoes(data.notificacoes);
+        setNaoLidas(data.naoLidas);
+      })
+      .catch(() => {
+        // Sino não deve derrubar a sessão se a API falhar.
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!sessao) return;
+    carregar();
+    const timer = window.setInterval(carregar, 60_000);
+    return () => window.clearInterval(timer);
+  }, [sessao, carregar]);
+
+  async function marcarUma(notificacao: Notificacao) {
+    if (!notificacao.lida) {
+      try {
+        const atualizada = await marcarNotificacaoLidaApi(notificacao.id);
+        setNotificacoes((atual) => atual.map((item) => (item.id === atualizada.id ? atualizada : item)));
+        setNaoLidas((atual) => Math.max(0, atual - 1));
+      } catch {
+        toast.error("Não foi possível marcar a notificação como lida.");
+        return;
+      }
+    }
+    if (notificacao.href) router.push(notificacao.href);
+  }
+
+  async function marcarTodas() {
+    try {
+      const data = await marcarNotificacoesLidasApi();
+      setNotificacoes(data.notificacoes);
+      setNaoLidas(data.naoLidas);
+    } catch {
+      toast.error("Não foi possível marcar as notificações como lidas.");
+    }
+  }
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 lg:px-6">
@@ -78,38 +122,54 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative" aria-label="Notificações">
               <Bell />
-              {alertas.length > 0 && (
+              {naoLidas > 0 && (
                 <span className="absolute right-2 top-2 size-2 rounded-full bg-destructive ring-2 ring-card" />
               )}
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-80 p-0">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <p className="text-sm font-semibold">Alertas</p>
-              <Badge tone="outline">{alertas.length}</Badge>
+              <p className="text-sm font-semibold">Notificações</p>
+              <div className="flex items-center gap-2">
+                <Badge tone="outline">{naoLidas}</Badge>
+                {naoLidas > 0 && (
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => void marcarTodas()}>
+                    Marcar lidas
+                  </Button>
+                )}
+              </div>
             </div>
-            {alertas.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhum alerta no momento.</p>
+            {notificacoes.length === 0 ? (
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhuma notificação no momento.</p>
             ) : (
-              <ul className="divide-y divide-border">
-                {alertas.map((alerta) => (
-                  <li key={alerta.id} className="px-4 py-3">
-                    <div className="flex items-start gap-2">
-                      <span
-                        className={cn(
-                          "mt-1.5 size-2 shrink-0 rounded-full",
-                          alerta.severidade === "alta"
-                            ? "bg-danger"
-                            : alerta.severidade === "media"
-                              ? "bg-warning"
-                              : "bg-info",
-                        )}
-                      />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">{alerta.titulo}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">{alerta.descricao}</p>
+              <ul className="max-h-80 divide-y divide-border overflow-y-auto">
+                {notificacoes.map((notificacao) => (
+                  <li key={notificacao.id}>
+                    <button
+                      type="button"
+                      className={cn(
+                        "w-full px-4 py-3 text-left transition-colors hover:bg-muted",
+                        !notificacao.lida && "bg-primary-subtle/40",
+                      )}
+                      onClick={() => void marcarUma(notificacao)}
+                    >
+                      <div className="flex items-start gap-2">
+                        <span
+                          className={cn(
+                            "mt-1.5 size-2 shrink-0 rounded-full",
+                            notificacao.severidade === "alta"
+                              ? "bg-danger"
+                              : notificacao.severidade === "media"
+                                ? "bg-warning"
+                                : "bg-info",
+                          )}
+                        />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground">{notificacao.titulo}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{notificacao.descricao}</p>
+                        </div>
                       </div>
-                    </div>
+                    </button>
                   </li>
                 ))}
               </ul>

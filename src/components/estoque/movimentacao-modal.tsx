@@ -21,7 +21,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatNumber } from "@/lib/format";
-import type { Produto } from "@/types";
+import { ApiError } from "@/lib/api";
+import { registrarMovimentacaoApi } from "@/services/estoque";
+import type { MovimentacaoEstoque, Produto } from "@/types";
 
 const movimentacaoSchema = z.object({
   produtoId: z.string().min(1, "Selecione o produto."),
@@ -31,8 +33,8 @@ const movimentacaoSchema = z.object({
     .min(1, "Informe a quantidade.")
     .refine((valor) => Number(valor) > 0, "A quantidade deve ser maior que zero."),
   data: z.string().min(1, "Informe a data da movimentação."),
-  responsavel: z.string().min(3, "Informe quem registrou a movimentação."),
   motivo: z.string().min(3, "Descreva o motivo da movimentação."),
+  procedimentoId: z.string().optional(),
 });
 
 type MovimentacaoFormValues = z.infer<typeof movimentacaoSchema>;
@@ -41,16 +43,20 @@ interface MovimentacaoModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   produtos: Produto[];
+  procedimentos?: { id: string; nome: string }[];
   dataPadrao: string;
   produtoSelecionadoId?: string;
+  onRegistrada?: (resultado: { produto: Produto; movimentacao: MovimentacaoEstoque }) => void;
 }
 
 export function MovimentacaoModal({
   open,
   onOpenChange,
   produtos,
+  procedimentos = [],
   dataPadrao,
   produtoSelecionadoId,
+  onRegistrada,
 }: MovimentacaoModalProps) {
   const {
     register,
@@ -66,8 +72,8 @@ export function MovimentacaoModal({
       tipo: "entrada",
       quantidade: "",
       data: dataPadrao,
-      responsavel: "",
       motivo: "",
+      procedimentoId: "",
     },
   });
 
@@ -78,8 +84,8 @@ export function MovimentacaoModal({
         tipo: "entrada",
         quantidade: "",
         data: dataPadrao,
-        responsavel: "",
         motivo: "",
+        procedimentoId: "",
       });
     }
   }, [open, produtoSelecionadoId, dataPadrao, reset]);
@@ -94,15 +100,24 @@ export function MovimentacaoModal({
     : null;
 
   async function onSubmit(values: MovimentacaoFormValues) {
-    // TODO: substituir pela chamada real de registro de movimentação quando a API estiver disponível.
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const nome = produtos.find((item) => item.id === values.produtoId)?.nome ?? "Produto";
-    toast.success(values.tipo === "entrada" ? "Entrada registrada" : "Saída registrada", {
-      description: `${nome} · ${formatNumber(Number(values.quantidade))} ${produto?.unidadeMedida ?? "un"}`,
-    });
-
-    onOpenChange(false);
+    try {
+      const resultado = await registrarMovimentacaoApi({
+        produtoId: values.produtoId,
+        tipo: values.tipo,
+        quantidade: Number(values.quantidade),
+        data: values.data,
+        motivo: values.motivo,
+        procedimentoId: values.procedimentoId || null,
+      });
+      const nome = resultado.produto.nome;
+      toast.success(values.tipo === "entrada" ? "Entrada registrada" : "Saída registrada", {
+        description: `${nome} · ${formatNumber(Number(values.quantidade))} ${resultado.produto.unidadeMedida}`,
+      });
+      onRegistrada?.(resultado);
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível registrar a movimentação.");
+    }
   }
 
   return (
@@ -165,14 +180,26 @@ export function MovimentacaoModal({
                 <Input id="data" type="date" aria-invalid={Boolean(errors.data)} {...register("data")} />
               </FormField>
 
-              <FormField label="Responsável" htmlFor="responsavel" error={errors.responsavel?.message} required>
-                <Input
-                  id="responsavel"
-                  placeholder="Quem realizou o lançamento"
-                  aria-invalid={Boolean(errors.responsavel)}
-                  {...register("responsavel")}
-                />
-              </FormField>
+              {procedimentos.length > 0 && (
+                <FormField label="Procedimento (opcional)" htmlFor="procedimentoId">
+                  <Select
+                    value={watch("procedimentoId") || "nenhum"}
+                    onValueChange={(valor) => setValue("procedimentoId", valor === "nenhum" ? "" : valor)}
+                  >
+                    <SelectTrigger id="procedimentoId">
+                      <SelectValue placeholder="Não vinculado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nenhum">Não vinculado</SelectItem>
+                      {procedimentos.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              )}
 
               <FormField label="Motivo" htmlFor="motivo" error={errors.motivo?.message} required full>
                 <Textarea

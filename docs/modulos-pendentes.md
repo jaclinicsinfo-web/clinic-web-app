@@ -19,6 +19,9 @@ A especificação completa está em [`especificacao-erp-clinicas.md`](./especifi
 | Prontuário e documentos do paciente (evolução, anexos, log de acesso) | Pronto |
 | Financeiro (receber, pagar, fluxo, lotes de convênio, comissões, formas de pagamento) | Pronto |
 | Dados da clínica e unidades | Pronto |
+| Estoque | Pronto |
+| Recuperação de senha | Pronto |
+| Notificações (sino) | Pronto |
 
 O profissional de saúde vê **só a própria agenda** e os pacientes em que é preferido **ou** já teve agendamento. O vínculo de preferência aponta para o cadastro clínico em `profissionais`, não mais para a conta de usuário.
 
@@ -34,11 +37,11 @@ O profissional de saúde vê **só a própria agenda** e os pacientes em que é 
 | Financeiro | Integrada | Pronto | — |
 | Formas de pagamento | Integrada | Pronto | — |
 | Dados da clínica / unidades | Integrada | Pronto | — |
+| Estoque | Integrada | Pronto | — |
+| Recuperação de senha | Integrada | Pronto | — |
+| Notificações | Integrada (sino) | Pronto | — |
 | Dashboard | Mock | Falta | 1 |
 | Relatórios | Mock | Falta | 2 |
-| Estoque | Mock | Falta | 3 |
-| Recuperação de senha | Não há | Falta | transversal |
-| Notificações e busca global | Só o desenho | Falta | transversal |
 
 ---
 
@@ -162,14 +165,16 @@ Ainda mock nesta área: **modelos de mensagem** e **integrações** (gateway, Wh
 
 ## 8. Estoque
 
-`/estoque` é mock e, na especificação, é opcional / plano avançado.
+Tela `/estoque` grava no banco: produtos/insumos, movimentações e consumo.
 
-- Produtos (categoria, unidade, mínimo, custo, fornecedor)
-- Entrada e saída (avulsa ou ligada a procedimento)
-- Alerta de estoque baixo
-- Relatório de consumo
+Já persiste:
 
-Pode ficar por último.
+- Cadastro de produtos (nome, categoria, unidade de medida, quantidade, mínimo, custo, fornecedor)
+- Entrada e saída (opcionalmente ligada a um procedimento)
+- Alerta de estoque baixo (na tela e no sino de notificações)
+- Consumo agrupado pelas saídas registradas
+
+Unidades inativas de produto deixam de aparecer nas novas movimentações. O saldo não pode ficar negativo.
 
 ## 9. O que falta **dentro** de Pacientes
 
@@ -188,9 +193,9 @@ Recepção e Financeiro não veem prontuário nem documentos clínicos.
 
 ## 10. Transversal (não é item de menu)
 
-- Recuperação e redefinição de senha
+- ~~Recuperação e redefinição de senha~~ — feito (`/esqueci-senha` e `/redefinir-senha`; envio por SMTP se configurado)
+- ~~Centro de notificações (sino)~~ — feito (estoque baixo, despesas vencidas, carteirinhas)
 - Busca global na topbar
-- Centro de notificações (sino)
 - Documentos do **profissional** (contratos/certidões) — os do paciente já existem
 - Envio real de lembretes (WhatsApp/e-mail)
 
@@ -206,9 +211,9 @@ Segue a seção 17 da especificação, ajustada ao que já existe:
 4. ~~Prontuário e documentos do paciente~~ — feito
 5. ~~Financeiro~~ — feito (cobrança a partir do atendimento; extrato do paciente)
 6. ~~Dados da clínica~~ — feito (identidade, endereço, logo e CRUD de unidades)
-7. **Dashboard** com números reais
-8. **Relatórios**
-9. **Estoque**, se o negócio precisar
-10. Recuperação de senha, lembretes e notificações
+7. ~~Estoque~~ — feito (produtos, movimentações, consumo e alerta de mínimo)
+8. ~~Recuperação de senha e notificações~~ — feito
+9. **Dashboard** com números reais
+10. **Relatórios**
 
 Cada módulo deve seguir o padrão já usado: Model → Controller → View na API, e `src/services` no painel sem mock.

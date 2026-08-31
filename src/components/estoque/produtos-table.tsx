@@ -2,26 +2,58 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertTriangle, ArrowDownUp } from "lucide-react";
+import { AlertTriangle, ArrowDownUp, MoreHorizontal, Pencil, Plus, Power } from "lucide-react";
+import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { DataTable } from "@/components/shared/data-table";
 import { MovimentacaoModal } from "@/components/estoque/movimentacao-modal";
+import { ProdutoDialog } from "@/components/estoque/produto-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatNumber } from "@/lib/format";
-import type { Produto } from "@/types";
+import { ApiError } from "@/lib/api";
+import { alternarProdutoApi } from "@/services/estoque";
+import type { MovimentacaoEstoque, Produto } from "@/types";
 
 interface ProdutosTableProps {
   produtos: Produto[];
   categorias: string[];
+  unidadesMedida: string[];
+  procedimentos: { id: string; nome: string }[];
   dataPadrao: string;
+  podeCriar: boolean;
+  podeEditar: boolean;
+  onProdutoSalvo: (produto: Produto) => void;
+  onProdutoAtualizado: (produto: Produto) => void;
+  onMovimentacao: (produto: Produto, movimentacao: MovimentacaoEstoque) => void;
 }
 
-export function ProdutosTable({ produtos, categorias, dataPadrao }: ProdutosTableProps) {
+export function ProdutosTable({
+  produtos,
+  categorias,
+  unidadesMedida,
+  procedimentos,
+  dataPadrao,
+  podeCriar,
+  podeEditar,
+  onProdutoSalvo,
+  onProdutoAtualizado,
+  onMovimentacao,
+}: ProdutosTableProps) {
   const [categoria, setCategoria] = React.useState("todas");
   const [apenasAbaixo, setApenasAbaixo] = React.useState(false);
   const [movimentando, setMovimentando] = React.useState<Produto | null>(null);
+  const [editando, setEditando] = React.useState<Produto | null>(null);
+  const [novoAberto, setNovoAberto] = React.useState(false);
+  const [alternando, setAlternando] = React.useState<Produto | null>(null);
 
   const dados = React.useMemo(() => {
     return produtos.filter((produto) => {
@@ -65,12 +97,13 @@ export function ProdutosTable({ produtos, categorias, dataPadrao }: ProdutosTabl
               <span className={abaixo ? "font-semibold tabular-nums text-danger" : "font-medium tabular-nums"}>
                 {formatNumber(produto.quantidadeAtual)}
               </span>
-              {abaixo && (
+              {abaixo && produto.ativo !== false && (
                 <Badge tone="danger">
                   <AlertTriangle className="size-3" />
                   Estoque baixo
                 </Badge>
               )}
+              {produto.ativo === false && <Badge tone="outline">Inativo</Badge>}
             </span>
           );
         },
@@ -103,22 +136,46 @@ export function ProdutosTable({ produtos, categorias, dataPadrao }: ProdutosTabl
         enableSorting: false,
         enableHiding: false,
         enableGlobalFilter: false,
-        size: 72,
+        size: 88,
         cell: ({ row }) => (
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={`Movimentar ${row.original.nome}`}
-              onClick={() => setMovimentando(row.original)}
-            >
-              <ArrowDownUp />
-            </Button>
+          <div className="flex justify-end gap-1">
+            {podeCriar && row.original.ativo !== false && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Movimentar ${row.original.nome}`}
+                onClick={() => setMovimentando(row.original)}
+              >
+                <ArrowDownUp />
+              </Button>
+            )}
+            {podeEditar && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon-sm" aria-label={`Ações de ${row.original.nome}`}>
+                    <MoreHorizontal />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => setEditando(row.original)}>
+                    <Pencil />
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    destructive={row.original.ativo !== false}
+                    onSelect={() => setAlternando(row.original)}
+                  >
+                    <Power />
+                    {row.original.ativo === false ? "Reativar" : "Inativar"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         ),
       },
     ],
-    [],
+    [podeCriar, podeEditar],
   );
 
   return (
@@ -130,7 +187,7 @@ export function ProdutosTable({ produtos, categorias, dataPadrao }: ProdutosTabl
         exportFileName="estoque-produtos"
         pageSize={10}
         emptyTitle="Nenhum produto encontrado"
-        emptyDescription="Ajuste os filtros para ver outros insumos do estoque."
+        emptyDescription="Cadastre insumos para controlar saldo, mínimo e movimentações."
         toolbar={
           <>
             <Select value={categoria} onValueChange={setCategoria}>
@@ -156,6 +213,13 @@ export function ProdutosTable({ produtos, categorias, dataPadrao }: ProdutosTabl
               <AlertTriangle />
               Abaixo do mínimo
             </Button>
+
+            {podeCriar && (
+              <Button onClick={() => setNovoAberto(true)}>
+                <Plus />
+                Novo produto
+              </Button>
+            )}
           </>
         }
       />
@@ -163,9 +227,57 @@ export function ProdutosTable({ produtos, categorias, dataPadrao }: ProdutosTabl
       <MovimentacaoModal
         open={Boolean(movimentando)}
         onOpenChange={(aberto) => !aberto && setMovimentando(null)}
-        produtos={produtos}
+        produtos={produtos.filter((item) => item.ativo !== false)}
+        procedimentos={procedimentos}
         dataPadrao={dataPadrao}
         produtoSelecionadoId={movimentando?.id}
+        onRegistrada={(resultado) => {
+          onMovimentacao(resultado.produto, resultado.movimentacao);
+          setMovimentando(null);
+        }}
+      />
+
+      <ProdutoDialog
+        open={novoAberto || Boolean(editando)}
+        onOpenChange={(aberto) => {
+          if (!aberto) {
+            setNovoAberto(false);
+            setEditando(null);
+          }
+        }}
+        categorias={categorias}
+        unidadesMedida={unidadesMedida}
+        produto={editando}
+        onSalvo={(produto) => {
+          if (editando) onProdutoAtualizado(produto);
+          else onProdutoSalvo(produto);
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(alternando)}
+        onOpenChange={(aberto) => !aberto && setAlternando(null)}
+        title={alternando?.ativo === false ? "Reativar produto?" : "Inativar produto?"}
+        description={
+          alternando?.ativo === false
+            ? `${alternando.nome} voltará a aparecer nas movimentações.`
+            : `${alternando?.nome ?? ""} deixará de aparecer nas novas movimentações.`
+        }
+        confirmLabel={alternando?.ativo === false ? "Reativar" : "Inativar"}
+        destructive={alternando?.ativo !== false}
+        onConfirm={async () => {
+          if (!alternando) return;
+          try {
+            const atualizado = await alternarProdutoApi(alternando.id);
+            onProdutoAtualizado(atualizado);
+            toast.success(atualizado.ativo === false ? "Produto inativado" : "Produto reativado", {
+              description: atualizado.nome,
+            });
+            setAlternando(null);
+          } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : "Não foi possível atualizar o produto.");
+          }
+        }}
       />
     </>
   );

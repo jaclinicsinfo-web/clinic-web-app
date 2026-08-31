@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -293,15 +294,23 @@ export function LoginForm() {
           </div>
         </FormField>
 
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="lembrar"
-            checked={watch("lembrar")}
-            onCheckedChange={(checked) => setValue("lembrar", Boolean(checked))}
-          />
-          <Label htmlFor="lembrar" className="font-normal text-muted-foreground">
-            Manter conectado
-          </Label>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="lembrar"
+              checked={watch("lembrar")}
+              onCheckedChange={(checked) => setValue("lembrar", Boolean(checked))}
+            />
+            <Label htmlFor="lembrar" className="font-normal text-muted-foreground">
+              Manter conectado
+            </Label>
+          </div>
+          <Link
+            href="/esqueci-senha"
+            className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+          >
+            Esqueci minha senha
+          </Link>
         </div>
 
         <Button type="submit" className="w-full" size="lg" loading={isSubmitting}>

@@ -132,3 +132,11 @@ export async function encerrarSessaoApi() {
     clearToken();
   }
 }
+
+export async function solicitarRecuperacaoSenha(email: string) {
+  return api.post<{ mensagem: string }>("/auth/recuperar-senha", { email });
+}
+
+export async function redefinirSenhaApi(token: string, senha: string) {
+  return api.post<{ mensagem: string }>("/auth/redefinir-senha", { token, senha });
+}
