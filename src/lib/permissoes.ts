@@ -1,5 +1,5 @@
 import { navGroups } from "@/lib/navigation";
-import { isAdministrador } from "@/lib/plano";
+import { isAdministrador, isAdminOuGestor } from "@/lib/plano";
 import type { AcaoPermissao, ModuloSistema, Permissao } from "@/types";
 
 const MODULOS: ModuloSistema[] = [
@@ -68,9 +68,11 @@ export function moduloDaRota(pathname: string): ModuloSistema | null {
 }
 
 export function rotaExigeAdministrador(pathname: string) {
-  return (
-    pathname.startsWith("/configuracoes/usuarios") || pathname.startsWith("/configuracoes/permissoes")
-  );
+  return pathname.startsWith("/configuracoes/permissoes");
+}
+
+export function rotaExigeAdminOuGestor(pathname: string) {
+  return pathname.startsWith("/configuracoes/usuarios");
 }
 
 export function primeiraRotaPermitida(permissoes: Permissao[] | undefined | null) {
@@ -88,6 +90,7 @@ export function podeAcessarRota(
   perfilNome: string | undefined,
 ) {
   if (rotaExigeAdministrador(pathname) && !isAdministrador(perfilNome)) return false;
+  if (rotaExigeAdminOuGestor(pathname)) return isAdminOuGestor(perfilNome);
   const modulo = moduloDaRota(pathname);
   if (!modulo) return true;
   return temPermissao(permissoes, modulo);

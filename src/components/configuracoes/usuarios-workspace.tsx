@@ -10,14 +10,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { ApiError } from "@/lib/api";
-import { isAdministrador, planoEstaAcimaDoTeto, rotuloUso } from "@/lib/plano";
-import { ativarUsuarioApi, criarUsuarioApi, inativarUsuarioApi, listarUsuariosApi } from "@/services/usuarios";
+import { isAdministrador, isAdminOuGestor, planoEstaAcimaDoTeto, rotuloUso } from "@/lib/plano";
+import {
+  alterarPerfilUsuarioApi,
+  ativarUsuarioApi,
+  criarUsuarioApi,
+  inativarUsuarioApi,
+  listarUsuariosApi,
+} from "@/services/usuarios";
 import type { PerfilAcesso, Unidade, Usuario } from "@/types";
 
 export function UsuariosWorkspace() {
   const sessao = useSessaoStore((state) => state.sessao);
   const atualizarUso = useSessaoStore((state) => state.atualizarUso);
   const admin = isAdministrador(sessao?.perfil);
+  const adminOuGestor = isAdminOuGestor(sessao?.perfil);
 
   const [usuarios, setUsuarios] = React.useState<Usuario[]>([]);
   const [perfis, setPerfis] = React.useState<PerfilAcesso[]>([]);
@@ -70,6 +77,12 @@ export function UsuariosWorkspace() {
     atualizarUso(data.usoUsuarios);
   }
 
+  async function alterarPerfil(id: string, perfilId: string) {
+    const data = await alterarPerfilUsuarioApi(id, perfilId);
+    setUsuarios((atual) => atual.map((item) => (item.id === id ? data.usuario : item)));
+    atualizarUso(data.usoUsuarios);
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -111,10 +124,13 @@ export function UsuariosWorkspace() {
           carregando={carregando}
           podeAdicionar={Boolean(uso?.podeAdicionar) && admin && !acimaDoTeto}
           podeGerenciar={admin}
+          podeAlterarPerfil={adminOuGestor}
+          podeAtribuirAdministrador={admin}
           usuarioAtualId={sessao?.id}
           onCriar={criar}
           onInativar={inativar}
           onAtivar={ativar}
+          onAlterarPerfil={alterarPerfil}
         />
       )}
     </div>

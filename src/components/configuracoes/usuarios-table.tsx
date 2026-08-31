@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Plus, UserCheck, UserX } from "lucide-react";
+import { MoreHorizontal, Pencil, Plus, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -26,6 +26,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -51,10 +52,13 @@ export function UsuariosTable({
   carregando,
   podeAdicionar,
   podeGerenciar,
+  podeAlterarPerfil,
+  podeAtribuirAdministrador,
   usuarioAtualId,
   onCriar,
   onInativar,
   onAtivar,
+  onAlterarPerfil,
 }: {
   usuarios: Usuario[];
   perfis: PerfilAcesso[];
@@ -62,13 +66,18 @@ export function UsuariosTable({
   carregando?: boolean;
   podeAdicionar: boolean;
   podeGerenciar: boolean;
+  podeAlterarPerfil: boolean;
+  podeAtribuirAdministrador: boolean;
   usuarioAtualId?: string;
   onCriar: (values: FormValues) => Promise<void>;
   onInativar: (id: string) => Promise<void>;
   onAtivar: (id: string) => Promise<void>;
+  onAlterarPerfil: (id: string, perfilId: string) => Promise<void>;
 }) {
   const [status, setStatus] = React.useState("todos");
   const [aberto, setAberto] = React.useState(false);
+  const [editando, setEditando] = React.useState<Usuario | null>(null);
+  const [perfilSelecionado, setPerfilSelecionado] = React.useState("");
   const [inativando, setInativando] = React.useState<Usuario | null>(null);
   const [ativando, setAtivando] = React.useState<Usuario | null>(null);
   const [salvando, setSalvando] = React.useState(false);
@@ -76,6 +85,11 @@ export function UsuariosTable({
   const dados = React.useMemo(
     () => usuarios.filter((usuario) => status === "todos" || usuario.status === status),
     [usuarios, status],
+  );
+
+  const perfisAtribuiveis = React.useMemo(
+    () => (podeAtribuirAdministrador ? perfis : perfis.filter((perfil) => perfil.nome !== "Administrador")),
+    [perfis, podeAtribuirAdministrador],
   );
 
   const {
@@ -139,7 +153,10 @@ export function UsuariosTable({
         cell: ({ row }) => {
           const proprio = row.original.id === usuarioAtualId;
           const ativo = row.original.status === "ativo";
-          if (!podeGerenciar || proprio) return null;
+          const alvoAdmin = row.original.perfilNome === "Administrador";
+          const podePerfil = podeAlterarPerfil && !proprio && (podeAtribuirAdministrador || !alvoAdmin);
+          const podeStatus = podeGerenciar && !proprio;
+          if (!podePerfil && !podeStatus) return null;
 
           return (
             <div className="flex justify-end" onClick={(event) => event.stopPropagation()}>
@@ -150,17 +167,30 @@ export function UsuariosTable({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {ativo ? (
-                    <DropdownMenuItem destructive onSelect={() => setInativando(row.original)}>
-                      <UserX />
-                      Inativar
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onSelect={() => setAtivando(row.original)}>
-                      <UserCheck />
-                      Reativar
+                  {podePerfil && (
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        setEditando(row.original);
+                        setPerfilSelecionado(row.original.perfilId);
+                      }}
+                    >
+                      <Pencil />
+                      Alterar perfil
                     </DropdownMenuItem>
                   )}
+                  {podePerfil && podeStatus && <DropdownMenuSeparator />}
+                  {podeStatus &&
+                    (ativo ? (
+                      <DropdownMenuItem destructive onSelect={() => setInativando(row.original)}>
+                        <UserX />
+                        Inativar
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onSelect={() => setAtivando(row.original)}>
+                        <UserCheck />
+                        Reativar
+                      </DropdownMenuItem>
+                    ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -168,7 +198,7 @@ export function UsuariosTable({
         },
       },
     ],
-    [unidades, podeGerenciar, usuarioAtualId],
+    [unidades, podeGerenciar, podeAlterarPerfil, podeAtribuirAdministrador, usuarioAtualId],
   );
 
   return (
@@ -191,14 +221,16 @@ export function UsuariosTable({
                 <SelectItem value="inativo">Inativos</SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              onClick={() => setAberto(true)}
-              disabled={!podeAdicionar}
-              title={!podeAdicionar ? "Limite do plano atingido ou sem permissão." : undefined}
-            >
-              <Plus />
-              Novo usuário
-            </Button>
+            {podeGerenciar && (
+              <Button
+                onClick={() => setAberto(true)}
+                disabled={!podeAdicionar}
+                title={!podeAdicionar ? "Limite do plano atingido ou sem permissão." : undefined}
+              >
+                <Plus />
+                Novo usuário
+              </Button>
+            )}
           </>
         }
       />
@@ -280,6 +312,73 @@ export function UsuariosTable({
               </Button>
               <Button type="submit" loading={isSubmitting}>
                 Criar usuário
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(editando)}
+        onOpenChange={(estado) => {
+          if (!estado) {
+            setEditando(null);
+            setPerfilSelecionado("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Alterar perfil</DialogTitle>
+            <DialogDescription>
+              O acesso de {editando?.nome ?? "este usuário"} no painel segue o perfil escolhido.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (!editando || !perfilSelecionado) return;
+              setSalvando(true);
+              try {
+                await onAlterarPerfil(editando.id, perfilSelecionado);
+                toast.success("Perfil atualizado", {
+                  description: `${editando.nome} · ${perfis.find((item) => item.id === perfilSelecionado)?.nome ?? ""}`,
+                });
+                setEditando(null);
+                setPerfilSelecionado("");
+              } catch (error) {
+                toast.error(error instanceof ApiError ? error.message : "Não foi possível alterar o perfil.");
+              } finally {
+                setSalvando(false);
+              }
+            }}
+          >
+            <DialogBody className="space-y-4">
+              <FormField label="Perfil" required>
+                <Select value={perfilSelecionado} onValueChange={setPerfilSelecionado}>
+                  <SelectTrigger aria-label="Perfil">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {perfisAtribuiveis.map((perfil) => (
+                      <SelectItem key={perfil.id} value={perfil.id}>
+                        {perfil.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+            </DialogBody>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditando(null)}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                loading={salvando}
+                disabled={!perfilSelecionado || perfilSelecionado === editando?.perfilId}
+              >
+                Salvar perfil
               </Button>
             </DialogFooter>
           </form>

@@ -4,22 +4,30 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useSessaoStore } from "@/hooks/use-sessao";
-import { isAdministrador } from "@/lib/plano";
+import { temPermissao } from "@/lib/permissoes";
+import { isAdministrador, isAdminOuGestor } from "@/lib/plano";
 import { cn } from "@/lib/utils";
 
-const abas = [
+const abas: { label: string; href: string; visivel?: "admin" | "adminOuGestor" }[] = [
   { label: "Dados da clínica", href: "/configuracoes/clinica" },
-  { label: "Usuários", href: "/configuracoes/usuarios", admin: true },
-  { label: "Perfis e permissões", href: "/configuracoes/permissoes", admin: true },
+  { label: "Usuários", href: "/configuracoes/usuarios", visivel: "adminOuGestor" },
+  { label: "Perfis e permissões", href: "/configuracoes/permissoes", visivel: "admin" },
   { label: "Procedimentos", href: "/configuracoes/procedimentos" },
   { label: "Pagamentos", href: "/configuracoes/pagamentos" },
 ];
 
 export function ConfiguracoesTabs() {
   const pathname = usePathname();
-  const perfil = useSessaoStore((state) => state.sessao?.perfil);
+  const sessao = useSessaoStore((state) => state.sessao);
+  const perfil = sessao?.perfil;
   const admin = isAdministrador(perfil);
-  const visiveis = abas.filter((aba) => !aba.admin || admin);
+  const adminOuGestor = isAdminOuGestor(perfil);
+  const podeConfig = temPermissao(sessao?.permissoes, "configuracoes");
+  const visiveis = abas.filter((aba) => {
+    if (aba.visivel === "admin") return admin;
+    if (aba.visivel === "adminOuGestor") return adminOuGestor;
+    return podeConfig;
+  });
 
   return (
     <nav

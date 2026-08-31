@@ -7,7 +7,7 @@ import { ChevronDown, HeartPulse, PanelLeftClose, PanelLeftOpen } from "lucide-r
 
 import { navGroups, type NavItem } from "@/lib/navigation";
 import { temPermissao } from "@/lib/permissoes";
-import { isAdministrador } from "@/lib/plano";
+import { isAdministrador, isAdminOuGestor } from "@/lib/plano";
 import { cn } from "@/lib/utils";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -29,22 +29,23 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
   const sessao = useSessaoStore((state) => state.sessao);
   const permissoes = sessao?.permissoes;
   const admin = isAdministrador(sessao?.perfil);
+  const adminOuGestor = isAdminOuGestor(sessao?.perfil);
 
   const gruposVisiveis = navGroups
     .map((grupo) => ({
       ...grupo,
       items: grupo.items
-        .filter((item) => temPermissao(permissoes, item.modulo))
+        .filter((item) => temPermissao(permissoes, item.modulo) || (item.modulo === "configuracoes" && adminOuGestor))
         .map((item) => {
           if (!item.children) return item;
           const children = item.children.filter((child) => {
-            if (child.href.startsWith("/configuracoes/usuarios") || child.href.startsWith("/configuracoes/permissoes")) {
-              return admin;
-            }
-            return true;
+            if (child.href.startsWith("/configuracoes/usuarios")) return adminOuGestor;
+            if (child.href.startsWith("/configuracoes/permissoes")) return admin;
+            return temPermissao(permissoes, item.modulo);
           });
           return { ...item, href: children[0]?.href ?? item.href, children };
-        }),
+        })
+        .filter((item) => !item.children || item.children.length > 0),
     }))
     .filter((grupo) => grupo.items.length > 0);
 

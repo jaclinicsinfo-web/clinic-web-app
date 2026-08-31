@@ -48,6 +48,14 @@ export function isAdministrador(perfil: string | undefined) {
   return perfil === "Administrador";
 }
 
+export function isGestor(perfil: string | undefined) {
+  return perfil === "Gestor";
+}
+
+export function isAdminOuGestor(perfil: string | undefined) {
+  return isAdministrador(perfil) || isGestor(perfil);
+}
+
 export function isProfissionalSaude(perfil: string | undefined) {
   return perfil === "Profissional de saúde";
 }

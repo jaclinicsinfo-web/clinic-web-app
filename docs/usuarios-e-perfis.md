@@ -18,14 +18,19 @@ Na configuração inicial da clínica é criado o primeiro usuário, sempre com 
 
 ### Quem gerencia contas
 
-Somente o **Administrador** pode:
+O **Administrador** e o **Gestor** podem:
 
 - ver a lista de usuários
+- alterar o perfil de outros usuários
+
+Somente o **Administrador** pode:
+
 - criar contas
 - ativar ou inativar contas
 - abrir **Perfis e permissões**
+- atribuir o perfil Administrador ou alterar a conta de outro administrador
 
-Não é possível inativar a própria conta nem o último administrador da clínica.
+Não é possível alterar o próprio perfil, inativar a própria conta nem o último administrador da clínica.
 
 ### Dados da conta
 
@@ -55,7 +60,7 @@ No primeiro setup a clínica recebe cinco **perfis de sistema**:
 | Perfil | Função |
 |---|---|
 | Administrador | Acesso total, inclusive configurações e gestão de contas |
-| Gestor | Opera a clínica (agenda, profissionais, financeiro, relatórios), sem configurações |
+| Gestor | Opera a clínica e altera o perfil de outros usuários, sem o restante das configurações |
 | Recepção | Pacientes, agenda e financeiro básico (recebimentos) |
 | Profissional de saúde | Agenda e pacientes, sem financeiro geral nem cadastro de profissionais |
 | Financeiro | Financeiro, convênios e relatórios, sem configurações |
@@ -81,7 +86,7 @@ Cada módulo tem quatro ações:
 
 Se **visualizar** estiver desligado, o módulo some do menu. Abrir a URL direto redireciona para a primeira tela permitida.
 
-**Usuários** e **Perfis e permissões** exigem perfil Administrador, mesmo que Configurações esteja visível.
+**Usuários** exige perfil Administrador ou Gestor. **Perfis e permissões** exige perfil Administrador, mesmo que Configurações esteja visível.
 
 ## Matriz padrão
 
@@ -161,11 +166,13 @@ No dashboard deste perfil, cards de faturamento, contas a receber/pagar, gráfic
 | Convênios | ● | ● | ● | ● | ● |
 | Estoque | ● | ● | | ● | ● |
 | Relatórios | ● | ● | | | ● |
-| Configurações | ● | | | | |
+| Configurações | ● | ● | | | |
+
+O Gestor vê Configurações apenas com a aba **Usuários**.
 
 ## Onde isso vive no produto
 
-- **Configurações › Usuários** — contas da clínica (somente administrador)
+- **Configurações › Usuários** — contas da clínica (administrador e gestor; gestor altera perfil, sem criar/inativar)
 - **Configurações › Perfis e permissões** — matriz por perfil, com gravação no banco (somente administrador; perfil Administrador bloqueado para edição)
 
 As permissões do usuário logado entram na sessão no login e são atualizadas em `/auth/me`. O menu e a proteção de rotas usam esse perfil real, não uma lista fixa no frontend.

@@ -36,3 +36,9 @@ export async function inativarUsuarioApi(id: string) {
 export async function ativarUsuarioApi(id: string) {
   return api.patch<{ usuario: Usuario; usoUsuarios: UsoUsuarios }>(`/usuarios/${id}/ativar`);
 }
+
+export async function alterarPerfilUsuarioApi(id: string, perfilId: string) {
+  return api.patch<{ usuario: Usuario; usoUsuarios: UsoUsuarios }>(`/usuarios/${id}/perfil`, {
+    perfilId,
+  });
+}
