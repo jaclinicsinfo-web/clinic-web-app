@@ -1,4 +1,5 @@
 import { api, ApiError, clearToken, setToken } from "@/lib/api";
+import { modulosDoPlano } from "@/lib/modulos-plano";
 import { normalizarPermissoes } from "@/lib/permissoes";
 import type { PerfilSessao, Permissao, PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
 
@@ -46,12 +47,13 @@ function mensagemErro(error: unknown, fallback: string) {
 function lerPlano(raw: Partial<SessaoApi> | null | undefined): PlanoAtual | null {
   const plano = raw?.plano;
   if (!plano?.codigo) return null;
+  const codigo = plano.codigo;
   return {
-    codigo: plano.codigo,
+    codigo,
     nome: plano.nome,
     limiteUsuarios: plano.limiteUsuarios ?? null,
-    limiteUnidades: plano.limiteUnidades ?? (plano.codigo === "essencial" ? 1 : null),
-    modulos: Array.isArray(plano.modulos) ? plano.modulos : [],
+    limiteUnidades: plano.limiteUnidades ?? (codigo === "essencial" ? 1 : null),
+    modulos: plano.modulos?.length ? plano.modulos : modulosDoPlano(codigo),
   };
 }
 
