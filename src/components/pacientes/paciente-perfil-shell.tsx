@@ -9,7 +9,9 @@ import { PacienteHeader } from "@/components/pacientes/paciente-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { useEntidadeLabelsStore } from "@/hooks/use-entidade-labels";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import { ApiError } from "@/lib/api";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
 import { obterPacienteApi, type DetalhePacienteResponse } from "@/services/pacientes";
 import type { Paciente } from "@/types";
 
@@ -36,6 +38,7 @@ export function PacientePerfilShell({
   children: React.ReactNode;
 }) {
   const setPacienteNome = useEntidadeLabelsStore((state) => state.setPaciente);
+  const plano = useSessaoStore((state) => state.sessao?.plano);
   const [detalhe, setDetalhe] = React.useState<DetalhePacienteResponse | null>(null);
   const [carregando, setCarregando] = React.useState(true);
   const [erro, setErro] = React.useState<string | null>(null);
@@ -107,7 +110,9 @@ export function PacientePerfilShell({
     ...(detalhe.podeVerProntuario
       ? [{ label: "Documentos", href: `/pacientes/${pacienteId}/documentos` }]
       : []),
-    { label: "Financeiro", href: `/pacientes/${pacienteId}/financeiro` },
+    ...(planoIncluiModulo(plano, "financeiro")
+      ? [{ label: "Financeiro", href: `/pacientes/${pacienteId}/financeiro` }]
+      : []),
   ];
 
   return (

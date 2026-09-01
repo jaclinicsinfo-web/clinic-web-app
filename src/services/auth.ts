@@ -50,6 +50,8 @@ function lerPlano(raw: Partial<SessaoApi> | null | undefined): PlanoAtual | null
     codigo: plano.codigo,
     nome: plano.nome,
     limiteUsuarios: plano.limiteUsuarios ?? null,
+    limiteUnidades: plano.limiteUnidades ?? (plano.codigo === "essencial" ? 1 : null),
+    modulos: Array.isArray(plano.modulos) ? plano.modulos : [],
   };
 }
 

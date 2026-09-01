@@ -47,7 +47,15 @@ Usuário inativo não entra no painel.
 
 ### Limite do plano
 
-O número de contas ativas segue o plano configurado no deploy (`essencial`, `profissional` ou `ilimitado`). Quando o limite estoura, o administrador precisa inativar o excesso para voltar a criar usuários. Nada é excluído automaticamente.
+O número de contas ativas e de unidades segue o plano configurado no deploy (`essencial`, `profissional` ou `ilimitado`). Quando o limite estoura, o administrador precisa inativar o excesso para voltar a criar. Nada é excluído automaticamente.
+
+| Plano | Contas | Unidades | Módulos |
+|---|---|---|---|
+| Essencial | até 5 | 1 | Núcleo operacional (dashboard, pacientes, agenda, prontuário, profissionais, convênios, configurações/LGPD) |
+| Profissional | até 20 | várias | Núcleo + financeiro completo, relatórios e estoque |
+| Ilimitado | sem limite | sem limite | Tudo + integrações e lembretes, Power BI e agente de IA |
+
+O plano corta o módulo mesmo que o perfil tenha a permissão marcada. Integrações, Power BI e Agente de IA já aparecem no menu (com cadeado fora do Ilimitado); as telas ainda são reservadas para implementação.
 
 ### Unidade
 
@@ -75,6 +83,7 @@ O menu é agrupado assim:
 |---|---|
 | Operação | Dashboard, Pacientes, Agenda, Profissionais |
 | Gestão | Financeiro, Convênios, Estoque, Relatórios |
+| Avançado | Integrações e lembretes, Power BI, Agente de IA |
 | Sistema | Configurações |
 
 Cada módulo tem quatro ações:
@@ -108,6 +117,9 @@ Acesso total em todos os módulos (V C E X).
 | Convênios | ● | ● | ● | |
 | Estoque | ● | ● | ● | |
 | Relatórios | ● | | | |
+| Integrações e lembretes | ● | | | |
+| Power BI | ● | | | |
+| Agente de IA | ● | | | |
 | Configurações | | | | |
 
 ### Recepção
@@ -166,6 +178,9 @@ No dashboard deste perfil, cards de faturamento, contas a receber/pagar, gráfic
 | Convênios | ● | ● | ● | ● | ● |
 | Estoque | ● | ● | | ● | ● |
 | Relatórios | ● | ● | | | ● |
+| Integrações | ● | ● | | | |
+| Power BI | ● | ● | | | |
+| Agente de IA | ● | ● | | | |
 | Configurações | ● | ● | | | |
 
 O Gestor vê Configurações apenas com a aba **Usuários**.

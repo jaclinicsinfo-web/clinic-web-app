@@ -30,6 +30,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ApiError } from "@/lib/api";
+import { limiteUnidadesDoPlano } from "@/lib/modulos-plano";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import {
   ativarUnidadeApi,
   atualizarUnidadeApi,
@@ -57,6 +59,7 @@ export function UnidadesClinica({
   podeEditar: boolean;
   onMutacao: (resultado: UnidadeMutacao, unidades: Unidade[]) => void | Promise<void>;
 }) {
+  const plano = useSessaoStore((state) => state.sessao?.plano);
   const [aberto, setAberto] = React.useState(false);
   const [editando, setEditando] = React.useState<Unidade | null>(null);
   const [inativando, setInativando] = React.useState<Unidade | null>(null);
@@ -105,6 +108,8 @@ export function UnidadesClinica({
   }
 
   const ativas = unidades.filter((item) => item.ativo !== false).length;
+  const limiteUnidades = limiteUnidadesDoPlano(plano);
+  const noLimiteUnidades = limiteUnidades != null && ativas >= limiteUnidades;
 
   return (
     <>
@@ -112,10 +117,14 @@ export function UnidadesClinica({
         <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
           <div>
             <CardTitle>Unidades</CardTitle>
-            <CardDescription>Filiais disponíveis no seletor da topbar (multi-unidade).</CardDescription>
+            <CardDescription>
+              {limiteUnidades == null
+                ? "Filiais disponíveis no seletor da topbar (multi-unidade)."
+                : `O plano ${plano?.nome ?? "Essencial"} inclui ${limiteUnidades} unidade. Faça upgrade para cadastrar filiais.`}
+            </CardDescription>
           </div>
           {podeCriar && (
-            <Button onClick={abrirNova}>
+            <Button onClick={abrirNova} disabled={noLimiteUnidades} title={noLimiteUnidades ? "Limite do plano atingido." : undefined}>
               <Plus />
               Nova unidade
             </Button>
@@ -167,7 +176,10 @@ export function UnidadesClinica({
                                   Inativar
                                 </DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem onSelect={() => setAtivando(unidade)}>
+                                <DropdownMenuItem
+                                  onSelect={() => setAtivando(unidade)}
+                                  disabled={noLimiteUnidades}
+                                >
                                   <Power />
                                   Reativar
                                 </DropdownMenuItem>

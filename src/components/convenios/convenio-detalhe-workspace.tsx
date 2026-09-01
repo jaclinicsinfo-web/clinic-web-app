@@ -12,10 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import { formatCurrency, formatPercent, formatPhone } from "@/lib/format";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import { obterConvenioApi, type IndicadoresConvenio, type PacienteConvenio } from "@/services/convenios";
 import type { Convenio, Procedimento } from "@/types";
 
 export function ConvenioDetalheWorkspace({ convenioId }: { convenioId: string }) {
+  const plano = useSessaoStore((state) => state.sessao?.plano);
+  const mostraFaturamento = planoIncluiModulo(plano, "financeiro");
   const [convenio, setConvenio] = React.useState<Convenio | null>(null);
   const [indicadores, setIndicadores] = React.useState<IndicadoresConvenio | null>(null);
   const [pacientes, setPacientes] = React.useState<PacienteConvenio[]>([]);
@@ -96,12 +100,14 @@ export function ConvenioDetalheWorkspace({ convenioId }: { convenioId: string })
                 </a>
               </Button>
             )}
-            <Button asChild>
-              <Link href={`/financeiro/convenios?convenio=${convenio.id}`}>
-                <Table2 />
-                Faturamento
-              </Link>
-            </Button>
+            {mostraFaturamento && (
+              <Button asChild>
+                <Link href={`/financeiro/convenios?convenio=${convenio.id}`}>
+                  <Table2 />
+                  Faturamento
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </Card>

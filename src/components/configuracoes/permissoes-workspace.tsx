@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ApiError } from "@/lib/api";
 import { isAdministrador } from "@/lib/plano";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
 import { normalizarPermissoes } from "@/lib/permissoes";
 import { listarPerfisApi, salvarPermissoesApi } from "@/services/perfis";
 import { modulosLabels } from "@/services/configuracoes";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import type { PerfilAcesso, Permissao } from "@/types";
 
 const acoes = [
@@ -24,6 +26,7 @@ const acoes = [
 ];
 
 export function PermissoesWorkspace() {
+  const plano = useSessaoStore((state) => state.sessao?.plano);
   const [perfis, setPerfis] = React.useState<PerfilAcesso[]>([]);
   const [perfilId, setPerfilId] = React.useState("");
   const [matriz, setMatriz] = React.useState<Record<string, Permissao[]>>({});
@@ -51,7 +54,7 @@ export function PermissoesWorkspace() {
   }, [carregar]);
 
   const perfil = perfis.find((item) => item.id === perfilId);
-  const permissoes = matriz[perfilId] ?? [];
+  const permissoes = (matriz[perfilId] ?? []).filter((item) => planoIncluiModulo(plano, item.modulo));
   const bloqueado = isAdministrador(perfil?.nome);
 
   function alterar(modulo: Permissao["modulo"], campo: keyof Omit<Permissao, "modulo">, valor: boolean) {

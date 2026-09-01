@@ -232,6 +232,6 @@ Segue a seção 17 da especificação, ajustada ao que já existe:
 9. ~~Dashboard~~ — feito (números reais; recorte por perfil)
 10. ~~Relatórios~~ — feito (período, abas, CSV)
 
-Os itens que restam não são módulo de menu: documentos do profissional, envio real de lembretes, modelos de mensagem e integrações.
+Os itens que restam não são módulo de menu pronto: documentos do profissional, envio real de lembretes, modelos de mensagem e as telas de Integrações, Power BI e Agente de IA (já reservadas no menu do Ilimitado).
 
 Cada módulo deve seguir o padrão já usado: Model → Controller → View na API, e `src/services` no painel sem mock.

@@ -4,16 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useSessaoStore } from "@/hooks/use-sessao";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
 import { temPermissao } from "@/lib/permissoes";
 import { isAdministrador, isAdminOuGestor } from "@/lib/plano";
 import { cn } from "@/lib/utils";
 
-const abas: { label: string; href: string; visivel?: "admin" | "adminOuGestor" }[] = [
+const abas: { label: string; href: string; visivel?: "admin" | "adminOuGestor"; moduloPlano?: "financeiro" }[] = [
   { label: "Dados da clínica", href: "/configuracoes/clinica" },
   { label: "Usuários", href: "/configuracoes/usuarios", visivel: "adminOuGestor" },
   { label: "Perfis e permissões", href: "/configuracoes/permissoes", visivel: "admin" },
   { label: "Procedimentos", href: "/configuracoes/procedimentos" },
-  { label: "Pagamentos", href: "/configuracoes/pagamentos" },
+  { label: "Pagamentos", href: "/configuracoes/pagamentos", moduloPlano: "financeiro" },
 ];
 
 export function ConfiguracoesTabs() {
@@ -24,6 +25,7 @@ export function ConfiguracoesTabs() {
   const adminOuGestor = isAdminOuGestor(perfil);
   const podeConfig = temPermissao(sessao?.permissoes, "configuracoes");
   const visiveis = abas.filter((aba) => {
+    if (aba.moduloPlano && !planoIncluiModulo(sessao?.plano, aba.moduloPlano)) return false;
     if (aba.visivel === "admin") return admin;
     if (aba.visivel === "adminOuGestor") return adminOuGestor;
     return podeConfig;

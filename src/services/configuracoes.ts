@@ -11,6 +11,9 @@ export const modulosLabels: Record<ModuloSistema, string> = {
   estoque: "Estoque",
   relatorios: "Relatórios",
   configuracoes: "Configurações",
+  integracoes: "Integrações e lembretes",
+  powerbi: "Power BI",
+  agenteia: "Agente de IA",
 };
 
 export interface ClinicaPayload {

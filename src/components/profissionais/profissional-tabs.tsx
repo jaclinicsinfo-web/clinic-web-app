@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
+import { useSessaoStore } from "@/hooks/use-sessao";
 
 const abas = [
   { label: "Visão geral", segmento: "" },
@@ -15,14 +17,16 @@ const abas = [
 
 export function ProfissionalTabs({ profissionalId }: { profissionalId: string }) {
   const pathname = usePathname();
+  const plano = useSessaoStore((state) => state.sessao?.plano);
   const base = `/profissionais/${profissionalId}`;
+  const visiveis = abas.filter((aba) => aba.segmento !== "comissoes" || planoIncluiModulo(plano, "financeiro"));
 
   return (
     <nav
       aria-label="Seções do profissional"
       className="flex w-full items-center gap-1 overflow-x-auto border-b border-border scrollbar-thin"
     >
-      {abas.map((aba) => {
+      {visiveis.map((aba) => {
         const href = aba.segmento ? `${base}/${aba.segmento}` : base;
         const ativa = pathname === href;
 

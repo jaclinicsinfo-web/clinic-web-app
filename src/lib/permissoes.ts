@@ -1,8 +1,9 @@
 import { navGroups } from "@/lib/navigation";
+import { moduloEstaReservado, planoIncluiModulo } from "@/lib/modulos-plano";
 import { isAdministrador, isAdminOuGestor } from "@/lib/plano";
-import type { AcaoPermissao, ModuloSistema, Permissao } from "@/types";
+import type { AcaoPermissao, ModuloSistema, Permissao, PlanoAtual } from "@/types";
 
-const MODULOS: ModuloSistema[] = [
+export const MODULOS: ModuloSistema[] = [
   "dashboard",
   "pacientes",
   "agenda",
@@ -12,7 +13,25 @@ const MODULOS: ModuloSistema[] = [
   "estoque",
   "relatorios",
   "configuracoes",
+  "integracoes",
+  "powerbi",
+  "agenteia",
 ];
+
+const ROTA_PARA_MODULO: Record<string, ModuloSistema> = {
+  dashboard: "dashboard",
+  pacientes: "pacientes",
+  agenda: "agenda",
+  profissionais: "profissionais",
+  financeiro: "financeiro",
+  convenios: "convenios",
+  estoque: "estoque",
+  relatorios: "relatorios",
+  configuracoes: "configuracoes",
+  integracoes: "integracoes",
+  "power-bi": "powerbi",
+  "agente-ia": "agenteia",
+};
 
 export function normalizarPermissoes(raw: unknown): Permissao[] {
   const porModulo = new Map<string, Permissao>();
@@ -64,7 +83,7 @@ export function temPermissao(
 
 export function moduloDaRota(pathname: string): ModuloSistema | null {
   const segmento = pathname.split("/").filter(Boolean)[0];
-  return MODULOS.includes(segmento as ModuloSistema) ? (segmento as ModuloSistema) : null;
+  return ROTA_PARA_MODULO[segmento] ?? null;
 }
 
 export function rotaExigeAdministrador(pathname: string) {
@@ -73,6 +92,13 @@ export function rotaExigeAdministrador(pathname: string) {
 
 export function rotaExigeAdminOuGestor(pathname: string) {
   return pathname.startsWith("/configuracoes/usuarios");
+}
+
+function rotaExigeFinanceiroDoPlano(pathname: string) {
+  if (pathname.startsWith("/configuracoes/pagamentos")) return true;
+  if (/^\/pacientes\/[^/]+\/financeiro/.test(pathname)) return true;
+  if (/^\/profissionais\/[^/]+\/comissoes/.test(pathname)) return true;
+  return false;
 }
 
 export function primeiraRotaPermitida(permissoes: Permissao[] | undefined | null) {
@@ -88,10 +114,28 @@ export function podeAcessarRota(
   pathname: string,
   permissoes: Permissao[] | undefined | null,
   perfilNome: string | undefined,
+  plano?: PlanoAtual | null,
 ) {
   if (rotaExigeAdministrador(pathname) && !isAdministrador(perfilNome)) return false;
   if (rotaExigeAdminOuGestor(pathname)) return isAdminOuGestor(perfilNome);
+
+  if (rotaExigeFinanceiroDoPlano(pathname) && !planoIncluiModulo(plano, "financeiro")) {
+    return false;
+  }
+
   const modulo = moduloDaRota(pathname);
   if (!modulo) return true;
+
+  if (moduloEstaReservado(modulo)) {
+    if (planoIncluiModulo(plano, modulo)) {
+      return temPermissao(permissoes, modulo) || isAdminOuGestor(perfilNome);
+    }
+    return isAdminOuGestor(perfilNome);
+  }
+
+  if (!planoIncluiModulo(plano, modulo)) return false;
+  if (modulo === "configuracoes") {
+    return temPermissao(permissoes, modulo) || isAdminOuGestor(perfilNome);
+  }
   return temPermissao(permissoes, modulo);
 }

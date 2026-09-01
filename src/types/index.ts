@@ -388,7 +388,10 @@ export type ModuloSistema =
   | "convenios"
   | "estoque"
   | "relatorios"
-  | "configuracoes";
+  | "configuracoes"
+  | "integracoes"
+  | "powerbi"
+  | "agenteia";
 
 export interface Permissao {
   modulo: ModuloSistema;
@@ -425,6 +428,8 @@ export interface PlanoAtual {
   codigo: CodigoPlano;
   nome: string;
   limiteUsuarios: number | null;
+  limiteUnidades: number | null;
+  modulos: ModuloSistema[];
 }
 
 export interface UsoUsuarios {

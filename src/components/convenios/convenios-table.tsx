@@ -22,6 +22,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatPhone } from "@/lib/format";
 import { ApiError } from "@/lib/api";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import type { Convenio } from "@/types";
 
 interface ConveniosTableProps {
@@ -31,6 +33,8 @@ interface ConveniosTableProps {
 
 export function ConveniosTable({ convenios, onInativar }: ConveniosTableProps) {
   const router = useRouter();
+  const plano = useSessaoStore((state) => state.sessao?.plano);
+  const mostraFaturamento = planoIncluiModulo(plano, "financeiro");
   const [status, setStatus] = React.useState("todos");
   const [autorizacao, setAutorizacao] = React.useState("todas");
   const [inativando, setInativando] = React.useState<Convenio | null>(null);
@@ -130,10 +134,12 @@ export function ConveniosTable({ convenios, onInativar }: ConveniosTableProps) {
                     <ShieldCheck />
                     Ver convênio
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => router.push(`/financeiro/convenios?convenio=${convenio.id}`)}>
-                    <Table2 />
-                    Faturamento
-                  </DropdownMenuItem>
+                  {mostraFaturamento && (
+                    <DropdownMenuItem onSelect={() => router.push(`/financeiro/convenios?convenio=${convenio.id}`)}>
+                      <Table2 />
+                      Faturamento
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onSelect={() => router.push(`/convenios/${convenio.id}?editar=1`)}>
                     <Pencil />
                     Editar
@@ -158,7 +164,7 @@ export function ConveniosTable({ convenios, onInativar }: ConveniosTableProps) {
         },
       },
     ],
-    [router],
+    [router, mostraFaturamento, onInativar],
   );
 
   return (

@@ -5,6 +5,7 @@ import { create } from "zustand";
 
 import { clearToken, getToken } from "@/lib/api";
 import { comparouPlanos, LIMITES_PLANO, planoEstaAcimaDoTeto } from "@/lib/plano";
+import { LIMITES_UNIDADES, modulosDoPlano } from "@/lib/modulos-plano";
 import { encerrarSessaoApi, selecionarUnidade } from "@/services/auth";
 import { normalizarPermissoes } from "@/lib/permissoes";
 import type { CodigoPlano, Permissao, PlanoAtual, SessaoUsuario, Unidade, UsoUsuarios, Usuario } from "@/types";
@@ -65,7 +66,15 @@ function resolverEvento(
   const visto = asCodigoPlano(lerPlanoVisto());
   const referencia: PlanoAtual | null =
     planoAnterior ??
-    (visto ? { codigo: visto, nome: "", limiteUsuarios: LIMITES_PLANO[visto] } : null);
+    (visto
+      ? {
+          codigo: visto,
+          nome: "",
+          limiteUsuarios: LIMITES_PLANO[visto],
+          limiteUnidades: LIMITES_UNIDADES[visto],
+          modulos: modulosDoPlano(visto),
+        }
+      : null);
 
   if (!referencia || referencia.codigo === plano.codigo) return null;
 
@@ -87,7 +96,13 @@ function lerStorage(): SessaoUsuario | null {
       ...parsed,
       perfilId: parsed.perfilId ?? "",
       permissoes: Array.isArray(parsed.permissoes) ? normalizarPermissoes(parsed.permissoes) : null,
-      plano: parsed.plano ?? null,
+      plano: parsed.plano
+        ? {
+            ...parsed.plano,
+            limiteUnidades: parsed.plano.limiteUnidades ?? LIMITES_UNIDADES[parsed.plano.codigo] ?? null,
+            modulos: parsed.plano.modulos?.length ? parsed.plano.modulos : modulosDoPlano(parsed.plano.codigo),
+          }
+        : null,
       usoUsuarios: parsed.usoUsuarios ?? null,
       planoEvento: resolverEvento(null, parsed.plano, parsed.usoUsuarios),
       clinicaNome: parsed.clinicaNome ?? null,

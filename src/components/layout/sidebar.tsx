@@ -3,11 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, HeartPulse, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, HeartPulse, Lock, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import { navGroups, type NavItem } from "@/lib/navigation";
 import { temPermissao } from "@/lib/permissoes";
-import { isAdministrador, isAdminOuGestor } from "@/lib/plano";
+import { nomeDoPlano, isAdministrador, isAdminOuGestor } from "@/lib/plano";
+import { moduloEstaReservado, planoIncluiModulo, planoMinimoDoModulo } from "@/lib/modulos-plano";
 import { cn } from "@/lib/utils";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -31,16 +32,29 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
   const admin = isAdministrador(sessao?.perfil);
   const adminOuGestor = isAdminOuGestor(sessao?.perfil);
 
+  const plano = sessao?.plano;
+
   const gruposVisiveis = navGroups
     .map((grupo) => ({
       ...grupo,
       items: grupo.items
-        .filter((item) => temPermissao(permissoes, item.modulo) || (item.modulo === "configuracoes" && adminOuGestor))
+        .filter((item) => {
+          const noPlano = planoIncluiModulo(plano, item.modulo);
+          if (item.reservado || moduloEstaReservado(item.modulo)) {
+            if (noPlano) return temPermissao(permissoes, item.modulo) || adminOuGestor;
+            return adminOuGestor;
+          }
+          if (!noPlano) return false;
+          return temPermissao(permissoes, item.modulo) || (item.modulo === "configuracoes" && adminOuGestor);
+        })
         .map((item) => {
           if (!item.children) return item;
           const children = item.children.filter((child) => {
             if (child.href.startsWith("/configuracoes/usuarios")) return adminOuGestor;
             if (child.href.startsWith("/configuracoes/permissoes")) return admin;
+            if (child.href.startsWith("/configuracoes/pagamentos")) {
+              return planoIncluiModulo(plano, "financeiro") && temPermissao(permissoes, item.modulo);
+            }
             return temPermissao(permissoes, item.modulo);
           });
           return { ...item, href: children[0]?.href ?? item.href, children };
@@ -101,12 +115,15 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
                   const Icon = item.icon;
                   const hasChildren = Boolean(item.children);
                   const expanded = openGroups[item.label] ?? false;
+                  const bloqueado = (item.reservado || moduloEstaReservado(item.modulo)) && !planoIncluiModulo(plano, item.modulo);
+                  const dicaBloqueio = bloqueado ? `Disponível no plano ${nomeDoPlano(planoMinimoDoModulo(item.modulo))}` : item.label;
 
                   const linkContent = (
                     <>
                       <Icon className="size-[18px] shrink-0" />
                       {!collapsed && <span className="flex-1 truncate text-left">{item.label}</span>}
-                      {!collapsed && hasChildren && (
+                      {!collapsed && bloqueado && <Lock className="size-3.5 shrink-0 opacity-70" aria-hidden />}
+                      {!collapsed && hasChildren && !bloqueado && (
                         <ChevronDown
                           className={cn("size-4 shrink-0 transition-transform", expanded && "rotate-180")}
                         />
@@ -117,13 +134,23 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
                   const baseClasses = cn(
                     "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
-                    active ? "bg-sidebar-active text-white" : "text-sidebar-foreground hover:bg-sidebar-active/60",
+                    bloqueado
+                      ? "text-sidebar-muted/80 hover:bg-sidebar-active/40 hover:text-sidebar-foreground"
+                      : active
+                        ? "bg-sidebar-active text-white"
+                        : "text-sidebar-foreground hover:bg-sidebar-active/60",
                     collapsed && "justify-center px-0",
+                  );
+
+                  const link = (
+                    <Link href={item.href} className={baseClasses} onClick={onNavigate}>
+                      {linkContent}
+                    </Link>
                   );
 
                   return (
                     <li key={item.label}>
-                      {hasChildren && !collapsed ? (
+                      {hasChildren && !collapsed && !bloqueado ? (
                         <button
                           type="button"
                           className={baseClasses}
@@ -132,22 +159,16 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
                         >
                           {linkContent}
                         </button>
-                      ) : collapsed ? (
+                      ) : collapsed || bloqueado ? (
                         <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Link href={item.href} className={baseClasses} onClick={onNavigate}>
-                              {linkContent}
-                            </Link>
-                          </TooltipTrigger>
-                          <TooltipContent side="right">{item.label}</TooltipContent>
+                          <TooltipTrigger asChild>{link}</TooltipTrigger>
+                          <TooltipContent side="right">{dicaBloqueio}</TooltipContent>
                         </Tooltip>
                       ) : (
-                        <Link href={item.href} className={baseClasses} onClick={onNavigate}>
-                          {linkContent}
-                        </Link>
+                        link
                       )}
 
-                      {hasChildren && !collapsed && expanded && (
+                      {hasChildren && !collapsed && !bloqueado && expanded && (
                         <ul className="mt-0.5 space-y-0.5 border-l border-sidebar-border pl-3 ml-5">
                           {item.children!.map((child) => {
                             const childActive = pathname === child.href;

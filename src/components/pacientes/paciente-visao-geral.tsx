@@ -10,7 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDate, formatDateLong } from "@/lib/format";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
 import { estadoCivilLabels, sexoLabels } from "@/lib/status";
+import { useSessaoStore } from "@/hooks/use-sessao";
 
 function nomeConvenio(convenioId: string | null, convenioNome?: string | null) {
   if (convenioNome) return convenioNome;
@@ -19,6 +21,8 @@ function nomeConvenio(convenioId: string | null, convenioNome?: string | null) {
 
 export function PacienteVisaoGeral() {
   const { paciente, detalhe } = usePacientePerfil();
+  const plano = useSessaoStore((state) => state.sessao?.plano);
+  const mostraFinanceiro = planoIncluiModulo(plano, "financeiro");
   const id = paciente.id;
   const podeVerProntuario = Boolean(detalhe.podeVerProntuario);
 
@@ -243,6 +247,7 @@ export function PacienteVisaoGeral() {
           </CardContent>
         </Card>
 
+        {mostraFinanceiro && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -274,6 +279,7 @@ export function PacienteVisaoGeral() {
             </Button>
           </CardContent>
         </Card>
+        )}
 
         <Card>
           <CardHeader>

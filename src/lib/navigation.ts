@@ -1,10 +1,13 @@
 import {
+  BarChart3,
   Boxes,
   CalendarDays,
   FileBarChart,
   LayoutDashboard,
+  MessageCircle,
   Settings,
   ShieldCheck,
+  Sparkles,
   Stethoscope,
   Users,
   Wallet,
@@ -18,6 +21,8 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   modulo: ModuloSistema;
+  /** Sempre aparece para admin/gestor; trava se o plano não incluir o módulo. */
+  reservado?: boolean;
   children?: { label: string; href: string }[];
 }
 
@@ -51,6 +56,20 @@ export const navGroups: { title: string; items: NavItem[] }[] = [
       { label: "Convênios", href: "/convenios", icon: ShieldCheck, modulo: "convenios" },
       { label: "Estoque", href: "/estoque", icon: Boxes, modulo: "estoque" },
       { label: "Relatórios", href: "/relatorios", icon: FileBarChart, modulo: "relatorios" },
+    ],
+  },
+  {
+    title: "Avançado",
+    items: [
+      {
+        label: "Integrações e lembretes",
+        href: "/integracoes",
+        icon: MessageCircle,
+        modulo: "integracoes",
+        reservado: true,
+      },
+      { label: "Power BI", href: "/power-bi", icon: BarChart3, modulo: "powerbi", reservado: true },
+      { label: "Agente de IA", href: "/agente-ia", icon: Sparkles, modulo: "agenteia", reservado: true },
     ],
   },
   {
@@ -93,6 +112,9 @@ export const segmentLabels: Record<string, string> = {
   permissoes: "Perfis e permissões",
   procedimentos: "Procedimentos",
   pagamentos: "Formas de pagamento",
+  integracoes: "Integrações e lembretes",
+  "power-bi": "Power BI",
+  "agente-ia": "Agente de IA",
   novo: "Novo",
   prontuario: "Acompanhamento",
   historico: "Histórico",
