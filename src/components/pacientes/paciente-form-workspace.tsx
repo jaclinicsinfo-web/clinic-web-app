@@ -102,7 +102,7 @@ export function PacienteFormWorkspace({ pacienteId }: { pacienteId?: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <PageHeader
         title={edicao ? "Editar paciente" : "Novo paciente"}
         description={

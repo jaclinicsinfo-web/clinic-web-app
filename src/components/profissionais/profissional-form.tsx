@@ -245,8 +245,8 @@ export function ProfissionalForm({ especialidades, procedimentos, usuarios = [],
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <Card className="space-y-6 p-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <Card className="flex flex-col gap-6 p-6">
         <FormSection
           title="Dados pessoais"
           description="Identificação e contato do profissional."

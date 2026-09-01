@@ -185,6 +185,8 @@ export interface AgendaResponse {
   procedimentos: Procedimento[];
   convenios: { id: string; nome: string }[];
   pacientes: PacienteAgendaApi[];
+  ultimosPacientes: PacienteAgendaApi[];
+  ultimosPacientesPorProfissional: Record<string, PacienteAgendaApi[]>;
   salas: string[];
   somenteProprios: boolean;
   meuProfissionalId: string | null;

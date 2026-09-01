@@ -204,13 +204,13 @@ export function ClinicaForm({
   const somenteLeitura = !podeEditar;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Dados da clínica"
         description="Identidade, endereço e unidades usadas no seletor de contexto."
       />
 
-      <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+      <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
         <Card>
           <CardHeader>
             <CardTitle>Logo</CardTitle>
@@ -255,7 +255,7 @@ export function ClinicaForm({
         </Card>
 
         <Card>
-          <CardContent className="space-y-6 p-6">
+          <CardContent className="flex flex-col gap-6 p-6">
             <FormSection title="Identificação" description="Informações exibidas em documentos e no cabeçalho.">
               <FormField label="Nome fantasia" htmlFor="nomeFantasia" error={errors.nomeFantasia?.message} required>
                 <Input

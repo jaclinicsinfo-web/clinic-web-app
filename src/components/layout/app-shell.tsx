@@ -22,9 +22,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-full max-h-full overflow-hidden bg-background">
       <PlanoSync />
-      <div className="hidden shrink-0 lg:block">
+      <div className="hidden h-full min-h-0 shrink-0 lg:block">
         <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed((value) => !value)} />
       </div>
 
@@ -36,18 +36,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             onClick={() => setMobileOpen(false)}
             aria-label="Fechar menu"
           />
-          <div className="relative z-10 h-full">
+          <div className="relative z-10 h-full max-h-full">
             <Sidebar collapsed={false} onToggleCollapse={() => setMobileOpen(false)} onNavigate={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
         <PlanoBanner />
 
-        <main className="flex-1 overflow-y-auto scrollbar-thin">
-          <div className="mx-auto w-full max-w-[1600px] p-4 lg:p-6">
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain scrollbar-thin">
+          <div className="mx-auto w-full max-w-[1600px] p-4 pb-6 lg:p-6">
             {permissoes === null ? (
               <div className="flex min-h-[40vh] items-center justify-center">
                 <Loader2 className="size-5 animate-spin text-primary" aria-label="Carregando permissões" />

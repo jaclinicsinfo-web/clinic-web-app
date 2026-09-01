@@ -19,7 +19,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!hidratado || !sessao) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-full items-center justify-center bg-background">
         <Loader2 className="size-6 animate-spin text-primary" aria-label="Carregando" />
       </div>
     );

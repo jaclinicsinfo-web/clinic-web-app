@@ -63,7 +63,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
     <TooltipProvider delayDuration={200}>
       <aside
         className={cn(
-          "flex h-full flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200",
+          "flex h-full min-h-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200",
           collapsed ? "w-[68px]" : "w-64",
         )}
       >

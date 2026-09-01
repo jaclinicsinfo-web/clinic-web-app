@@ -36,6 +36,28 @@ import { CalendarView, deslocarPeriodo, type SlotSelecionado, type VisaoAgenda }
 import { ListaEsperaDialog } from "./lista-espera-dialog";
 import { classesBlocoStatus } from "./agenda-utils";
 
+function mapearPacienteAgenda(paciente: {
+  id: string;
+  nome: string;
+  telefone: string;
+  cpf?: string;
+  dataNascimento?: string;
+  convenioId: string | null;
+  alergias?: string[];
+  status?: string;
+}): PacienteAgenda {
+  return {
+    id: paciente.id,
+    nome: paciente.nome,
+    telefone: paciente.telefone,
+    cpf: paciente.cpf,
+    dataNascimento: paciente.dataNascimento,
+    convenioId: paciente.convenioId,
+    alergias: paciente.alergias,
+    status: paciente.status,
+  };
+}
+
 interface AgendaWorkspaceProps {
   dataInicial?: string;
 }
@@ -74,6 +96,8 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
   const [bloqueios, setBloqueios] = React.useState<BloqueioAgenda[]>([]);
   const [listaEspera, setListaEspera] = React.useState<ListaEsperaItem[]>([]);
   const [pacientes, setPacientes] = React.useState<PacienteAgenda[]>([]);
+  const [ultimosPacientes, setUltimosPacientes] = React.useState<PacienteAgenda[]>([]);
+  const [ultimosPorProfissional, setUltimosPorProfissional] = React.useState<Record<string, PacienteAgenda[]>>({});
   const [conveniosAgenda, setConveniosAgenda] = React.useState<{ id: string; nome: string }[]>([]);
   const [profissionais, setProfissionais] = React.useState<Profissional[]>([]);
   const [procedimentos, setProcedimentos] = React.useState<Procedimento[]>([]);
@@ -103,17 +127,15 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
       setAgendamentos(payload.agendamentos);
       setBloqueios(payload.bloqueios);
       setListaEspera(payload.listaEspera);
-      setPacientes(
-        payload.pacientes.map((paciente) => ({
-          id: paciente.id,
-          nome: paciente.nome,
-          telefone: paciente.telefone,
-          cpf: paciente.cpf,
-          dataNascimento: paciente.dataNascimento,
-          convenioId: paciente.convenioId,
-          alergias: paciente.alergias,
-          status: paciente.status,
-        })),
+      setPacientes(payload.pacientes.map(mapearPacienteAgenda));
+      setUltimosPacientes((payload.ultimosPacientes ?? []).map(mapearPacienteAgenda));
+      setUltimosPorProfissional(
+        Object.fromEntries(
+          Object.entries(payload.ultimosPacientesPorProfissional ?? {}).map(([id, lista]) => [
+            id,
+            lista.map(mapearPacienteAgenda),
+          ]),
+        ),
       );
       setConveniosAgenda(payload.convenios);
       setProfissionais(payload.profissionais);
@@ -205,7 +227,13 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
 
   function abrirCriacao(slot?: SlotSelecionado, pacienteId?: string) {
     setAgendamentoAberto(null);
-    setSlotAberto(slot ?? { data: dataIso, horaInicio: "09:00" });
+    setSlotAberto(
+      slot ?? {
+        data: dataIso,
+        horaInicio: "09:00",
+        profissionalId: profissionalFiltro !== "todos" ? profissionalFiltro : undefined,
+      },
+    );
     setPacienteSheetId(pacienteId);
     setSheetAberto(true);
   }
@@ -235,6 +263,19 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
       toast.success(draft.id ? "Agendamento atualizado" : "Horário agendado", {
         description: `${salvo.pacienteNome} · ${salvo.horaInicio}`,
       });
+      const pacienteSalvo = pacientes.find((item) => item.id === draft.pacienteId);
+      if (pacienteSalvo) {
+        setUltimosPacientes((atual) =>
+          [pacienteSalvo, ...atual.filter((item) => item.id !== pacienteSalvo.id)].slice(0, 3),
+        );
+        setUltimosPorProfissional((atual) => ({
+          ...atual,
+          [draft.profissionalId]: [
+            pacienteSalvo,
+            ...(atual[draft.profissionalId] ?? []).filter((item) => item.id !== pacienteSalvo.id),
+          ].slice(0, 3),
+        }));
+      }
       setSheetAberto(false);
       setAgendamentoAberto(null);
       setSlotAberto(null);
@@ -453,6 +494,8 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
         slot={slotAberto}
         pacienteInicialId={pacienteSheetId}
         pacientes={pacientes}
+        ultimosPacientes={ultimosPacientes}
+        ultimosPacientesPorProfissional={ultimosPorProfissional}
         profissionais={profissionaisAtivos}
         procedimentos={procedimentos}
         convenios={conveniosAgenda}

@@ -283,9 +283,9 @@ export function PacienteForm({ convenios, profissionais, paciente }: PacienteFor
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <Card>
-        <CardContent className="space-y-6 p-6">
+        <CardContent className="flex flex-col gap-6 p-6">
           <FormSection title="Dados pessoais" columns={3}>
             <FormField label="Nome completo" htmlFor="nome" error={errors.nome?.message} required full>
               <Input id="nome" aria-invalid={Boolean(errors.nome)} {...register("nome")} />
@@ -527,7 +527,7 @@ export function PacienteForm({ convenios, profissionais, paciente }: PacienteFor
             description="Obrigatório para pacientes menores de idade ou dependentes."
             columns={2}
           >
-            <div className="flex items-center gap-2 md:col-span-full">
+            <div className="flex items-center gap-2 col-span-full">
               <Controller
                 control={control}
                 name="temResponsavel"
@@ -697,7 +697,7 @@ export function PacienteForm({ convenios, profissionais, paciente }: PacienteFor
           </FormSection>
 
           <FormSection title="Consentimentos" description="Exigidos pela LGPD antes do primeiro atendimento.">
-            <div className="space-y-3 md:col-span-full">
+            <div className="col-span-full space-y-3">
               <div className="flex items-start gap-2.5">
                 <Controller
                   control={control}
@@ -743,7 +743,7 @@ export function PacienteForm({ convenios, profissionais, paciente }: PacienteFor
         </CardContent>
       </Card>
 
-      <div className="sticky bottom-0 mt-4 flex flex-col-reverse gap-2 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:justify-end">
+      <div className="flex flex-col-reverse gap-2 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" asChild>
           <Link href={paciente ? `/pacientes/${paciente.id}` : "/pacientes"}>Cancelar</Link>
         </Button>

@@ -17,12 +17,19 @@ const columnClasses = {
 
 export function FormSection({ title, description, children, columns = 2, className }: FormSectionProps) {
   return (
-    <section className={cn("border-b border-border pb-6 last:border-0 last:pb-0", className)}>
+    <section className={cn("min-w-0 border-b border-border pb-6 last:border-0 last:pb-0", className)}>
       <div className="mb-4">
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
       </div>
-      <div className={cn("grid grid-cols-1 gap-4", columnClasses[columns])}>{children}</div>
+      <div
+        className={cn(
+          "grid auto-rows-min grid-cols-1 content-start items-start gap-4",
+          columnClasses[columns],
+        )}
+      >
+        {children}
+      </div>
     </section>
   );
 }
@@ -41,7 +48,7 @@ interface FormFieldProps {
 
 export function FormField({ label, htmlFor, error, hint, required, full, children, className }: FormFieldProps) {
   return (
-    <div className={cn("flex flex-col gap-1.5", full && "md:col-span-full", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-1.5", full && "col-span-full", className)}>
       <label htmlFor={htmlFor} className="text-sm font-medium text-foreground">
         {label}
         {required && <span className="ml-0.5 text-destructive">*</span>}

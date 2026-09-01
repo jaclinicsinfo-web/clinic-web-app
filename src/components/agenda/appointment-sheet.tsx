@@ -95,6 +95,8 @@ interface AppointmentSheetProps {
   procedimentos: Procedimento[];
   convenios: { id: string; nome: string }[];
   salas: string[];
+  ultimosPacientes?: PacienteAgenda[];
+  ultimosPacientesPorProfissional?: Record<string, PacienteAgenda[]>;
   onSave: (draft: AgendamentoDraft) => void | Promise<void>;
   onChangeStatus?: (id: string, status: AgendamentoStatus) => void;
   onNovoPaciente?: (paciente: PacienteAgenda) => void;
@@ -111,6 +113,8 @@ export function AppointmentSheet({
   procedimentos,
   convenios,
   salas,
+  ultimosPacientes = [],
+  ultimosPacientesPorProfissional = {},
   onSave,
   onChangeStatus,
   onNovoPaciente,
@@ -159,13 +163,18 @@ export function AppointmentSheet({
 
   const pacientesFiltrados = React.useMemo(() => {
     const termo = busca.trim().toLowerCase();
-    if (!termo) return pacientes.slice(0, 8);
-    return pacientes
-      .filter((item) =>
-        [item.nome, item.telefone, item.cpf ?? ""].some((campo) => campo.toLowerCase().includes(termo)),
-      )
-      .slice(0, 8);
-  }, [busca, pacientes]);
+    if (termo) {
+      return pacientes
+        .filter((item) =>
+          [item.nome, item.telefone, item.cpf ?? ""].some((campo) => campo.toLowerCase().includes(termo)),
+        )
+        .slice(0, 8);
+    }
+    if (values.profissionalId) {
+      return ultimosPacientesPorProfissional[values.profissionalId] ?? [];
+    }
+    return ultimosPacientes.slice(0, 3);
+  }, [busca, pacientes, ultimosPacientes, ultimosPacientesPorProfissional, values.profissionalId]);
 
   function selecionarPaciente(item: PacienteAgenda) {
     setValue("pacienteId", item.id, { shouldValidate: true });
@@ -260,7 +269,25 @@ export function AppointmentSheet({
               </div>
             )}
 
-            <FormSection title="Paciente" description="Busca por nome, CPF ou telefone." columns={1}>
+            <FormSection title="Paciente" description="Últimos 3 do profissional. Busque para encontrar outros." columns={1}>
+              <FormField label="Profissional" error={errors.profissionalId?.message} required>
+                <Select
+                  value={values.profissionalId || undefined}
+                  onValueChange={(valor) => setValue("profissionalId", valor, { shouldValidate: true })}
+                >
+                  <SelectTrigger aria-label="Profissional">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {profissionais.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+
               {paciente ? (
                 <div className="rounded-lg border border-border p-1">
                   <PatientCard
@@ -304,7 +331,13 @@ export function AppointmentSheet({
                       />
                     ))}
                     {pacientesFiltrados.length === 0 && (
-                      <p className="px-3 py-4 text-sm text-muted-foreground">Nenhum paciente encontrado.</p>
+                      <p className="px-3 py-4 text-sm text-muted-foreground">
+                        {busca.trim()
+                          ? "Nenhum paciente encontrado."
+                          : values.profissionalId
+                            ? "Nenhum atendimento recente deste profissional. Busque pelo nome, CPF ou telefone."
+                            : "Selecione o profissional para ver os últimos pacientes, ou busque pelo nome."}
+                      </p>
                     )}
                   </div>
                   {errors.pacienteId && <p className="text-xs text-destructive">{errors.pacienteId.message}</p>}
@@ -329,24 +362,6 @@ export function AppointmentSheet({
             </FormSection>
 
             <FormSection title="Atendimento">
-              <FormField label="Profissional" error={errors.profissionalId?.message} required>
-                <Select
-                  value={values.profissionalId || undefined}
-                  onValueChange={(valor) => setValue("profissionalId", valor, { shouldValidate: true })}
-                >
-                  <SelectTrigger aria-label="Profissional">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {profissionais.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormField>
-
               <FormField label="Procedimento" error={errors.procedimentoId?.message} required>
                 <Select value={values.procedimentoId || undefined} onValueChange={onProcedimentoChange}>
                   <SelectTrigger aria-label="Procedimento">

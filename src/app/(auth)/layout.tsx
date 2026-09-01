@@ -4,7 +4,7 @@ const FEATURES = ["Agenda", "Prontuário", "Financeiro", "Convênios", "Multi-un
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-full">
       <aside className="relative hidden w-[48%] flex-col items-center justify-center overflow-hidden bg-sidebar px-12 py-16 lg:flex">
         <div
           aria-hidden
