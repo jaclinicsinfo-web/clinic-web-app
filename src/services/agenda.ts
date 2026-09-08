@@ -1,7 +1,7 @@
 import { endOfWeek, format, isSameDay, parseISO, startOfWeek } from "date-fns";
 
 import { api } from "@/lib/api";
-import type { Agendamento, AgendamentoStatus, BloqueioAgenda, ListaEsperaItem, Procedimento, Profissional } from "@/types";
+import type { Agendamento, AgendamentoStatus, BloqueioAgenda, ListaEsperaItem, Procedimento, Profissional, TipoAgendamento } from "@/types";
 import { agendamentos, bloqueiosAgenda, hoje, listaEspera } from "./mock/agenda";
 
 export { hoje };
@@ -206,6 +206,7 @@ export async function criarAgendamentoApi(payload: {
   sala: string | null;
   particular: boolean;
   convenioId: string | null;
+  tipo: TipoAgendamento;
   observacoes: string | null;
   status: AgendamentoStatus;
 }) {
@@ -225,6 +226,7 @@ export async function atualizarAgendamentoApi(
     sala: string | null;
     particular: boolean;
     convenioId: string | null;
+    tipo: TipoAgendamento;
     observacoes: string | null;
     status: AgendamentoStatus;
   },

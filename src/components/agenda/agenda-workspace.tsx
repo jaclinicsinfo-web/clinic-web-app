@@ -249,6 +249,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
       sala: draft.sala ?? null,
       particular: draft.particular,
       convenioId: draft.convenioId,
+      tipo: draft.tipo,
       observacoes: draft.observacoes ?? null,
       status: draft.status,
     };

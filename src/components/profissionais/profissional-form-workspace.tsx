@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
+import { FormPage } from "@/components/shared/form-page";
 import { ProfissionalForm } from "@/components/profissionais/profissional-form";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -78,29 +79,33 @@ export function ProfissionalFormWorkspace({ profissionalId }: { profissionalId?:
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title={edicao ? "Editar profissional" : "Novo profissional"}
-        description={
-          edicao
-            ? profissional?.nome
-            : "Cadastre o profissional, o vínculo contratual e a disponibilidade na agenda."
-        }
-        actions={
-          <Button variant="outline" asChild>
-            <Link href={edicao && profissionalId ? `/profissionais/${profissionalId}` : "/profissionais"}>
-              <ArrowLeft />
-              Voltar
-            </Link>
-          </Button>
-        }
-      />
+    <FormPage
+      header={
+        <PageHeader
+          title={edicao ? "Editar profissional" : "Novo profissional"}
+          description={
+            edicao
+              ? profissional?.nome
+              : "Cadastre o profissional, o vínculo contratual e a disponibilidade na agenda."
+          }
+          actions={
+            <Button variant="outline" asChild>
+              <Link href={edicao && profissionalId ? `/profissionais/${profissionalId}` : "/profissionais"}>
+                <ArrowLeft />
+                Voltar
+              </Link>
+            </Button>
+          }
+        />
+      }
+      contentClassName="flex min-h-0 flex-col overflow-hidden"
+    >
       <ProfissionalForm
         especialidades={especialidades}
         procedimentos={procedimentos}
         usuarios={usuarios}
         profissional={profissional}
       />
-    </div>
+    </FormPage>
   );
 }

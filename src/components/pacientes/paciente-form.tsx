@@ -85,10 +85,6 @@ const pacienteSchema = z
   .refine((dados) => !dados.temResponsavel || (dados.responsavelNome ?? "").length >= 5, {
     message: "Informe o nome do responsável.",
     path: ["responsavelNome"],
-  })
-  .refine((dados) => dados.convenioId === "particular" || (dados.numeroCarteirinha ?? "").length > 0, {
-    message: "Informe o número da carteirinha.",
-    path: ["numeroCarteirinha"],
   });
 
 type PacienteFormValues = z.infer<typeof pacienteSchema>;
@@ -283,7 +279,8 @@ export function PacienteForm({ convenios, profissionais, paciente }: PacienteFor
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain scrollbar-thin">
       <Card>
         <CardContent className="flex flex-col gap-6 p-6">
           <FormSection title="Dados pessoais" columns={3}>
@@ -477,8 +474,8 @@ export function PacienteForm({ convenios, profissionais, paciente }: PacienteFor
             </FormField>
           </FormSection>
 
-          <FormSection title="Convênio" description="Deixe como particular quando não houver plano de saúde.">
-            <FormField label="Convênio / plano" error={errors.convenioId?.message} required>
+          <FormSection title="Convênio" description="Opcional. Deixe como particular quando não houver plano de saúde.">
+            <FormField label="Convênio / plano" error={errors.convenioId?.message}>
               <Controller
                 control={control}
                 name="convenioId"
@@ -506,7 +503,6 @@ export function PacienteForm({ convenios, profissionais, paciente }: PacienteFor
                   label="Número da carteirinha"
                   htmlFor="numeroCarteirinha"
                   error={errors.numeroCarteirinha?.message}
-                  required
                 >
                   <Input
                     id="numeroCarteirinha"
@@ -742,8 +738,9 @@ export function PacienteForm({ convenios, profissionais, paciente }: PacienteFor
           </FormSection>
         </CardContent>
       </Card>
+      </div>
 
-      <div className="flex flex-col-reverse gap-2 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:justify-end">
+      <div className="flex shrink-0 flex-col-reverse gap-2 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" asChild>
           <Link href={paciente ? `/pacientes/${paciente.id}` : "/pacientes"}>Cancelar</Link>
         </Button>

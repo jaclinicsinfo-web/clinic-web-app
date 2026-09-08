@@ -72,6 +72,16 @@ export function ProfissionalAgenda({ agendamentos }: ProfissionalAgendaProps) {
         ),
       },
       {
+        id: "tipo",
+        accessorFn: (row) => (row.tipo === "avaliacao" ? "Avaliação" : "Atendimento"),
+        header: "Tipo",
+        cell: ({ row }) => (
+          <Badge tone={row.original.tipo === "avaliacao" ? "info" : "outline"}>
+            {row.original.tipo === "avaliacao" ? "Avaliação" : "Atendimento"}
+          </Badge>
+        ),
+      },
+      {
         id: "procedimento",
         accessorFn: (row) => row.procedimentoNome,
         header: "Procedimento",

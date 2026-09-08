@@ -245,7 +245,8 @@ export function ProfissionalForm({ especialidades, procedimentos, usuarios = [],
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain scrollbar-thin">
       <Card className="flex flex-col gap-6 p-6">
         <FormSection
           title="Dados pessoais"
@@ -593,8 +594,9 @@ export function ProfissionalForm({ especialidades, procedimentos, usuarios = [],
           </div>
         </FormSection>
       </Card>
+      </div>
 
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <div className="flex shrink-0 flex-col-reverse gap-2 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" asChild>
           <Link href="/profissionais">Cancelar</Link>
         </Button>

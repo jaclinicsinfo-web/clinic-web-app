@@ -77,7 +77,9 @@ export function PacienteVisaoGeral() {
                       </p>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">{agendamento.procedimentoNome}</p>
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {agendamento.tipo === "avaliacao" ? "Avaliação" : agendamento.procedimentoNome}
+                      </p>
                       <p className="truncate text-xs text-muted-foreground">
                         {agendamento.profissionalNome}
                         {agendamento.sala ? ` · ${agendamento.sala}` : ""}

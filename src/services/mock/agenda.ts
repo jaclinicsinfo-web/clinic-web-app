@@ -112,6 +112,7 @@ function gerarAgendamentos(): Agendamento[] {
           sala: pick(rng, salas),
           convenioId,
           particular: !convenioId,
+          tipo: rng() < 0.22 ? "avaliacao" : "atendimento",
           valor: valorConvenio ?? procedimento.valorParticular,
           status: statusParaDia(rng, offset, horaAtual),
           observacoes: rng() < 0.3 ? "Paciente relatou desconforto persistente." : undefined,

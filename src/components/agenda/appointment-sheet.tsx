@@ -26,11 +26,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency, formatMinutes } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { getStatusMeta } from "@/lib/status";
 import { duracaoEmMinutos, proximosStatus, somarMinutos } from "@/services/agenda";
-import type { Agendamento, AgendamentoStatus, Procedimento, Profissional } from "@/types";
-
+import type { Agendamento, AgendamentoStatus, Procedimento, Profissional, TipoAgendamento } from "@/types";
 import type { SlotSelecionado } from "./calendar-view";
+import { tipoAgendamentoLabels, rotuloTipoAgendamento } from "./agenda-utils";
 
 const schema = z
   .object({
@@ -43,6 +44,7 @@ const schema = z
     sala: z.string(),
     particular: z.boolean(),
     convenioId: z.string().nullable(),
+    tipo: z.enum(["avaliacao", "atendimento"]),
     observacoes: z.string(),
     status: z.enum([
       "agendado",
@@ -53,10 +55,6 @@ const schema = z
       "cancelado",
       "faltou",
     ]),
-  })
-  .refine((values) => values.particular || Boolean(values.convenioId), {
-    message: "Informe o convênio ou marque como particular.",
-    path: ["convenioId"],
   });
 
 type FormValues = z.infer<typeof schema>;
@@ -75,6 +73,7 @@ export interface AgendamentoDraft {
   sala?: string;
   convenioId: string | null;
   particular: boolean;
+  tipo: TipoAgendamento;
   valor: number;
   status: AgendamentoStatus;
   observacoes?: string;
@@ -185,6 +184,12 @@ export function AppointmentSheet({
       setValue("particular", true);
       setValue("convenioId", null);
     }
+    const jaAtendido = Boolean(
+      (values.profissionalId &&
+        ultimosPacientesPorProfissional[values.profissionalId]?.some((paciente) => paciente.id === item.id)) ||
+        ultimosPacientes.some((paciente) => paciente.id === item.id),
+    );
+    setValue("tipo", jaAtendido ? "atendimento" : "avaliacao");
     setBusca("");
   }
 
@@ -223,7 +228,8 @@ export function AppointmentSheet({
       horaFim: form.horaFim,
       sala: form.sala || undefined,
       convenioId: form.particular ? null : form.convenioId,
-      particular: form.particular,
+      particular: form.particular || !form.convenioId,
+      tipo: form.tipo,
       valor: valorCalculado,
       status: form.status,
       observacoes: form.observacoes || undefined,
@@ -362,6 +368,41 @@ export function AppointmentSheet({
             </FormSection>
 
             <FormSection title="Atendimento">
+              <FormField label="Tipo" error={errors.tipo?.message} required full>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    {
+                      valor: "avaliacao" as const,
+                      descricao: "Primeira vez ou consulta de avaliação",
+                    },
+                    {
+                      valor: "atendimento" as const,
+                      descricao: "Consulta, retorno ou procedimento",
+                    },
+                  ] as const).map((opcao) => {
+                    const selecionado = values.tipo === opcao.valor;
+                    return (
+                      <button
+                        key={opcao.valor}
+                        type="button"
+                        onClick={() => setValue("tipo", opcao.valor, { shouldValidate: true })}
+                        className={cn(
+                          "rounded-lg border px-3 py-2.5 text-left transition-colors",
+                          selecionado
+                            ? "border-primary bg-primary-subtle"
+                            : "border-border hover:bg-muted",
+                        )}
+                      >
+                        <span className="block text-sm font-medium text-foreground">
+                          {tipoAgendamentoLabels[opcao.valor]}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">{opcao.descricao}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </FormField>
+
               <FormField label="Procedimento" error={errors.procedimentoId?.message} required>
                 <Select value={values.procedimentoId || undefined} onValueChange={onProcedimentoChange}>
                   <SelectTrigger aria-label="Procedimento">
@@ -437,7 +478,7 @@ export function AppointmentSheet({
               </FormField>
             </FormSection>
 
-            <FormSection title="Convênio e valor" columns={1}>
+            <FormSection title="Convênio e valor" description="Opcional. Use só se o atendimento for pelo plano." columns={1}>
               <div className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
                 <Switch
                   id="particular"
@@ -451,13 +492,13 @@ export function AppointmentSheet({
                 <div>
                   <Label htmlFor="particular">Particular</Label>
                   <p className="mt-0.5 text-sm text-muted-foreground">
-                    Desmarque para faturar pelo convênio do paciente.
+                    Desmarque apenas se quiser informar um convênio.
                   </p>
                 </div>
               </div>
 
               {!values.particular && (
-                <FormField label="Convênio" required error={errors.convenioId?.message}>
+                <FormField label="Convênio" error={errors.convenioId?.message}>
                   <Select
                     value={values.convenioId || undefined}
                     onValueChange={(valor) => setValue("convenioId", valor, { shouldValidate: true })}
@@ -524,6 +565,7 @@ function valoresIniciais(
       sala: agendamento.sala ?? "",
       particular: agendamento.particular,
       convenioId: agendamento.convenioId,
+      tipo: rotuloTipoAgendamento(agendamento.tipo),
       observacoes: agendamento.observacoes ?? "",
       status: agendamento.status,
     };
@@ -539,6 +581,7 @@ function valoresIniciais(
     sala: "",
     particular: true,
     convenioId: null,
+    tipo: "atendimento",
     observacoes: "",
     status: "agendado",
   };

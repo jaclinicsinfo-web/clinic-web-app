@@ -224,7 +224,9 @@ function ColunaProfissional({
               {agendamento.horaInicio} {agendamento.pacienteNome}
             </p>
             {altura > 40 && (
-              <p className="truncate text-[10px] opacity-80">{agendamento.procedimentoNome}</p>
+              <p className="truncate text-[10px] opacity-80">
+                {agendamento.tipo === "avaliacao" ? "Avaliação" : agendamento.procedimentoNome}
+              </p>
             )}
             {altura > 56 && (
               <p className="mt-0.5 flex items-center gap-1 text-[10px] opacity-80">

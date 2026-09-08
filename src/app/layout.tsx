@@ -27,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={inter.variable}>
-      <body>
+    <html lang="pt-BR" className={`${inter.variable} h-full overflow-hidden`}>
+      <body className="flex h-full min-h-0 flex-col overflow-hidden">
         <SessaoProvider>
           {children}
           <Toaster position="top-right" richColors closeButton />

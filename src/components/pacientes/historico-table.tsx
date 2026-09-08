@@ -53,6 +53,12 @@ export function HistoricoTable({ agendamentos }: { agendamentos: Agendamento[] }
           </div>
         ),
       },
+      {
+        id: "tipo",
+        accessorFn: (row) => (row.tipo === "avaliacao" ? "Avaliação" : "Atendimento"),
+        header: "Tipo",
+        cell: ({ getValue }) => <span className="text-muted-foreground">{getValue() as string}</span>,
+      },
       { accessorKey: "procedimentoNome", header: "Procedimento" },
       { accessorKey: "profissionalNome", header: "Profissional" },
       {

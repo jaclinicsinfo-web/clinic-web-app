@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 
+import { FormPage } from "@/components/shared/form-page";
 import { PacienteForm } from "@/components/pacientes/paciente-form";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -102,16 +103,21 @@ export function PacienteFormWorkspace({ pacienteId }: { pacienteId?: string }) {
   }
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6">
-      <PageHeader
-        title={edicao ? "Editar paciente" : "Novo paciente"}
-        description={
-          edicao
-            ? paciente?.nome
-            : "Preencha os dados cadastrais, clínicos e os consentimentos exigidos pela LGPD."
-        }
-      />
+    <FormPage
+      className="mx-auto max-w-5xl"
+      header={
+        <PageHeader
+          title={edicao ? "Editar paciente" : "Novo paciente"}
+          description={
+            edicao
+              ? paciente?.nome
+              : "Preencha os dados cadastrais, clínicos e os consentimentos exigidos pela LGPD."
+          }
+        />
+      }
+      contentClassName="flex min-h-0 flex-col overflow-hidden"
+    >
       <PacienteForm convenios={convenios} profissionais={profissionais} paciente={paciente} />
-    </div>
+    </FormPage>
   );
 }

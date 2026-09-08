@@ -119,6 +119,8 @@ export type AgendamentoStatus =
   | "cancelado"
   | "faltou";
 
+export type TipoAgendamento = "avaliacao" | "atendimento";
+
 export interface Agendamento {
   id: string;
   pacienteId: string;
@@ -134,6 +136,7 @@ export interface Agendamento {
   convenioId: string | null;
   convenioNome?: string | null;
   particular: boolean;
+  tipo: TipoAgendamento;
   valor: number;
   status: AgendamentoStatus;
   observacoes?: string;
