@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { PlanoAtualIndicador } from "@/components/layout/plano-atual-indicador";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -93,6 +94,8 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <PlanoAtualIndicador />
+
         {sessao && unidades.length > 0 && (
           <Select
             value={sessao.unidadeAtualId}

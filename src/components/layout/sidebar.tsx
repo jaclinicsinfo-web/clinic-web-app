@@ -87,16 +87,32 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
             collapsed && "justify-center px-0",
           )}
         >
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <HeartPulse className="size-5" />
-          </span>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <HeartPulse className="size-5" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right">
                 {sessao?.clinicaNome || "J.A. Clinics"}
-              </p>
-              <p className="truncate text-xs text-sidebar-muted">Gestão de clínicas</p>
-            </div>
+                {plano ? ` · Plano ${plano.nome}` : ""}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <>
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <HeartPulse className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-white">
+                  {sessao?.clinicaNome || "J.A. Clinics"}
+                </p>
+                <p className="truncate text-xs text-sidebar-muted">
+                  {plano ? `Plano ${plano.nome}` : "Gestão de clínicas"}
+                </p>
+              </div>
+            </>
           )}
         </div>
 
