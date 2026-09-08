@@ -118,8 +118,8 @@ export function DataTable<TData>({
 
   return (
     <div className={cn("flex flex-col gap-4", className)}>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative w-full lg:max-w-xs">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[16rem] flex-1 basis-64">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={globalFilter}
@@ -130,17 +130,16 @@ export function DataTable<TData>({
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {toolbar}
+        {toolbar}
 
-          {enableColumnVisibility && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <SlidersHorizontal />
-                  Colunas
-                </Button>
-              </DropdownMenuTrigger>
+        {enableColumnVisibility && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="shrink-0">
+                <SlidersHorizontal />
+                Colunas
+              </Button>
+            </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Exibir colunas</DropdownMenuLabel>
                 {table
@@ -165,12 +164,11 @@ export function DataTable<TData>({
           )}
 
           {exportFileName && (
-            <Button variant="outline" size="sm" onClick={handleExport} disabled={totalFiltered === 0}>
+            <Button variant="outline" size="sm" className="shrink-0" onClick={handleExport} disabled={totalFiltered === 0}>
               <Download />
               Exportar
             </Button>
           )}
-        </div>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">

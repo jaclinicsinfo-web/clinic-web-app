@@ -28,7 +28,6 @@ import type { Paciente } from "@/types";
 
 interface PacientesTableProps {
   pacientes: Paciente[];
-  convenios: { id: string; nome: string }[];
   profissionais: { id: string; nome: string }[];
   carregando?: boolean;
   somenteProprios?: boolean;
@@ -44,7 +43,6 @@ function nomeConvenio(paciente: Paciente) {
 
 export function PacientesTable({
   pacientes,
-  convenios,
   profissionais,
   carregando,
   somenteProprios,
@@ -54,7 +52,6 @@ export function PacientesTable({
   const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
   const podeEditar = temPermissao(permissoes, "pacientes", "editar");
   const [status, setStatus] = React.useState("todos");
-  const [convenio, setConvenio] = React.useState("todos");
   const [profissional, setProfissional] = React.useState("todos");
   const [faixa, setFaixa] = React.useState<FaixaEtaria>("todas");
   const [arquivando, setArquivando] = React.useState<Paciente | null>(null);
@@ -63,8 +60,6 @@ export function PacientesTable({
   const dados = React.useMemo(() => {
     return pacientes.filter((paciente) => {
       if (status !== "todos" && paciente.status !== status) return false;
-      if (convenio === "particular" && paciente.convenioId) return false;
-      if (convenio !== "todos" && convenio !== "particular" && paciente.convenioId !== convenio) return false;
       if (profissional !== "todos" && paciente.profissionalPreferidoId !== profissional) return false;
 
       if (faixa !== "todas") {
@@ -76,7 +71,7 @@ export function PacientesTable({
 
       return true;
     });
-  }, [pacientes, status, convenio, profissional, faixa]);
+  }, [pacientes, status, profissional, faixa]);
 
   const columns = React.useMemo<ColumnDef<Paciente, unknown>[]>(
     () => [
@@ -228,7 +223,7 @@ export function PacientesTable({
         toolbar={
           <>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-36" aria-label="Filtrar por status">
+              <SelectTrigger className="w-36 shrink-0" aria-label="Filtrar por status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -239,24 +234,9 @@ export function PacientesTable({
               </SelectContent>
             </Select>
 
-            <Select value={convenio} onValueChange={setConvenio}>
-              <SelectTrigger className="w-40" aria-label="Filtrar por convênio">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todo convênio</SelectItem>
-                <SelectItem value="particular">Particular</SelectItem>
-                {convenios.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
             {!somenteProprios && (
               <Select value={profissional} onValueChange={setProfissional}>
-                <SelectTrigger className="w-44" aria-label="Filtrar por profissional">
+                <SelectTrigger className="w-44 shrink-0" aria-label="Filtrar por profissional">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -271,7 +251,7 @@ export function PacientesTable({
             )}
 
             <Select value={faixa} onValueChange={(valor) => setFaixa(valor as FaixaEtaria)}>
-              <SelectTrigger className="w-36" aria-label="Filtrar por faixa etária">
+              <SelectTrigger className="w-36 shrink-0" aria-label="Filtrar por faixa etária">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

@@ -39,7 +39,6 @@ export function PacientesWorkspace() {
 
   const [pacientes, setPacientes] = React.useState<Paciente[]>([]);
   const [resumo, setResumo] = React.useState<ResumoPacientes>(resumoVazio);
-  const [convenios, setConvenios] = React.useState<OpcaoPaciente[]>([]);
   const [profissionais, setProfissionais] = React.useState<OpcaoPaciente[]>([]);
   const [somenteProprios, setSomenteProprios] = React.useState(profissionalSaude);
   const [carregando, setCarregando] = React.useState(true);
@@ -52,7 +51,6 @@ export function PacientesWorkspace() {
       const data = await listarPacientesApi();
       setPacientes(data.pacientes);
       setResumo(data.resumo);
-      setConvenios(data.convenios);
       setProfissionais(data.profissionais);
       setSomenteProprios(data.somenteProprios);
       data.pacientes.forEach((paciente) => setPacienteNome(paciente.id, paciente.nome));
@@ -137,7 +135,6 @@ export function PacientesWorkspace() {
       ) : (
         <PacientesTable
           pacientes={pacientes}
-          convenios={convenios}
           profissionais={profissionais}
           carregando={carregando}
           somenteProprios={somenteProprios}
