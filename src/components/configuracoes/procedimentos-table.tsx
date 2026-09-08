@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Plus, Power } from "lucide-react";
+import { MoreHorizontal, Pencil, Plus, Power } from "lucide-react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -27,6 +27,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -34,7 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatCurrency, formatMinutes } from "@/lib/format";
 import { ApiError } from "@/lib/api";
 import type { Procedimento } from "@/types";
-import { criarProcedimentoApi, inativarProcedimentoApi } from "@/services/procedimentos";
+import { atualizarProcedimentoApi, criarProcedimentoApi, inativarProcedimentoApi } from "@/services/procedimentos";
 
 const schema = z.object({
   nome: z.string().min(3, "Informe o nome do procedimento."),
@@ -44,6 +45,8 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
+
+const VALORES_VAZIOS: FormValues = { nome: "", categoria: "", duracaoPadraoMin: 30, valorParticular: 0 };
 
 export function ProcedimentosTable({
   procedimentos,
@@ -56,6 +59,7 @@ export function ProcedimentosTable({
   const [status, setStatus] = React.useState("todos");
   const [categoria, setCategoria] = React.useState("todas");
   const [aberto, setAberto] = React.useState(false);
+  const [editando, setEditando] = React.useState<Procedimento | null>(null);
   const [inativando, setInativando] = React.useState<Procedimento | null>(null);
 
   React.useEffect(() => {
@@ -81,8 +85,28 @@ export function ProcedimentosTable({
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: "", categoria: "", duracaoPadraoMin: 30, valorParticular: 0 },
+    defaultValues: VALORES_VAZIOS,
   });
+
+  function abrirNovo() {
+    setEditando(null);
+    reset(VALORES_VAZIOS);
+    setAberto(true);
+  }
+
+  const abrirEdicao = React.useCallback(
+    (procedimento: Procedimento) => {
+      setEditando(procedimento);
+      reset({
+        nome: procedimento.nome,
+        categoria: procedimento.categoria,
+        duracaoPadraoMin: procedimento.duracaoPadraoMin,
+        valorParticular: procedimento.valorParticular,
+      });
+      setAberto(true);
+    },
+    [reset],
+  );
 
   const columns = React.useMemo<ColumnDef<Procedimento, unknown>[]>(
     () => [
@@ -133,17 +157,26 @@ export function ProcedimentosTable({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem destructive onSelect={() => setInativando(row.original)}>
-                  <Power />
-                  Inativar
+                <DropdownMenuItem onSelect={() => abrirEdicao(row.original)}>
+                  <Pencil />
+                  Editar
                 </DropdownMenuItem>
+                {row.original.status === "ativo" && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem destructive onSelect={() => setInativando(row.original)}>
+                      <Power />
+                      Inativar
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         ),
       },
     ],
-    [],
+    [abrirEdicao],
   );
 
   return (
@@ -179,7 +212,7 @@ export function ProcedimentosTable({
                 <SelectItem value="inativo">Inativos</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={() => setAberto(true)}>
+            <Button onClick={abrirNovo}>
               <Plus />
               Novo procedimento
             </Button>
@@ -191,24 +224,47 @@ export function ProcedimentosTable({
         open={aberto}
         onOpenChange={(estado) => {
           setAberto(estado);
-          if (!estado) reset();
+          if (!estado) {
+            setEditando(null);
+            reset(VALORES_VAZIOS);
+          }
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Novo procedimento</DialogTitle>
-            <DialogDescription>Duração padrão alimenta a agenda; valores de convênio saem na ficha da operadora.</DialogDescription>
+            <DialogTitle>{editando ? "Editar procedimento" : "Novo procedimento"}</DialogTitle>
+            <DialogDescription>
+              {editando
+                ? "Alterações de duração passam a valer nos próximos agendamentos."
+                : "Duração padrão alimenta a agenda; valores de convênio saem na ficha da operadora."}
+            </DialogDescription>
           </DialogHeader>
           <form
             onSubmit={handleSubmit(async (values) => {
               try {
-                const criado = await criarProcedimentoApi(values);
-                setLista((atual) => [...atual, criado]);
-                toast.success("Procedimento cadastrado", { description: values.nome });
-                reset();
+                if (editando) {
+                  const atualizado = await atualizarProcedimentoApi(editando.id, {
+                    ...values,
+                    status: editando.status,
+                  });
+                  setLista((atual) => atual.map((item) => (item.id === atualizado.id ? atualizado : item)));
+                  toast.success("Procedimento atualizado", { description: values.nome });
+                } else {
+                  const criado = await criarProcedimentoApi(values);
+                  setLista((atual) => [...atual, criado]);
+                  toast.success("Procedimento cadastrado", { description: values.nome });
+                }
+                reset(VALORES_VAZIOS);
+                setEditando(null);
                 setAberto(false);
               } catch (error) {
-                toast.error(error instanceof ApiError ? error.message : "Não foi possível cadastrar o procedimento.");
+                toast.error(
+                  error instanceof ApiError
+                    ? error.message
+                    : editando
+                      ? "Não foi possível atualizar o procedimento."
+                      : "Não foi possível cadastrar o procedimento.",
+                );
               }
             })}
           >
