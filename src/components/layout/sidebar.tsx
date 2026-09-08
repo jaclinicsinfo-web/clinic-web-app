@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, HeartPulse, Lock, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
+import { PlanoAtualIndicador } from "@/components/layout/plano-atual-indicador";
 import { navGroups, type NavItem } from "@/lib/navigation";
 import { temPermissao } from "@/lib/permissoes";
 import { nomeDoPlano, isAdministrador, isAdminOuGestor } from "@/lib/plano";
@@ -83,8 +84,8 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
       >
         <div
           className={cn(
-            "flex h-16 shrink-0 items-center gap-2.5 border-b border-sidebar-border px-4",
-            collapsed && "justify-center px-0",
+            "shrink-0 border-b border-sidebar-border",
+            collapsed ? "flex h-16 items-center justify-center" : "px-3 py-3",
           )}
         >
           {collapsed ? (
@@ -101,17 +102,18 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
             </Tooltip>
           ) : (
             <>
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <HeartPulse className="size-5" />
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">
-                  {sessao?.clinicaNome || "J.A. Clinics"}
-                </p>
-                <p className="truncate text-xs text-sidebar-muted">
-                  {plano ? `Plano ${plano.nome}` : "Gestão de clínicas"}
-                </p>
+              <div className="flex items-center gap-2.5 px-1">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <HeartPulse className="size-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-white">
+                    {sessao?.clinicaNome || "J.A. Clinics"}
+                  </p>
+                  {!plano && <p className="truncate text-xs text-sidebar-muted">Gestão de clínicas</p>}
+                </div>
               </div>
+              {plano ? <PlanoAtualIndicador className="mt-2.5" /> : null}
             </>
           )}
         </div>
