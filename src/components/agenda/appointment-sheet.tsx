@@ -25,10 +25,11 @@ import {
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { formatCurrency, formatMinutes } from "@/lib/format";
+import { formatCurrency, formatMinutes, toMoneyNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { getStatusMeta } from "@/lib/status";
 import { duracaoEmMinutos, proximosStatus, somarMinutos } from "@/services/agenda";
+import { listarProcedimentosApi } from "@/services/procedimentos";
 import type { Agendamento, AgendamentoStatus, Procedimento, Profissional, TipoAgendamento } from "@/types";
 import type { SlotSelecionado } from "./calendar-view";
 import { tipoAgendamentoLabels, rotuloTipoAgendamento } from "./agenda-utils";
@@ -119,6 +120,7 @@ export function AppointmentSheet({
   onNovoPaciente,
 }: AppointmentSheetProps) {
   const [busca, setBusca] = React.useState("");
+  const [catalogo, setCatalogo] = React.useState(procedimentos);
 
   const edicao = Boolean(agendamento);
 
@@ -134,6 +136,10 @@ export function AppointmentSheet({
   });
 
   React.useEffect(() => {
+    setCatalogo(procedimentos);
+  }, [procedimentos]);
+
+  React.useEffect(() => {
     if (!open) {
       setBusca("");
       return;
@@ -141,24 +147,35 @@ export function AppointmentSheet({
     reset(valoresIniciais(agendamento, slot, pacienteInicialId));
   }, [open, agendamento, slot, pacienteInicialId, reset]);
 
+  React.useEffect(() => {
+    if (!open) return;
+    let cancelado = false;
+    void listarProcedimentosApi()
+      .then((data) => {
+        if (!cancelado) setCatalogo(data.procedimentos);
+      })
+      .catch(() => {
+        if (!cancelado) setCatalogo(procedimentos);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [open, procedimentos]);
+
   const values = watch();
   const paciente = pacientes.find((item) => item.id === values.pacienteId);
   const profissional = profissionais.find((item) => item.id === values.profissionalId);
-  const procedimento = procedimentos.find((item) => item.id === values.procedimentoId);
+  const procedimento = catalogo.find((item) => item.id === values.procedimentoId);
 
   const procedimentosHabilitados = React.useMemo(() => {
-    if (!profissional) return procedimentos.filter((item) => item.status === "ativo");
-    return procedimentos.filter(
-      (item) => item.status === "ativo" && profissional.procedimentosHabilitados.includes(item.id),
-    );
-  }, [profissional, procedimentos]);
+    const ativos = catalogo.filter((item) => item.status === "ativo");
+    if (!profissional) return ativos;
+    const habilitados = profissional.procedimentosHabilitados ?? [];
+    if (habilitados.length === 0) return ativos;
+    return ativos.filter((item) => habilitados.includes(item.id));
+  }, [profissional, catalogo]);
 
-  const valorCalculado = React.useMemo(() => {
-    if (!procedimento) return 0;
-    if (values.particular || !values.convenioId) return procedimento.valorParticular;
-    return procedimento.valoresPorConvenio.find((item) => item.convenioId === values.convenioId)?.valor
-      ?? procedimento.valorParticular;
-  }, [procedimento, values.particular, values.convenioId]);
+  const valorCalculado = valorPrevistoDoProcedimento(procedimento, values.particular, values.convenioId);
 
   const pacientesFiltrados = React.useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -195,7 +212,7 @@ export function AppointmentSheet({
 
   function onProcedimentoChange(procedimentoId: string) {
     setValue("procedimentoId", procedimentoId, { shouldValidate: true });
-    const escolhido = procedimentos.find((item) => item.id === procedimentoId);
+    const escolhido = catalogo.find((item) => item.id === procedimentoId);
     if (escolhido && values.horaInicio) {
       setValue("horaFim", somarMinutos(values.horaInicio, escolhido.duracaoPadraoMin));
     }
@@ -411,7 +428,7 @@ export function AppointmentSheet({
                   <SelectContent>
                     {procedimentosHabilitados.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
-                        {item.nome} · {formatMinutes(item.duracaoPadraoMin)}
+                        {item.nome} · {formatMinutes(item.duracaoPadraoMin)} · {formatCurrency(item.valorParticular)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -518,7 +535,10 @@ export function AppointmentSheet({
               )}
 
               <p className="text-sm text-muted-foreground">
-                Valor previsto: <span className="font-semibold tabular-nums text-foreground">{formatCurrency(valorCalculado)}</span>
+                Valor previsto:{" "}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {procedimento ? formatCurrency(valorCalculado) : "—"}
+                </span>
               </p>
             </FormSection>
 
@@ -547,6 +567,18 @@ export function AppointmentSheet({
       </SheetContent>
     </Sheet>
   );
+}
+
+function valorPrevistoDoProcedimento(
+  procedimento: Procedimento | undefined,
+  particular: boolean,
+  convenioId: string | null,
+) {
+  if (!procedimento) return 0;
+  const particularValor = toMoneyNumber(procedimento.valorParticular);
+  if (particular || !convenioId) return particularValor;
+  const daTabela = procedimento.valoresPorConvenio?.find((item) => item.convenioId === convenioId);
+  return daTabela ? toMoneyNumber(daTabela.valor) : particularValor;
 }
 
 function valoresIniciais(

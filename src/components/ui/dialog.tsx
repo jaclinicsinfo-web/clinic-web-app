@@ -43,6 +43,7 @@ const DialogContent = React.forwardRef<
         data-slot="dialog-content"
         className={cn(
           "fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl",
+          "[&>form]:flex [&>form]:min-h-0 [&>form]:flex-1 [&>form]:flex-col",
           sizes[size],
           className,
         )}
@@ -62,17 +63,30 @@ const DialogContent = React.forwardRef<
 DialogContent.displayName = "DialogContent";
 
 function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col gap-1 border-b border-border px-6 py-4 pr-12", className)} {...props} />;
+  return (
+    <div className={cn("flex shrink-0 flex-col gap-1 border-b border-border px-6 py-4 pr-12", className)} {...props} />
+  );
 }
 
 function DialogBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex-1 overflow-y-auto px-6 py-5 scrollbar-thin", className)} {...props} />;
+  return (
+    <div
+      className={cn(
+        "min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-6 py-5 scrollbar-thin",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("flex flex-col-reverse gap-2 border-t border-border px-6 py-4 sm:flex-row sm:justify-end", className)}
+      className={cn(
+        "flex shrink-0 flex-col-reverse gap-2 border-t border-border px-6 py-4 sm:flex-row sm:justify-end",
+        className,
+      )}
       {...props}
     />
   );

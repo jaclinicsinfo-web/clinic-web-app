@@ -108,7 +108,7 @@ export function NovoConvenioDialog({ onCriado }: { onCriado?: () => void }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)} className="contents">
           <DialogBody className="space-y-6">
             <FormSection title="Identificação" description="Dados cadastrais da operadora.">
               <FormField label="Nome do convênio" htmlFor="nome" error={errors.nome?.message} required>

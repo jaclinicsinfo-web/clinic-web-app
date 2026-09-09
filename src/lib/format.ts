@@ -15,11 +15,29 @@ export function formatISODate(value: Date) {
   return format(value, "yyyy-MM-dd");
 }
 
+/** Converte Decimal/string da API em número para exibir e calcular preço. */
+export function toMoneyNumber(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value.trim().replace(/\s/g, "").replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  if (value && typeof value === "object" && "toNumber" in value && typeof value.toNumber === "function") {
+    const parsed = Number(value.toNumber());
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  if (value != null) {
+    const parsed = Number(String(value));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(value);
+  }).format(toMoneyNumber(value));
 }
 
 /** Valor compacto para cards de indicador: R$ 12,4 mil */
