@@ -4,12 +4,15 @@ import * as React from "react";
 import { salvarTabelaConvenioApi } from "@/services/convenios";
 import { toast } from "sonner";
 
+import { Pode } from "@/components/auth/pode";
 import { MoneyInput } from "@/components/shared/money-input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/format";
 import { ApiError } from "@/lib/api";
+import { temPermissao } from "@/lib/permissoes";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import type { Convenio, Procedimento } from "@/types";
 
 interface ConvenioTabelaPrecosProps {
@@ -19,6 +22,8 @@ interface ConvenioTabelaPrecosProps {
 }
 
 export function ConvenioTabelaPrecos({ convenio, procedimentos, onSalvo }: ConvenioTabelaPrecosProps) {
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const podeEditar = temPermissao(permissoes, "convenios", "editar");
   const [valores, setValores] = React.useState<Record<string, number>>(() => {
     const inicial: Record<string, number> = {};
     convenio.tabelaPrecos.forEach((item) => {
@@ -36,9 +41,10 @@ export function ConvenioTabelaPrecos({ convenio, procedimentos, onSalvo }: Conve
           <CardTitle>Tabela de preços</CardTitle>
           <CardDescription>Valores do convênio comparados ao particular.</CardDescription>
         </div>
-        <Button
-          size="sm"
-          onClick={async () => {
+        <Pode modulo="convenios" acao="editar">
+          <Button
+            size="sm"
+            onClick={async () => {
             const precos = Object.entries(valores)
               .filter(([, valor]) => valor > 0)
               .map(([procedimentoId, valor]) => ({ procedimentoId, valor }));
@@ -53,6 +59,7 @@ export function ConvenioTabelaPrecos({ convenio, procedimentos, onSalvo }: Conve
         >
           Salvar tabela
         </Button>
+        </Pode>
       </CardHeader>
       <CardContent className="px-0 pb-0">
         <Table>
@@ -81,6 +88,7 @@ export function ConvenioTabelaPrecos({ convenio, procedimentos, onSalvo }: Conve
                     <MoneyInput
                       className="ml-auto max-w-36"
                       value={valorConvenio ?? 0}
+                      disabled={!podeEditar}
                       onChange={(valor) =>
                         setValores((atual) => ({ ...atual, [procedimento.id]: valor }))
                       }

@@ -7,6 +7,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ExternalLink, MoreHorizontal, Pencil, Power, ShieldCheck, Table2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ConvenioDialog } from "@/components/convenios/convenio-dialog";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { DataTable } from "@/components/shared/data-table";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -23,21 +24,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatPhone } from "@/lib/format";
 import { ApiError } from "@/lib/api";
 import { planoIncluiModulo } from "@/lib/modulos-plano";
+import { temPermissao } from "@/lib/permissoes";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import type { Convenio } from "@/types";
 
 interface ConveniosTableProps {
   convenios: Convenio[];
   onInativar?: (convenio: Convenio) => Promise<void> | void;
+  onAtivar?: (convenio: Convenio) => Promise<void> | void;
+  onAtualizado?: (convenio: Convenio) => void;
 }
 
-export function ConveniosTable({ convenios, onInativar }: ConveniosTableProps) {
+export function ConveniosTable({ convenios, onInativar, onAtivar, onAtualizado }: ConveniosTableProps) {
   const router = useRouter();
   const plano = useSessaoStore((state) => state.sessao?.plano);
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
   const mostraFaturamento = planoIncluiModulo(plano, "financeiro");
+  const podeEditar = temPermissao(permissoes, "convenios", "editar");
   const [status, setStatus] = React.useState("todos");
   const [autorizacao, setAutorizacao] = React.useState("todas");
+  const [editando, setEditando] = React.useState<Convenio | null>(null);
   const [inativando, setInativando] = React.useState<Convenio | null>(null);
+  const [ativando, setAtivando] = React.useState<Convenio | null>(null);
 
   const dados = React.useMemo(() => {
     return convenios.filter((convenio) => {
@@ -140,10 +148,12 @@ export function ConveniosTable({ convenios, onInativar }: ConveniosTableProps) {
                       Faturamento
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onSelect={() => router.push(`/convenios/${convenio.id}?editar=1`)}>
-                    <Pencil />
-                    Editar
-                  </DropdownMenuItem>
+                  {podeEditar && (
+                    <DropdownMenuItem onSelect={() => setEditando(convenio)}>
+                      <Pencil />
+                      Editar
+                    </DropdownMenuItem>
+                  )}
                   {convenio.portalUrl && (
                     <DropdownMenuItem asChild>
                       <a href={convenio.portalUrl} target="_blank" rel="noreferrer">
@@ -152,11 +162,22 @@ export function ConveniosTable({ convenios, onInativar }: ConveniosTableProps) {
                       </a>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem destructive onSelect={() => setInativando(convenio)}>
-                    <Power />
-                    Inativar
-                  </DropdownMenuItem>
+                  {podeEditar && (
+                    <>
+                      <DropdownMenuSeparator />
+                      {convenio.status === "ativo" ? (
+                        <DropdownMenuItem destructive onSelect={() => setInativando(convenio)}>
+                          <Power />
+                          Inativar
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onSelect={() => setAtivando(convenio)}>
+                          <Power />
+                          Reativar
+                        </DropdownMenuItem>
+                      )}
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -164,7 +185,7 @@ export function ConveniosTable({ convenios, onInativar }: ConveniosTableProps) {
         },
       },
     ],
-    [router, mostraFaturamento, onInativar],
+    [router, mostraFaturamento, podeEditar],
   );
 
   return (
@@ -204,6 +225,16 @@ export function ConveniosTable({ convenios, onInativar }: ConveniosTableProps) {
         }
       />
 
+      <ConvenioDialog
+        open={Boolean(editando)}
+        onOpenChange={(aberto) => !aberto && setEditando(null)}
+        convenio={editando}
+        onSalvo={(atualizado) => {
+          onAtualizado?.(atualizado);
+          setEditando(null);
+        }}
+      />
+
       <ConfirmDialog
         open={Boolean(inativando)}
         onOpenChange={(aberto) => !aberto && setInativando(null)}
@@ -218,6 +249,25 @@ export function ConveniosTable({ convenios, onInativar }: ConveniosTableProps) {
             setInativando(null);
           } catch (error) {
             toast.error(error instanceof ApiError ? error.message : "Não foi possível inativar o convênio.");
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(ativando)}
+        onOpenChange={(aberto) => !aberto && setAtivando(null)}
+        title="Reativar convênio?"
+        description={`${ativando?.nome ?? ""} voltará a aparecer na criação de agendamentos e no vínculo de pacientes.`}
+        confirmLabel="Reativar"
+        destructive={false}
+        onConfirm={async () => {
+          if (!ativando) return;
+          try {
+            if (onAtivar) await onAtivar(ativando);
+            toast.success("Convênio reativado", { description: ativando.nome });
+            setAtivando(null);
+          } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : "Não foi possível reativar o convênio.");
           }
         }}
       />

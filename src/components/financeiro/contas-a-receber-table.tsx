@@ -21,7 +21,9 @@ import { ParcelasDialog } from "@/components/financeiro/parcelas-dialog";
 import { RegistrarPagamentoDialog } from "@/components/financeiro/registrar-pagamento-dialog";
 import { formasPagamento } from "@/components/financeiro/utils";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { temPermissao } from "@/lib/permissoes";
 import { formaPagamentoLabels } from "@/lib/status";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import type { Cobranca } from "@/types";
 import type { PagamentoRegistrado } from "@/components/financeiro/registrar-pagamento-dialog";
 
@@ -37,6 +39,8 @@ function nomeConvenio(cobranca: Cobranca) {
 }
 
 export function ContasAReceberTable({ cobrancas, convenios, onPagar }: ContasAReceberTableProps) {
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const podeReceber = temPermissao(permissoes, "financeiro", "criar");
   const [status, setStatus] = React.useState("todos");
   const [origem, setOrigem] = React.useState("todas");
   const [forma, setForma] = React.useState("todas");
@@ -161,10 +165,12 @@ export function ContasAReceberTable({ cobrancas, convenios, onPagar }: ContasARe
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem disabled={quitada} onSelect={() => setRecebendo(cobranca)}>
-                    <CreditCard />
-                    Registrar pagamento
-                  </DropdownMenuItem>
+                  {podeReceber && (
+                    <DropdownMenuItem disabled={quitada} onSelect={() => setRecebendo(cobranca)}>
+                      <CreditCard />
+                      Registrar pagamento
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     disabled={cobranca.parcelas.length === 0}
                     onSelect={() => setDetalhando(cobranca)}
@@ -186,7 +192,7 @@ export function ContasAReceberTable({ cobrancas, convenios, onPagar }: ContasARe
         },
       },
     ],
-    [],
+    [podeReceber],
   );
 
   return (

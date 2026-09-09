@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { ContasAReceberTable } from "@/components/financeiro/contas-a-receber-table";
 import { NovaCobrancaDialog } from "@/components/financeiro/nova-cobranca-dialog";
+import { Pode } from "@/components/auth/pode";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -83,7 +84,11 @@ export function ContasAReceberWorkspace() {
       <PageHeader
         title="Contas a receber"
         description="Cobranças de pacientes e faturamento particular da clínica."
-        actions={<NovaCobrancaDialog pacientes={pacientes} convenios={convenios} onCriada={() => void carregar()} />}
+        actions={
+          <Pode modulo="financeiro" acao="criar">
+            <NovaCobrancaDialog pacientes={pacientes} convenios={convenios} onCriada={() => void carregar()} />
+          </Pode>
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

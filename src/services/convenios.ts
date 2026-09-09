@@ -61,6 +61,11 @@ export async function inativarConvenioApi(id: string) {
   return data.convenio;
 }
 
+export async function ativarConvenioApi(id: string) {
+  const data = await api.patch<{ convenio: Convenio }>(`/convenios/${id}/ativar`);
+  return data.convenio;
+}
+
 export async function salvarTabelaConvenioApi(id: string, precos: { procedimentoId: string; valor: number }[]) {
   const data = await api.put<{ convenio: Convenio }>(`/convenios/${id}/tabela`, { precos });
   return data.convenio;

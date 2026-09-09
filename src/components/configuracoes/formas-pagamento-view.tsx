@@ -4,6 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/shared/empty-state";
+import { Pode } from "@/components/auth/pode";
 import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,13 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ApiError } from "@/lib/api";
 import { formatPercent } from "@/lib/format";
+import { temPermissao } from "@/lib/permissoes";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import { listarFormasPagamentoApi, salvarFormasPagamentoApi, type FormaPagamentoCadastro } from "@/services/financeiro";
 
 export function FormasPagamentoView() {
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const podeEditar = temPermissao(permissoes, "configuracoes", "editar");
   const [itens, setItens] = React.useState<FormaPagamentoCadastro[]>([]);
   const [carregando, setCarregando] = React.useState(true);
   const [salvando, setSalvando] = React.useState(false);
@@ -43,6 +48,7 @@ export function FormasPagamentoView() {
   }, []);
 
   async function salvar() {
+    if (!podeEditar) return;
     setSalvando(true);
     try {
       const formas = await salvarFormasPagamentoApi(
@@ -67,9 +73,11 @@ export function FormasPagamentoView() {
         title="Formas de pagamento"
         description="Canais aceitos no caixa e no faturamento particular."
         actions={
-          <Button onClick={() => void salvar()} loading={salvando} disabled={carregando}>
-            Salvar
-          </Button>
+          <Pode modulo="configuracoes" acao="editar">
+            <Button onClick={() => void salvar()} loading={salvando} disabled={carregando}>
+              Salvar
+            </Button>
+          </Pode>
         }
       />
       <Card>
@@ -100,6 +108,7 @@ export function FormasPagamentoView() {
                   <TableCell className="text-right">
                     <Switch
                       checked={forma.ativo}
+                      disabled={!podeEditar}
                       onCheckedChange={(checked) =>
                         setItens((atual) =>
                           atual.map((item) => (item.id === forma.id ? { ...item, ativo: checked } : item)),

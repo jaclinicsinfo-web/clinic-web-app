@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dialog";
 import { formatCompetencia } from "@/components/financeiro/utils";
 import { formatCurrency, formatDate, formatNumber, formatPercent } from "@/lib/format";
+import { temPermissao } from "@/lib/permissoes";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import type { LoteConvenio } from "@/types";
 
 interface LoteDetalheDialogProps {
@@ -46,6 +48,8 @@ function LinhaResumo({ label, valor, tone }: { label: string; valor: string; ton
 }
 
 export function LoteDetalheDialog({ lote, onOpenChange, onEnviar, onConciliar }: LoteDetalheDialogProps) {
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const podeEditar = temPermissao(permissoes, "financeiro", "editar");
   const aReceber = lote ? Math.max(lote.valorApresentado - lote.valorGlosado - lote.valorRecebido, 0) : 0;
   const taxaGlosa = lote && lote.valorApresentado > 0 ? (lote.valorGlosado / lote.valorApresentado) * 100 : 0;
   const [glosado, setGlosado] = React.useState(0);
@@ -124,7 +128,7 @@ export function LoteDetalheDialog({ lote, onOpenChange, onEnviar, onConciliar }:
                 </div>
               </div>
 
-              {lote.status === "enviado" || lote.status === "parcial" ? (
+              {podeEditar && (lote.status === "enviado" || lote.status === "parcial") ? (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField label="Valor glosado">
                     <MoneyInput value={glosado} onChange={setGlosado} />
@@ -142,11 +146,11 @@ export function LoteDetalheDialog({ lote, onOpenChange, onEnviar, onConciliar }:
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>
-          {lote?.status === "aberto" ? (
+          {podeEditar && lote?.status === "aberto" ? (
             <Button loading={salvando} onClick={() => void enviar()}>
               Enviar lote
             </Button>
-          ) : (
+          ) : podeEditar ? (
             <Button
               disabled={!lote || lote.status === "pago" || lote.status === "glosado"}
               loading={salvando}
@@ -154,7 +158,7 @@ export function LoteDetalheDialog({ lote, onOpenChange, onEnviar, onConciliar }:
             >
               Conciliar recebimento
             </Button>
-          )}
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>

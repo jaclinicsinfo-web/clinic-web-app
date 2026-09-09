@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { PatientCard, type PatientCardPaciente } from "@/components/shared/patient-card";
 import { FormField, FormSection } from "@/components/shared/form-section";
+import { Pode } from "@/components/auth/pode";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,7 +100,7 @@ interface AppointmentSheetProps {
   ultimosPacientesPorProfissional?: Record<string, PacienteAgenda[]>;
   onSave: (draft: AgendamentoDraft) => void | Promise<void>;
   onChangeStatus?: (id: string, status: AgendamentoStatus) => void;
-  onNovoPaciente?: (paciente: PacienteAgenda) => void;
+  onNovoPaciente?: () => void;
 }
 
 export function AppointmentSheet({
@@ -364,22 +365,14 @@ export function AppointmentSheet({
                     )}
                   </div>
                   {errors.pacienteId && <p className="text-xs text-destructive">{errors.pacienteId.message}</p>}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      onNovoPaciente?.({
-                        id: "",
-                        nome: "",
-                        telefone: "",
-                        convenioId: null,
-                      })
-                    }
-                  >
-                    <UserPlus />
-                    Cadastrar novo
-                  </Button>
+                  {onNovoPaciente && (
+                    <Pode modulo="pacientes" acao="criar">
+                      <Button type="button" variant="outline" size="sm" onClick={onNovoPaciente}>
+                        <UserPlus />
+                        Cadastrar novo
+                      </Button>
+                    </Pode>
+                  )}
                 </div>
               )}
             </FormSection>

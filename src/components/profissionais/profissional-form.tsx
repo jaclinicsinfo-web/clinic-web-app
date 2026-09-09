@@ -225,6 +225,7 @@ export function ProfissionalForm({ especialidades, procedimentos, usuarios = [],
           horaFim,
         })),
       usuarioId: values.usuarioId ? values.usuarioId : null,
+      status: profissional?.status ?? "ativo",
     };
 
     try {

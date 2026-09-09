@@ -23,21 +23,27 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatPercent, getInitials } from "@/lib/format";
 import { ApiError } from "@/lib/api";
+import { temPermissao } from "@/lib/permissoes";
 import { formaRemuneracaoLabels, tipoVinculoLabels } from "@/lib/status";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import type { Profissional } from "@/types";
 
 interface ProfissionaisTableProps {
   profissionais: Profissional[];
   especialidades: string[];
   onInativar?: (profissional: Profissional) => Promise<void> | void;
+  onAtivar?: (profissional: Profissional) => Promise<void> | void;
 }
 
-export function ProfissionaisTable({ profissionais, especialidades, onInativar }: ProfissionaisTableProps) {
+export function ProfissionaisTable({ profissionais, especialidades, onInativar, onAtivar }: ProfissionaisTableProps) {
   const router = useRouter();
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const podeEditar = temPermissao(permissoes, "profissionais", "editar");
   const [status, setStatus] = React.useState("todos");
   const [especialidade, setEspecialidade] = React.useState("todas");
   const [vinculo, setVinculo] = React.useState("todos");
   const [inativando, setInativando] = React.useState<Profissional | null>(null);
+  const [ativando, setAtivando] = React.useState<Profissional | null>(null);
 
   const dados = React.useMemo(() => {
     return profissionais.filter((profissional) => {
@@ -153,15 +159,28 @@ export function ProfissionaisTable({ profissionais, especialidades, onInativar }
                     <CalendarDays />
                     Ver agenda
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => router.push(`/profissionais/${profissional.id}/editar`)}>
-                    <Pencil />
-                    Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem destructive onSelect={() => setInativando(profissional)}>
-                    <Power />
-                    Inativar
-                  </DropdownMenuItem>
+                  {podeEditar && (
+                    <DropdownMenuItem onSelect={() => router.push(`/profissionais/${profissional.id}/editar`)}>
+                      <Pencil />
+                      Editar
+                    </DropdownMenuItem>
+                  )}
+                  {podeEditar && (
+                    <>
+                      <DropdownMenuSeparator />
+                      {profissional.status === "ativo" ? (
+                        <DropdownMenuItem destructive onSelect={() => setInativando(profissional)}>
+                          <Power />
+                          Inativar
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onSelect={() => setAtivando(profissional)}>
+                          <Power />
+                          Reativar
+                        </DropdownMenuItem>
+                      )}
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -169,7 +188,7 @@ export function ProfissionaisTable({ profissionais, especialidades, onInativar }
         },
       },
     ],
-    [router],
+    [router, podeEditar],
   );
 
   return (
@@ -238,6 +257,25 @@ export function ProfissionaisTable({ profissionais, especialidades, onInativar }
             setInativando(null);
           } catch (error) {
             toast.error(error instanceof ApiError ? error.message : "Não foi possível inativar o profissional.");
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(ativando)}
+        onOpenChange={(aberto) => !aberto && setAtivando(null)}
+        title="Reativar profissional?"
+        description={`${ativando?.nome ?? ""} voltará a aparecer na agenda e poderá receber novos agendamentos.`}
+        confirmLabel="Reativar"
+        destructive={false}
+        onConfirm={async () => {
+          if (!ativando) return;
+          try {
+            if (onAtivar) await onAtivar(ativando);
+            toast.success("Profissional reativado", { description: ativando.nome });
+            setAtivando(null);
+          } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : "Não foi possível reativar o profissional.");
           }
         }}
       />

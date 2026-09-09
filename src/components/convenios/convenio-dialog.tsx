@@ -4,7 +4,6 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { FormField, FormSection } from "@/components/shared/form-section";
@@ -17,7 +16,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +23,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { formatPhone } from "@/lib/format";
 import { ApiError } from "@/lib/api";
-import { criarConvenioApi } from "@/services/convenios";
+import { atualizarConvenioApi, criarConvenioApi } from "@/services/convenios";
+import type { Convenio } from "@/types";
 
 const convenioSchema = z.object({
   nome: z.string().min(3, "Informe o nome do convênio."),
@@ -43,8 +42,42 @@ const convenioSchema = z.object({
 
 type ConvenioFormValues = z.infer<typeof convenioSchema>;
 
-export function NovoConvenioDialog({ onCriado }: { onCriado?: () => void }) {
-  const [aberto, setAberto] = React.useState(false);
+const VALORES_VAZIOS: ConvenioFormValues = {
+  nome: "",
+  registroAns: "",
+  prazoPagamentoDias: 30,
+  exigeAutorizacaoPrevia: false,
+  contatoNome: "",
+  contatoTelefone: "",
+  portalUrl: "",
+  status: "ativo",
+};
+
+function valoresDoConvenio(convenio: Convenio): ConvenioFormValues {
+  return {
+    nome: convenio.nome,
+    registroAns: convenio.registroAns ?? "",
+    prazoPagamentoDias: convenio.prazoPagamentoDias,
+    exigeAutorizacaoPrevia: convenio.exigeAutorizacaoPrevia,
+    contatoNome: convenio.contatoNome,
+    contatoTelefone: formatPhone(convenio.contatoTelefone),
+    portalUrl: convenio.portalUrl ?? "",
+    status: convenio.status,
+  };
+}
+
+export function ConvenioDialog({
+  open,
+  onOpenChange,
+  convenio,
+  onSalvo,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  convenio?: Convenio | null;
+  onSalvo?: (convenio: Convenio) => void;
+}) {
+  const editando = Boolean(convenio);
 
   const {
     register,
@@ -55,69 +88,76 @@ export function NovoConvenioDialog({ onCriado }: { onCriado?: () => void }) {
     formState: { errors, isSubmitting },
   } = useForm<ConvenioFormValues>({
     resolver: zodResolver(convenioSchema),
-    defaultValues: {
-      nome: "",
-      registroAns: "",
-      prazoPagamentoDias: 30,
-      exigeAutorizacaoPrevia: false,
-      contatoNome: "",
-      contatoTelefone: "",
-      portalUrl: "",
-      status: "ativo",
-    },
+    defaultValues: VALORES_VAZIOS,
   });
 
+  React.useEffect(() => {
+    if (!open) return;
+    reset(convenio ? valoresDoConvenio(convenio) : VALORES_VAZIOS);
+  }, [open, convenio, reset]);
+
   async function onSubmit(values: ConvenioFormValues) {
+    const payload = {
+      ...values,
+      contatoTelefone: values.contatoTelefone.replace(/\D/g, ""),
+      portalUrl: values.portalUrl.trim() ? values.portalUrl.trim() : null,
+    };
+
     try {
-      await criarConvenioApi({
-        ...values,
-        contatoTelefone: values.contatoTelefone.replace(/\D/g, ""),
-        portalUrl: values.portalUrl.trim() ? values.portalUrl.trim() : null,
+      const salvo =
+        editando && convenio
+          ? await atualizarConvenioApi(convenio.id, payload)
+          : await criarConvenioApi(payload);
+      toast.success(editando ? "Convênio atualizado" : "Convênio cadastrado", {
+        description: editando
+          ? values.nome
+          : `${values.nome} já pode ser vinculado a pacientes e agendamentos.`,
       });
-      toast.success("Convênio cadastrado", {
-        description: `${values.nome} já pode ser vinculado a pacientes e agendamentos.`,
-      });
-      reset();
-      setAberto(false);
-      onCriado?.();
+      onOpenChange(false);
+      onSalvo?.(salvo);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Não foi possível cadastrar o convênio.");
+      toast.error(
+        error instanceof ApiError
+          ? error.message
+          : editando
+            ? "Não foi possível atualizar o convênio."
+            : "Não foi possível cadastrar o convênio.",
+      );
     }
   }
 
   return (
-    <Dialog
-      open={aberto}
-      onOpenChange={(estado) => {
-        setAberto(estado);
-        if (!estado) reset();
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button>
-          <Plus />
-          Novo convênio
-        </Button>
-      </DialogTrigger>
-
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Novo convênio</DialogTitle>
+          <DialogTitle>{editando ? "Editar convênio" : "Novo convênio"}</DialogTitle>
           <DialogDescription>
-            A tabela de preços por procedimento é configurada depois, na página do convênio.
+            {editando
+              ? "Dados cadastrais da operadora. A tabela de preços fica na ficha do convênio."
+              : "A tabela de preços por procedimento é configurada depois, na página do convênio."}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="contents">
           <DialogBody className="space-y-6">
             <FormSection title="Identificação" description="Dados cadastrais da operadora.">
-              <FormField label="Nome do convênio" htmlFor="nome" error={errors.nome?.message} required>
-                <Input id="nome" placeholder="Unimed" aria-invalid={Boolean(errors.nome)} {...register("nome")} />
+              <FormField label="Nome do convênio" htmlFor="convenio-nome" error={errors.nome?.message} required>
+                <Input
+                  id="convenio-nome"
+                  placeholder="Unimed"
+                  aria-invalid={Boolean(errors.nome)}
+                  {...register("nome")}
+                />
               </FormField>
 
-              <FormField label="Registro ANS" htmlFor="registroAns" error={errors.registroAns?.message} required>
+              <FormField
+                label="Registro ANS"
+                htmlFor="convenio-ans"
+                error={errors.registroAns?.message}
+                required
+              >
                 <Input
-                  id="registroAns"
+                  id="convenio-ans"
                   inputMode="numeric"
                   placeholder="393321"
                   aria-invalid={Boolean(errors.registroAns)}
@@ -142,14 +182,14 @@ export function NovoConvenioDialog({ onCriado }: { onCriado?: () => void }) {
 
               <FormField
                 label="Prazo de pagamento"
-                htmlFor="prazoPagamentoDias"
+                htmlFor="convenio-prazo"
                 error={errors.prazoPagamentoDias?.message}
                 hint="Prazo médio entre o envio do lote e o crédito."
                 required
               >
                 <div className="relative">
                   <Input
-                    id="prazoPagamentoDias"
+                    id="convenio-prazo"
                     type="number"
                     min={1}
                     max={180}
@@ -165,18 +205,23 @@ export function NovoConvenioDialog({ onCriado }: { onCriado?: () => void }) {
             </FormSection>
 
             <FormSection title="Contato e portal" description="Canal usado pela recepção e pelo faturamento.">
-              <FormField label="Contato" htmlFor="contatoNome" error={errors.contatoNome?.message} required>
+              <FormField label="Contato" htmlFor="convenio-contato" error={errors.contatoNome?.message} required>
                 <Input
-                  id="contatoNome"
+                  id="convenio-contato"
                   placeholder="Central de Relacionamento"
                   aria-invalid={Boolean(errors.contatoNome)}
                   {...register("contatoNome")}
                 />
               </FormField>
 
-              <FormField label="Telefone" htmlFor="contatoTelefone" error={errors.contatoTelefone?.message} required>
+              <FormField
+                label="Telefone"
+                htmlFor="convenio-telefone"
+                error={errors.contatoTelefone?.message}
+                required
+              >
                 <Input
-                  id="contatoTelefone"
+                  id="convenio-telefone"
                   inputMode="numeric"
                   placeholder="(00) 0000-0000"
                   aria-invalid={Boolean(errors.contatoTelefone)}
@@ -186,21 +231,21 @@ export function NovoConvenioDialog({ onCriado }: { onCriado?: () => void }) {
                 />
               </FormField>
 
-              <FormField label="Portal do prestador" htmlFor="portalUrl" error={errors.portalUrl?.message} full>
-                <Input id="portalUrl" placeholder="https://portal.operadora.com.br" {...register("portalUrl")} />
+              <FormField label="Portal do prestador" htmlFor="convenio-portal" error={errors.portalUrl?.message} full>
+                <Input id="convenio-portal" placeholder="https://portal.operadora.com.br" {...register("portalUrl")} />
               </FormField>
             </FormSection>
 
             <FormSection title="Regras de atendimento" description="Condições aplicadas no agendamento." columns={1}>
               <div className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
                 <Switch
-                  id="exigeAutorizacaoPrevia"
+                  id="convenio-autorizacao"
                   className="mt-0.5"
                   checked={watch("exigeAutorizacaoPrevia")}
                   onCheckedChange={(checked) => setValue("exigeAutorizacaoPrevia", checked)}
                 />
                 <div>
-                  <Label htmlFor="exigeAutorizacaoPrevia">Exige autorização prévia</Label>
+                  <Label htmlFor="convenio-autorizacao">Exige autorização prévia</Label>
                   <p className="mt-0.5 text-sm text-muted-foreground">
                     A recepção precisa registrar o número da senha antes de confirmar o agendamento.
                   </p>
@@ -210,11 +255,11 @@ export function NovoConvenioDialog({ onCriado }: { onCriado?: () => void }) {
           </DialogBody>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setAberto(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button type="submit" loading={isSubmitting}>
-              Salvar convênio
+              {editando ? "Salvar alterações" : "Cadastrar"}
             </Button>
           </DialogFooter>
         </form>

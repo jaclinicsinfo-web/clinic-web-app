@@ -45,8 +45,8 @@ interface CalendarViewProps {
   bloqueios: BloqueioAgenda[];
   profissionais: Profissional[];
   onSelectAgendamento: (agendamento: Agendamento) => void;
-  onSelectSlot: (slot: SlotSelecionado) => void;
-  onReagendar: (agendamentoId: string, slot: SlotSelecionado) => void;
+  onSelectSlot?: (slot: SlotSelecionado) => void;
+  onReagendar?: (agendamentoId: string, slot: SlotSelecionado) => void;
   onSelectDia: (dataIso: string) => void;
 }
 
@@ -152,11 +152,12 @@ function ColunaProfissional({
   agendamentos: Agendamento[];
   bloqueios: BloqueioAgenda[];
   onSelectAgendamento: (agendamento: Agendamento) => void;
-  onSelectSlot: (slot: SlotSelecionado) => void;
-  onReagendar: (agendamentoId: string, slot: SlotSelecionado) => void;
+  onSelectSlot?: (slot: SlotSelecionado) => void;
+  onReagendar?: (agendamentoId: string, slot: SlotSelecionado) => void;
 }) {
   function handleDrop(event: React.DragEvent, horaInicio: string) {
     event.preventDefault();
+    if (!onReagendar) return;
     const id = event.dataTransfer.getData("text/agendamento-id");
     if (!id) return;
     onReagendar(id, { data: dataIso, horaInicio, profissionalId: profissional.id });
@@ -169,10 +170,16 @@ function ColunaProfissional({
           key={slot}
           type="button"
           aria-label={`Horário ${slot} com ${profissional.nome}`}
-          className="absolute inset-x-0 border-t border-border/70 hover:bg-primary-subtle/60"
+          className={cn(
+            "absolute inset-x-0 border-t border-border/70",
+            onSelectSlot && "hover:bg-primary-subtle/60",
+          )}
           style={{ top: posicaoTopo(slot), height: 30 * PIXELS_POR_MINUTO }}
-          onClick={() => onSelectSlot({ data: dataIso, horaInicio: slot, profissionalId: profissional.id })}
-          onDragOver={(event) => event.preventDefault()}
+          onClick={() => onSelectSlot?.({ data: dataIso, horaInicio: slot, profissionalId: profissional.id })}
+          onDragOver={(event) => {
+            if (!onReagendar) return;
+            event.preventDefault();
+          }}
           onDrop={(event) => handleDrop(event, slot)}
         />
       ))}
@@ -205,8 +212,9 @@ function ColunaProfissional({
           <button
             key={agendamento.id}
             type="button"
-            draggable
+            draggable={Boolean(onReagendar)}
             onDragStart={(event) => {
+              if (!onReagendar) return;
               event.dataTransfer.setData("text/agendamento-id", agendamento.id);
               event.dataTransfer.effectAllowed = "move";
             }}
@@ -282,6 +290,7 @@ function VisaoSemana({
 
               <div className="flex flex-1 flex-col gap-1.5 p-2">
                 {doDia.length === 0 ? (
+                  onSelectSlot ? (
                   <button
                     type="button"
                     className="rounded-md border border-dashed border-border px-2 py-6 text-center text-xs text-muted-foreground hover:border-primary hover:text-primary"
@@ -289,6 +298,7 @@ function VisaoSemana({
                   >
                     Encaixar horário
                   </button>
+                  ) : null
                 ) : (
                   doDia.map((agendamento) => (
                     <button

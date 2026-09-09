@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { LotesConvenioTable } from "@/components/financeiro/lotes-convenio-table";
 import { formatCompetencia, hojeISO } from "@/components/financeiro/utils";
+import { Pode } from "@/components/auth/pode";
 import { FormField } from "@/components/shared/form-section";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -102,6 +103,7 @@ export function LotesConvenioWorkspace() {
         title="Faturamento de convênios"
         description="Lotes enviados, glosas e valores recebidos das operadoras."
         actions={
+          <Pode modulo="financeiro" acao="criar">
           <Dialog open={aberto} onOpenChange={setAberto}>
             <DialogTrigger asChild>
               <Button>
@@ -143,6 +145,7 @@ export function LotesConvenioWorkspace() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </Pode>
         }
       />
 

@@ -10,6 +10,8 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
+import { temPermissao } from "@/lib/permissoes";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import {
   obterProfissionalApi,
   opcoesProfissionaisApi,
@@ -20,6 +22,8 @@ import type { Profissional } from "@/types";
 
 export function ProfissionalFormWorkspace({ profissionalId }: { profissionalId?: string }) {
   const edicao = Boolean(profissionalId);
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const podeSalvar = temPermissao(permissoes, "profissionais", edicao ? "editar" : "criar");
   const [especialidades, setEspecialidades] = React.useState<string[]>([]);
   const [procedimentos, setProcedimentos] = React.useState<ProcedimentoOpcao[]>([]);
   const [usuarios, setUsuarios] = React.useState<UsuarioVinculo[]>([]);
@@ -28,6 +32,8 @@ export function ProfissionalFormWorkspace({ profissionalId }: { profissionalId?:
   const [erro, setErro] = React.useState<string | null>(null);
 
   React.useEffect(() => {
+    if (!podeSalvar) return;
+
     let ativo = true;
     async function carregar() {
       setCarregando(true);
@@ -54,7 +60,25 @@ export function ProfissionalFormWorkspace({ profissionalId }: { profissionalId?:
     return () => {
       ativo = false;
     };
-  }, [profissionalId]);
+  }, [profissionalId, podeSalvar]);
+
+  if (!podeSalvar) {
+    return (
+      <EmptyState
+        title="Sem permissão"
+        description={
+          edicao
+            ? "Seu perfil não pode editar profissionais."
+            : "Seu perfil não pode cadastrar profissionais."
+        }
+        action={
+          <Button variant="outline" asChild>
+            <Link href="/profissionais">Voltar para profissionais</Link>
+          </Button>
+        }
+      />
+    );
+  }
 
   if (carregando) {
     return (

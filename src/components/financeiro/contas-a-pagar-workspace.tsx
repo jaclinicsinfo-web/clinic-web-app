@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { ContasAPagarTable } from "@/components/financeiro/contas-a-pagar-table";
 import { NovaDespesaDialog } from "@/components/financeiro/nova-despesa-dialog";
+import { Pode } from "@/components/auth/pode";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -78,7 +79,11 @@ export function ContasAPagarWorkspace() {
       <PageHeader
         title="Contas a pagar"
         description="Despesas operacionais, fornecedores e recorrências."
-        actions={<NovaDespesaDialog categorias={categorias} onCriada={() => void carregar()} />}
+        actions={
+          <Pode modulo="financeiro" acao="criar">
+            <NovaDespesaDialog categorias={categorias} onCriada={() => void carregar()} />
+          </Pode>
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

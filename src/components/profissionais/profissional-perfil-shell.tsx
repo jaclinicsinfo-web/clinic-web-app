@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CalendarPlus, Loader2, Mail, Pencil, Phone } from "lucide-react";
 
 import { ProfissionalTabs } from "@/components/profissionais/profissional-tabs";
+import { Pode } from "@/components/auth/pode";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -138,12 +139,14 @@ export function ProfissionalPerfilShell({
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
-              <Button variant="outline" asChild>
-                <Link href={`/profissionais/${profissional.id}/editar`}>
-                  <Pencil />
-                  Editar
-                </Link>
-              </Button>
+              <Pode modulo="profissionais" acao="editar">
+                <Button variant="outline" asChild>
+                  <Link href={`/profissionais/${profissional.id}/editar`}>
+                    <Pencil />
+                    Editar
+                  </Link>
+                </Button>
+              </Pode>
               <Button asChild>
                 <Link href={`/agenda?profissional=${profissional.id}&novo=1`}>
                   <CalendarPlus />

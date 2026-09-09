@@ -8,6 +8,7 @@ import { ComissoesTable } from "@/components/financeiro/comissoes-table";
 import { FecharFolhaButton } from "@/components/financeiro/fechar-folha-button";
 import { hojeISO } from "@/components/financeiro/utils";
 import { EmptyState } from "@/components/shared/empty-state";
+import { Pode } from "@/components/auth/pode";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/ui/button";
@@ -87,10 +88,13 @@ export function ComissoesWorkspace() {
         description="Repasses do corpo clínico por competência, com aprovação e pagamento."
         actions={
           <>
-            <Button variant="outline" loading={calculando} onClick={() => void calcular()}>
-              Calcular competência
-            </Button>
+            <Pode modulo="financeiro" acao="criar">
+              <Button variant="outline" loading={calculando} onClick={() => void calcular()}>
+                Calcular competência
+              </Button>
+            </Pode>
             {resumo.competencia ? (
+              <Pode modulo="financeiro" acao="editar">
               <FecharFolhaButton
                 competencia={resumo.competencia}
                 total={resumo.totalPrevisto}
@@ -105,6 +109,7 @@ export function ComissoesWorkspace() {
                   }
                 }}
               />
+              </Pode>
             ) : null}
           </>
         }

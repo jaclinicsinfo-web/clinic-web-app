@@ -2,9 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Loader2, ExternalLink, Phone, ShieldCheck, Table2, Timer } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Loader2, ExternalLink, Pencil, Phone, ShieldCheck, Table2, Timer } from "lucide-react";
 
+import { ConvenioDialog } from "@/components/convenios/convenio-dialog";
 import { ConvenioTabelaPrecos } from "@/components/convenios/convenio-tabela-precos";
+import { Pode } from "@/components/auth/pode";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +20,14 @@ import { useSessaoStore } from "@/hooks/use-sessao";
 import { obterConvenioApi, type IndicadoresConvenio, type PacienteConvenio } from "@/services/convenios";
 import type { Convenio, Procedimento } from "@/types";
 
-export function ConvenioDetalheWorkspace({ convenioId }: { convenioId: string }) {
+export function ConvenioDetalheWorkspace({
+  convenioId,
+  abrirEdicao = false,
+}: {
+  convenioId: string;
+  abrirEdicao?: boolean;
+}) {
+  const router = useRouter();
   const plano = useSessaoStore((state) => state.sessao?.plano);
   const mostraFaturamento = planoIncluiModulo(plano, "financeiro");
   const [convenio, setConvenio] = React.useState<Convenio | null>(null);
@@ -26,6 +36,7 @@ export function ConvenioDetalheWorkspace({ convenioId }: { convenioId: string })
   const [procedimentos, setProcedimentos] = React.useState<Procedimento[]>([]);
   const [carregando, setCarregando] = React.useState(true);
   const [erro, setErro] = React.useState<string | null>(null);
+  const [formAberto, setFormAberto] = React.useState(abrirEdicao);
 
   const carregar = React.useCallback(async () => {
     setCarregando(true);
@@ -46,6 +57,11 @@ export function ConvenioDetalheWorkspace({ convenioId }: { convenioId: string })
   React.useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  React.useEffect(() => {
+    if (!abrirEdicao) return;
+    router.replace(`/convenios/${convenioId}`, { scroll: false });
+  }, [abrirEdicao, convenioId, router]);
 
   if (carregando) {
     return (
@@ -92,6 +108,12 @@ export function ConvenioDetalheWorkspace({ convenioId }: { convenioId: string })
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
+            <Pode modulo="convenios" acao="editar">
+              <Button variant="outline" onClick={() => setFormAberto(true)}>
+                <Pencil />
+                Editar
+              </Button>
+            </Pode>
             {convenio.portalUrl && (
               <Button variant="outline" asChild>
                 <a href={convenio.portalUrl} target="_blank" rel="noreferrer">
@@ -166,6 +188,18 @@ export function ConvenioDetalheWorkspace({ convenioId }: { convenioId: string })
           )}
         </CardContent>
       </Card>
+
+      <Pode modulo="convenios" acao="editar">
+        <ConvenioDialog
+          open={formAberto}
+          onOpenChange={setFormAberto}
+          convenio={convenio}
+          onSalvo={(atualizado) => {
+            setConvenio(atualizado);
+            void carregar();
+          }}
+        />
+      </Pode>
     </div>
   );
 }

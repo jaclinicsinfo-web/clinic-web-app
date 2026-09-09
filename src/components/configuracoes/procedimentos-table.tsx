@@ -34,8 +34,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatMinutes } from "@/lib/format";
 import { ApiError } from "@/lib/api";
+import { temPermissao } from "@/lib/permissoes";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import type { Procedimento } from "@/types";
-import { atualizarProcedimentoApi, criarProcedimentoApi, inativarProcedimentoApi } from "@/services/procedimentos";
+import {
+  ativarProcedimentoApi,
+  atualizarProcedimentoApi,
+  criarProcedimentoApi,
+  inativarProcedimentoApi,
+} from "@/services/procedimentos";
 
 const schema = z.object({
   nome: z.string().min(3, "Informe o nome do procedimento."),
@@ -55,12 +62,16 @@ export function ProcedimentosTable({
   procedimentos: Procedimento[];
   categorias: readonly string[];
 }) {
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const podeCriar = temPermissao(permissoes, "configuracoes", "criar");
+  const podeEditar = temPermissao(permissoes, "configuracoes", "editar");
   const [lista, setLista] = React.useState(procedimentos);
   const [status, setStatus] = React.useState("todos");
   const [categoria, setCategoria] = React.useState("todas");
   const [aberto, setAberto] = React.useState(false);
   const [editando, setEditando] = React.useState<Procedimento | null>(null);
   const [inativando, setInativando] = React.useState<Procedimento | null>(null);
+  const [ativando, setAtivando] = React.useState<Procedimento | null>(null);
 
   React.useEffect(() => {
     setLista(procedimentos);
@@ -148,7 +159,9 @@ export function ProcedimentosTable({
         enableHiding: false,
         enableGlobalFilter: false,
         size: 56,
-        cell: ({ row }) => (
+        cell: ({ row }) => {
+          if (!podeEditar) return null;
+          return (
           <div className="flex justify-end" onClick={(event) => event.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -157,11 +170,13 @@ export function ProcedimentosTable({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => abrirEdicao(row.original)}>
-                  <Pencil />
-                  Editar
-                </DropdownMenuItem>
-                {row.original.status === "ativo" && (
+                {podeEditar && (
+                  <DropdownMenuItem onSelect={() => abrirEdicao(row.original)}>
+                    <Pencil />
+                    Editar
+                  </DropdownMenuItem>
+                )}
+                {podeEditar && row.original.status === "ativo" && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem destructive onSelect={() => setInativando(row.original)}>
@@ -170,13 +185,23 @@ export function ProcedimentosTable({
                     </DropdownMenuItem>
                   </>
                 )}
+                {podeEditar && row.original.status === "inativo" && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => setAtivando(row.original)}>
+                      <Power />
+                      Reativar
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        ),
+          );
+        },
       },
     ],
-    [abrirEdicao],
+    [abrirEdicao, podeEditar],
   );
 
   return (
@@ -212,10 +237,12 @@ export function ProcedimentosTable({
                 <SelectItem value="inativo">Inativos</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={abrirNovo}>
-              <Plus />
-              Novo procedimento
-            </Button>
+            {podeCriar && (
+              <Button onClick={abrirNovo}>
+                <Plus />
+                Novo procedimento
+              </Button>
+            )}
           </>
         }
       />
@@ -308,7 +335,7 @@ export function ProcedimentosTable({
                 Cancelar
               </Button>
               <Button type="submit" loading={isSubmitting}>
-                Salvar
+                {editando ? "Salvar alterações" : "Cadastrar"}
               </Button>
             </DialogFooter>
           </form>
@@ -330,6 +357,26 @@ export function ProcedimentosTable({
             setInativando(null);
           } catch (error) {
             toast.error(error instanceof ApiError ? error.message : "Não foi possível inativar o procedimento.");
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(ativando)}
+        onOpenChange={(abertoDialog) => !abertoDialog && setAtivando(null)}
+        title="Reativar procedimento?"
+        description={`${ativando?.nome ?? ""} voltará a aparecer na criação de agendamentos.`}
+        confirmLabel="Reativar"
+        destructive={false}
+        onConfirm={async () => {
+          if (!ativando) return;
+          try {
+            const atualizado = await ativarProcedimentoApi(ativando.id);
+            setLista((atual) => atual.map((item) => (item.id === atualizado.id ? atualizado : item)));
+            toast.success("Procedimento reativado", { description: ativando.nome });
+            setAtivando(null);
+          } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : "Não foi possível reativar o procedimento.");
           }
         }}
       />

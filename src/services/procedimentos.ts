@@ -27,3 +27,8 @@ export async function inativarProcedimentoApi(id: string) {
   const data = await api.patch<{ procedimento: Procedimento }>(`/procedimentos/${id}/inativar`);
   return data.procedimento;
 }
+
+export async function ativarProcedimentoApi(id: string) {
+  const data = await api.patch<{ procedimento: Procedimento }>(`/procedimentos/${id}/ativar`);
+  return data.procedimento;
+}

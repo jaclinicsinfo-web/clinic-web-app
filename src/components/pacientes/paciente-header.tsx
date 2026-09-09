@@ -76,12 +76,14 @@ export function PacienteHeader({ paciente }: { paciente: Paciente }) {
               </Link>
             </Button>
           </Pode>
-          <Button asChild>
-            <Link href={`/agenda?paciente=${paciente.id}`}>
-              <CalendarPlus />
-              Agendar
-            </Link>
-          </Button>
+          <Pode modulo="agenda" acao="criar">
+            <Button asChild>
+              <Link href={`/agenda?paciente=${paciente.id}`}>
+                <CalendarPlus />
+                Agendar
+              </Link>
+            </Button>
+          </Pode>
         </div>
       </div>
     </Card>

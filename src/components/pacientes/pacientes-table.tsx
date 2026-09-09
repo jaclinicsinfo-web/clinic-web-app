@@ -51,6 +51,7 @@ export function PacientesTable({
   const router = useRouter();
   const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
   const podeEditar = temPermissao(permissoes, "pacientes", "editar");
+  const podeAgendar = temPermissao(permissoes, "agenda", "criar");
   const [status, setStatus] = React.useState("todos");
   const [profissional, setProfissional] = React.useState("todos");
   const [faixa, setFaixa] = React.useState<FaixaEtaria>("todas");
@@ -174,10 +175,12 @@ export function PacientesTable({
                     <UserRound />
                     Ver perfil
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => router.push(`/agenda?paciente=${paciente.id}`)}>
-                    <CalendarPlus />
-                    Agendar
-                  </DropdownMenuItem>
+                  {podeAgendar && (
+                    <DropdownMenuItem onSelect={() => router.push(`/agenda?paciente=${paciente.id}`)}>
+                      <CalendarPlus />
+                      Agendar
+                    </DropdownMenuItem>
+                  )}
                   {podeEditar && (
                     <DropdownMenuItem onSelect={() => router.push(`/pacientes/${paciente.id}/editar`)}>
                       <Pencil />
@@ -200,7 +203,7 @@ export function PacientesTable({
         },
       },
     ],
-    [router, podeEditar],
+    [router, podeEditar, podeAgendar],
   );
 
   return (

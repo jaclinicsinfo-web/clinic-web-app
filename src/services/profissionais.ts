@@ -105,3 +105,8 @@ export async function inativarProfissionalApi(id: string) {
   const data = await api.patch<{ profissional: Profissional }>(`/profissionais/${id}/inativar`);
   return data.profissional;
 }
+
+export async function ativarProfissionalApi(id: string) {
+  const data = await api.patch<{ profissional: Profissional }>(`/profissionais/${id}/ativar`);
+  return data.profissional;
+}

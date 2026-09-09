@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Percent, Plus, Stethoscope, UserCheck, Users } from "lucide-react";
 
 import { ProfissionaisTable } from "@/components/profissionais/profissionais-table";
+import { Pode } from "@/components/auth/pode";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { formatPercent } from "@/lib/format";
 import {
+  ativarProfissionalApi,
   inativarProfissionalApi,
   listarProfissionaisApi,
   type ResumoProfissionais,
@@ -56,18 +58,29 @@ export function ProfissionaisWorkspace() {
     }));
   }
 
+  async function ativar(profissional: Profissional) {
+    const atualizado = await ativarProfissionalApi(profissional.id);
+    setProfissionais((atual) => atual.map((item) => (item.id === atualizado.id ? atualizado : item)));
+    setResumo((atual) => ({
+      ...atual,
+      ativos: atual.ativos + (profissional.status === "inativo" ? 1 : 0),
+    }));
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Profissionais"
         description="Corpo clínico da clínica: vínculos, comissionamento e disponibilidade na agenda."
         actions={
-          <Button asChild>
-            <Link href="/profissionais/novo">
-              <Plus />
-              Novo profissional
-            </Link>
-          </Button>
+          <Pode modulo="profissionais" acao="criar">
+            <Button asChild>
+              <Link href="/profissionais/novo">
+                <Plus />
+                Novo profissional
+              </Link>
+            </Button>
+          </Pode>
         }
       />
 
@@ -97,7 +110,12 @@ export function ProfissionaisWorkspace() {
             />
           </div>
 
-          <ProfissionaisTable profissionais={profissionais} especialidades={especialidades} onInativar={inativar} />
+          <ProfissionaisTable
+            profissionais={profissionais}
+            especialidades={especialidades}
+            onInativar={inativar}
+            onAtivar={ativar}
+          />
         </>
       )}
     </div>

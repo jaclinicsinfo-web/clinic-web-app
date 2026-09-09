@@ -1,15 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { Handshake, ShieldCheck, Timer, Users } from "lucide-react";
+import { Handshake, Plus, ShieldCheck, Timer, Users } from "lucide-react";
 
+import { ConvenioDialog } from "@/components/convenios/convenio-dialog";
 import { ConveniosTable } from "@/components/convenios/convenios-table";
-import { NovoConvenioDialog } from "@/components/convenios/novo-convenio-dialog";
+import { Pode } from "@/components/auth/pode";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
+import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import {
+  ativarConvenioApi,
   inativarConvenioApi,
   listarConveniosApi,
   type ResumoConvenios,
@@ -28,6 +31,7 @@ export function ConveniosWorkspace() {
   const [resumo, setResumo] = React.useState<ResumoConvenios>(resumoVazio);
   const [carregando, setCarregando] = React.useState(true);
   const [erro, setErro] = React.useState<string | null>(null);
+  const [novoAberto, setNovoAberto] = React.useState(false);
 
   const carregar = React.useCallback(async () => {
     setCarregando(true);
@@ -47,13 +51,24 @@ export function ConveniosWorkspace() {
     void carregar();
   }, [carregar]);
 
+  function substituir(atualizado: Convenio, anteriorStatus?: Convenio["status"]) {
+    setConvenios((atual) => atual.map((item) => (item.id === atualizado.id ? atualizado : item)));
+    if (anteriorStatus && anteriorStatus !== atualizado.status) {
+      setResumo((atual) => ({
+        ...atual,
+        ativos: Math.max(0, atual.ativos + (atualizado.status === "ativo" ? 1 : -1)),
+      }));
+    }
+  }
+
   async function inativar(convenio: Convenio) {
     const atualizado = await inativarConvenioApi(convenio.id);
-    setConvenios((atual) => atual.map((item) => (item.id === atualizado.id ? atualizado : item)));
-    setResumo((atual) => ({
-      ...atual,
-      ativos: Math.max(0, atual.ativos - (convenio.status === "ativo" ? 1 : 0)),
-    }));
+    substituir(atualizado, convenio.status);
+  }
+
+  async function ativar(convenio: Convenio) {
+    const atualizado = await ativarConvenioApi(convenio.id);
+    substituir(atualizado, convenio.status);
   }
 
   return (
@@ -61,7 +76,14 @@ export function ConveniosWorkspace() {
       <PageHeader
         title="Convênios"
         description="Operadoras, tabela de preços por procedimento e regras de autorização prévia."
-        actions={<NovoConvenioDialog onCriado={() => void carregar()} />}
+        actions={
+          <Pode modulo="convenios" acao="criar">
+            <Button onClick={() => setNovoAberto(true)}>
+              <Plus />
+              Novo convênio
+            </Button>
+          </Pode>
+        }
       />
 
       {erro ? (
@@ -84,9 +106,18 @@ export function ConveniosWorkspace() {
             />
           </div>
 
-          <ConveniosTable convenios={convenios} onInativar={inativar} />
+          <ConveniosTable
+            convenios={convenios}
+            onInativar={inativar}
+            onAtivar={ativar}
+            onAtualizado={(atualizado) =>
+              substituir(atualizado, convenios.find((item) => item.id === atualizado.id)?.status)
+            }
+          />
         </>
       )}
+
+      <ConvenioDialog open={novoAberto} onOpenChange={setNovoAberto} onSalvo={() => void carregar()} />
     </div>
   );
 }

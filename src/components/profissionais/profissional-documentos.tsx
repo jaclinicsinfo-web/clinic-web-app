@@ -5,6 +5,7 @@ import { Download, FileText, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { Pode } from "@/components/auth/pode";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -85,14 +86,16 @@ export function ProfissionalDocumentos({ profissionalNome }: { profissionalNome:
               Contrato, certificações e documentos do conselho de classe de {profissionalNome}
             </CardDescription>
           </div>
-          <Button
-            size="sm"
-            className="shrink-0"
-            onClick={() => toast.info("Envio de documentos disponível em breve.")}
-          >
-            <Upload />
-            Enviar documento
-          </Button>
+          <Pode modulo="profissionais" acao="editar">
+            <Button
+              size="sm"
+              className="shrink-0"
+              onClick={() => toast.info("Envio de documentos disponível em breve.")}
+            >
+              <Upload />
+              Enviar documento
+            </Button>
+          </Pode>
         </CardHeader>
         <CardContent className="px-0 pb-0">
           {documentos.length === 0 ? (
@@ -101,10 +104,12 @@ export function ProfissionalDocumentos({ profissionalNome }: { profissionalNome:
               description="Envie o contrato, as certificações e os documentos do conselho para manter o cadastro completo."
               icon={FileText}
               action={
-                <Button variant="outline" onClick={() => toast.info("Envio de documentos disponível em breve.")}>
-                  <Upload />
-                  Enviar documento
-                </Button>
+                <Pode modulo="profissionais" acao="editar">
+                  <Button variant="outline" onClick={() => toast.info("Envio de documentos disponível em breve.")}>
+                    <Upload />
+                    Enviar documento
+                  </Button>
+                </Pode>
               }
             />
           ) : (
@@ -136,6 +141,7 @@ export function ProfissionalDocumentos({ profissionalNome }: { profissionalNome:
                     >
                       <Download />
                     </Button>
+                    <Pode modulo="profissionais" acao="editar">
                     <Button
                       variant="ghost"
                       size="icon-sm"
@@ -144,6 +150,7 @@ export function ProfissionalDocumentos({ profissionalNome }: { profissionalNome:
                     >
                       <Trash2 />
                     </Button>
+                    </Pode>
                   </div>
                 </li>
               ))}
@@ -152,6 +159,7 @@ export function ProfissionalDocumentos({ profissionalNome }: { profissionalNome:
         </CardContent>
       </Card>
 
+      <Pode modulo="profissionais" acao="editar">
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-input bg-card px-6 py-10 text-center">
         <span className="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
           <Upload className="size-5" />
@@ -166,6 +174,7 @@ export function ProfissionalDocumentos({ profissionalNome }: { profissionalNome:
           Selecionar arquivos
         </Button>
       </div>
+      </Pode>
 
       <ConfirmDialog
         open={Boolean(removendo)}

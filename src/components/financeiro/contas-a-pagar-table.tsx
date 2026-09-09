@@ -17,7 +17,9 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RegistrarPagamentoDialog, type PagamentoRegistrado } from "@/components/financeiro/registrar-pagamento-dialog";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { temPermissao } from "@/lib/permissoes";
 import { formaPagamentoLabels } from "@/lib/status";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import type { Despesa } from "@/types";
 
 interface ContasAPagarTableProps {
@@ -27,6 +29,8 @@ interface ContasAPagarTableProps {
 }
 
 export function ContasAPagarTable({ despesas, categorias, onPagar }: ContasAPagarTableProps) {
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const podePagar = temPermissao(permissoes, "financeiro", "criar");
   const [status, setStatus] = React.useState("todos");
   const [categoria, setCategoria] = React.useState("todas");
   const [pagando, setPagando] = React.useState<Despesa | null>(null);
@@ -118,6 +122,7 @@ export function ContasAPagarTable({ despesas, categorias, onPagar }: ContasAPaga
         enableGlobalFilter: false,
         size: 56,
         cell: ({ row }) => {
+          if (!podePagar) return null;
           const despesa = row.original;
           return (
             <div className="flex justify-end">
@@ -139,7 +144,7 @@ export function ContasAPagarTable({ despesas, categorias, onPagar }: ContasAPaga
         },
       },
     ],
-    [],
+    [podePagar],
   );
 
   return (

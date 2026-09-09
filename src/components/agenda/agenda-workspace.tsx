@@ -9,14 +9,17 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
+import { Pode } from "@/components/auth/pode";
 import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
 import { formatCurrency, formatISODate, parseLocalDate } from "@/lib/format";
+import { temPermissao } from "@/lib/permissoes";
 import { getStatusMeta } from "@/lib/status";
 import { cn } from "@/lib/utils";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import {
   alterarStatusAgendamentoApi,
   atualizarAgendamentoApi,
@@ -81,6 +84,8 @@ const statusFiltro: AgendamentoStatus[] = [
 export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const podeCriar = temPermissao(permissoes, "agenda", "criar");
   const pacienteInicialId = searchParams.get("paciente") ?? undefined;
   const profissionalInicialId = searchParams.get("profissional") ?? undefined;
   const abrirNovo = searchParams.get("novo") === "1" || Boolean(pacienteInicialId);
@@ -161,7 +166,9 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
   const [agendamentoAberto, setAgendamentoAberto] = React.useState<Agendamento | null>(null);
   const [slotAberto, setSlotAberto] = React.useState<SlotSelecionado | null>(null);
   const [pacienteSheetId, setPacienteSheetId] = React.useState<string | undefined>(pacienteInicialId);
-  const [sheetAberto, setSheetAberto] = React.useState(abrirNovo || Boolean(pacienteInicialId));
+  const [sheetAberto, setSheetAberto] = React.useState(
+    podeCriar && (abrirNovo || Boolean(pacienteInicialId)),
+  );
   const [bloqueioAberto, setBloqueioAberto] = React.useState(false);
   const [esperaAberta, setEsperaAberta] = React.useState(false);
 
@@ -226,6 +233,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
   }, [dataIso, visao]);
 
   function abrirCriacao(slot?: SlotSelecionado, pacienteId?: string) {
+    if (!podeCriar) return;
     setAgendamentoAberto(null);
     setSlotAberto(
       slot ?? {
@@ -353,14 +361,18 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
                 </span>
               )}
             </Button>
-            <Button variant="outline" onClick={() => setBloqueioAberto(true)}>
-              <Lock />
-              Bloquear horário
-            </Button>
-            <Button onClick={() => abrirCriacao()}>
-              <CalendarPlus />
-              Novo agendamento
-            </Button>
+            <Pode modulo="agenda" acao="criar">
+              <Button variant="outline" onClick={() => setBloqueioAberto(true)}>
+                <Lock />
+                Bloquear horário
+              </Button>
+            </Pode>
+            <Pode modulo="agenda" acao="criar">
+              <Button onClick={() => abrirCriacao()}>
+                <CalendarPlus />
+                Novo agendamento
+              </Button>
+            </Pode>
           </>
         }
       />

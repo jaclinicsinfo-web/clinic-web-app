@@ -17,7 +17,9 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
+import { temPermissao } from "@/lib/permissoes";
 import { formatDateTime, formatPhone } from "@/lib/format";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import { criarEsperaApi } from "@/services/agenda";
 import type { ListaEsperaItem } from "@/types";
 
@@ -49,6 +51,10 @@ export function ListaEsperaDialog({
   const [procedimentoId, setProcedimentoId] = React.useState("nenhum");
   const [periodo, setPeriodo] = React.useState<ListaEsperaItem["preferenciaPeriodo"]>("qualquer");
   const [salvando, setSalvando] = React.useState(false);
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const podeCriar = temPermissao(permissoes, "agenda", "criar");
+  const podeEditar = temPermissao(permissoes, "agenda", "editar");
+  const podeEncaixar = podeCriar && podeEditar;
 
   React.useEffect(() => {
     if (!open) return;
@@ -110,15 +116,18 @@ export function ListaEsperaDialog({
                       {formatPhone(item.telefone)} · desde {formatDateTime(item.criadoEm)}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => onEncaixar(item)}>
-                    <CalendarPlus />
-                    Encaixar
-                  </Button>
+                  {podeEncaixar && (
+                    <Button size="sm" variant="outline" onClick={() => onEncaixar(item)}>
+                      <CalendarPlus />
+                      Encaixar
+                    </Button>
+                  )}
                 </li>
               ))}
             </ul>
           )}
 
+          {podeCriar && (
           <div className="space-y-3 border-t border-border px-6 py-4">
             <p className="text-sm font-medium text-foreground">Incluir na espera</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -184,6 +193,7 @@ export function ListaEsperaDialog({
               Adicionar à espera
             </Button>
           </div>
+          )}
         </DialogBody>
       </DialogContent>
     </Dialog>

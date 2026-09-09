@@ -19,6 +19,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCompetencia } from "@/components/financeiro/utils";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/format";
+import { temPermissao } from "@/lib/permissoes";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import type { Comissao } from "@/types";
 
 interface ComissoesTableProps {
@@ -31,6 +33,8 @@ interface ComissoesTableProps {
 type AcaoComissao = { comissao: Comissao; tipo: "aprovar" | "pagar" };
 
 export function ComissoesTable({ comissoes, competencias, onAprovar, onPagar }: ComissoesTableProps) {
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const podeEditar = temPermissao(permissoes, "financeiro", "editar");
   const [competencia, setCompetencia] = React.useState("todas");
   const [status, setStatus] = React.useState("todos");
   const [acao, setAcao] = React.useState<AcaoComissao | null>(null);
@@ -116,6 +120,8 @@ export function ComissoesTable({ comissoes, competencias, onAprovar, onPagar }: 
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {podeEditar && (
+                    <>
                   <DropdownMenuItem
                     disabled={comissao.status !== "prevista"}
                     onSelect={() => setAcao({ comissao, tipo: "aprovar" })}
@@ -131,6 +137,8 @@ export function ComissoesTable({ comissoes, competencias, onAprovar, onPagar }: 
                     Registrar pagamento
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link href={`/profissionais/${comissao.profissionalId}`}>
                       <Stethoscope />
@@ -144,7 +152,7 @@ export function ComissoesTable({ comissoes, competencias, onAprovar, onPagar }: 
         },
       },
     ],
-    [],
+    [podeEditar],
   );
 
   const aprovando = acao?.tipo === "aprovar";
