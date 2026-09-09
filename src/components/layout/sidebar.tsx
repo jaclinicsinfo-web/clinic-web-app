@@ -42,7 +42,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
         .filter((item) => {
           const noPlano = planoIncluiModulo(plano, item.modulo);
           if (item.reservado || moduloEstaReservado(item.modulo)) {
-            if (noPlano) return temPermissao(permissoes, item.modulo) || adminOuGestor;
+            if (noPlano) return temPermissao(permissoes, item.modulo);
             return adminOuGestor;
           }
           if (!noPlano) return false;
@@ -51,11 +51,11 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
         .map((item) => {
           if (!item.children) return item;
           const children = item.children.filter((child) => {
-            if (child.href.startsWith("/configuracoes/usuarios")) return adminOuGestor;
-            if (child.href.startsWith("/configuracoes/permissoes")) return admin;
             if (child.href.startsWith("/configuracoes/pagamentos")) {
               return planoIncluiModulo(plano, "financeiro") && temPermissao(permissoes, item.modulo);
             }
+            if (child.href.startsWith("/configuracoes/usuarios")) return adminOuGestor;
+            if (child.href.startsWith("/configuracoes/permissoes")) return admin;
             return temPermissao(permissoes, item.modulo);
           });
           return { ...item, href: children[0]?.href ?? item.href, children };

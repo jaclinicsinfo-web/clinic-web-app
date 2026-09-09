@@ -52,11 +52,13 @@ export function UnidadesClinica({
   unidades,
   podeCriar,
   podeEditar,
+  podeDesativar,
   onMutacao,
 }: {
   unidades: Unidade[];
   podeCriar: boolean;
   podeEditar: boolean;
+  podeDesativar: boolean;
   onMutacao: (resultado: UnidadeMutacao, unidades: Unidade[]) => void | Promise<void>;
 }) {
   const plano = useSessaoStore((state) => state.sessao?.plano);
@@ -140,7 +142,7 @@ export function UnidadesClinica({
                   <TableHead>Unidade</TableHead>
                   <TableHead>Cidade</TableHead>
                   <TableHead>Status</TableHead>
-                  {podeEditar && <TableHead className="w-12" />}
+                  {(podeEditar || podeDesativar) && <TableHead className="w-12" />}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -153,7 +155,7 @@ export function UnidadesClinica({
                       <TableCell>
                         <StatusBadge domain="generico" status={ativa ? "ativo" : "inativo"} />
                       </TableCell>
-                      {podeEditar && (
+                      {(podeEditar || podeDesativar) && (
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -162,11 +164,13 @@ export function UnidadesClinica({
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onSelect={() => abrirEdicao(unidade)}>
-                                <Pencil />
-                                Editar
-                              </DropdownMenuItem>
-                              {ativa ? (
+                              {podeEditar && (
+                                <DropdownMenuItem onSelect={() => abrirEdicao(unidade)}>
+                                  <Pencil />
+                                  Editar
+                                </DropdownMenuItem>
+                              )}
+                              {podeDesativar && ativa ? (
                                 <DropdownMenuItem
                                   destructive
                                   disabled={ativas <= 1}
@@ -175,7 +179,8 @@ export function UnidadesClinica({
                                   <Power />
                                   Inativar
                                 </DropdownMenuItem>
-                              ) : (
+                              ) : null}
+                              {podeDesativar && !ativa ? (
                                 <DropdownMenuItem
                                   onSelect={() => setAtivando(unidade)}
                                   disabled={noLimiteUnidades}
@@ -183,7 +188,7 @@ export function UnidadesClinica({
                                   <Power />
                                   Reativar
                                 </DropdownMenuItem>
-                              )}
+                              ) : null}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

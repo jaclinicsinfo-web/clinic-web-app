@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDate, formatDateLong } from "@/lib/format";
 import { planoIncluiModulo } from "@/lib/modulos-plano";
+import { temPermissao } from "@/lib/permissoes";
 import { estadoCivilLabels, sexoLabels } from "@/lib/status";
 import { useSessaoStore } from "@/hooks/use-sessao";
 
@@ -22,7 +23,8 @@ function nomeConvenio(convenioId: string | null, convenioNome?: string | null) {
 export function PacienteVisaoGeral() {
   const { paciente, detalhe } = usePacientePerfil();
   const plano = useSessaoStore((state) => state.sessao?.plano);
-  const mostraFinanceiro = planoIncluiModulo(plano, "financeiro");
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const mostraFinanceiro = planoIncluiModulo(plano, "financeiro") && temPermissao(permissoes, "financeiro");
   const id = paciente.id;
   const podeVerProntuario = Boolean(detalhe.podeVerProntuario);
 

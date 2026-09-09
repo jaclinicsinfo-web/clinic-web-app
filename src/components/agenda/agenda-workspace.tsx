@@ -86,6 +86,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
   const searchParams = useSearchParams();
   const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
   const podeCriar = temPermissao(permissoes, "agenda", "criar");
+  const podeEditar = temPermissao(permissoes, "agenda", "editar");
   const pacienteInicialId = searchParams.get("paciente") ?? undefined;
   const profissionalInicialId = searchParams.get("profissional") ?? undefined;
   const abrirNovo = searchParams.get("novo") === "1" || Boolean(pacienteInicialId);
@@ -263,6 +264,14 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
     };
 
     try {
+      if (draft.id && !podeEditar) {
+        toast.error("Você não tem permissão para editar agendamentos.");
+        return;
+      }
+      if (!draft.id && !podeCriar) {
+        toast.error("Você não tem permissão para criar agendamentos.");
+        return;
+      }
       const salvo = draft.id
         ? await atualizarAgendamentoApi(draft.id, payload)
         : await criarAgendamentoApi(payload);
@@ -487,7 +496,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
           setSheetAberto(true);
         }}
         onSelectSlot={(slot) => abrirCriacao(slot)}
-        onReagendar={reagendar}
+        onReagendar={podeEditar ? reagendar : undefined}
         onSelectDia={(iso) => {
           setDataIso(iso);
           setVisao("dia");
@@ -514,7 +523,8 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
         convenios={conveniosAgenda}
         salas={salas}
         onSave={salvarAgendamento}
-        onChangeStatus={mudarStatus}
+        onChangeStatus={podeEditar ? mudarStatus : undefined}
+        podeEditar={podeEditar}
         onNovoPaciente={() => router.push("/pacientes/novo")}
       />
 

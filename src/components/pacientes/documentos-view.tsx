@@ -45,12 +45,14 @@ export function DocumentosView({
   pacienteId,
   pacienteNome,
   podeRegistrar = false,
+  podeExcluir = false,
   onAtualizado,
 }: {
   documentos: DocumentoPaciente[];
   pacienteId: string;
   pacienteNome: string;
   podeRegistrar?: boolean;
+  podeExcluir?: boolean;
   onAtualizado?: (documentos: DocumentoPaciente[]) => void;
 }) {
   const [documentos, setDocumentos] = React.useState(documentosIniciais);
@@ -178,7 +180,7 @@ export function DocumentosView({
                       >
                         <Download />
                       </Button>
-                      {podeRegistrar && (
+                      {podeExcluir && (
                         <Button
                           variant="ghost"
                           size="icon-sm"

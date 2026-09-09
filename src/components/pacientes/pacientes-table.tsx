@@ -51,6 +51,7 @@ export function PacientesTable({
   const router = useRouter();
   const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
   const podeEditar = temPermissao(permissoes, "pacientes", "editar");
+  const podeDesativar = temPermissao(permissoes, "pacientes", "excluir");
   const podeAgendar = temPermissao(permissoes, "agenda", "criar");
   const [status, setStatus] = React.useState("todos");
   const [profissional, setProfissional] = React.useState("todos");
@@ -187,7 +188,7 @@ export function PacientesTable({
                       Editar
                     </DropdownMenuItem>
                   )}
-                  {podeEditar && paciente.status !== "arquivado" && (
+                  {podeDesativar && paciente.status !== "arquivado" && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem destructive onSelect={() => setArquivando(paciente)}>
@@ -203,7 +204,7 @@ export function PacientesTable({
         },
       },
     ],
-    [router, podeEditar, podeAgendar],
+    [router, podeEditar, podeDesativar, podeAgendar],
   );
 
   return (

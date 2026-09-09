@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDate, formatPercent } from "@/lib/format";
 import { formaRemuneracaoLabels, tipoVinculoLabels } from "@/lib/status";
+import { Pode } from "@/components/auth/pode";
 
 export default function ProfissionalVisaoGeralPage() {
   const { profissional, indicadores, procedimentosHabilitados } = useProfissionalPerfil();
@@ -17,7 +18,9 @@ export default function ProfissionalVisaoGeralPage() {
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Atendimentos no mês" value={String(indicadores.atendimentosMes)} icon={CalendarCheck} />
-        <StatCard label="Faturamento gerado" value={formatCurrency(indicadores.faturamentoGerado)} icon={TrendingUp} />
+        <Pode modulo="financeiro">
+          <StatCard label="Faturamento gerado" value={formatCurrency(indicadores.faturamentoGerado)} icon={TrendingUp} />
+        </Pode>
         <StatCard label="Taxa de ocupação" value={formatPercent(indicadores.taxaOcupacao)} icon={Percent} />
         <StatCard
           label="Pacientes atendidos"
@@ -37,7 +40,6 @@ export default function ProfissionalVisaoGeralPage() {
               {[
                 { termo: "Vínculo", valor: tipoVinculoLabels[profissional.tipoVinculo] },
                 { termo: "Remuneração", valor: formaRemuneracaoLabels[profissional.formaRemuneracao] },
-                { termo: "Comissão", valor: formatPercent(profissional.percentualComissao) },
                 { termo: "Admissão", valor: formatDate(profissional.dataAdmissao) },
                 { termo: "Conselho", valor: `${profissional.conselho} ${profissional.registroConselho}` },
                 { termo: "Horas semanais", valor: `${indicadores.horasSemanais.toLocaleString("pt-BR")} h` },
@@ -47,6 +49,12 @@ export default function ProfissionalVisaoGeralPage() {
                   <dd className="font-medium text-foreground">{item.valor}</dd>
                 </div>
               ))}
+              <Pode modulo="financeiro">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">Comissão</dt>
+                  <dd className="font-medium text-foreground">{formatPercent(profissional.percentualComissao)}</dd>
+                </div>
+              </Pode>
             </dl>
           </CardContent>
         </Card>

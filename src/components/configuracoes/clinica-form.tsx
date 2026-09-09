@@ -64,12 +64,14 @@ export function ClinicaForm({
   clinica,
   podeEditar,
   podeCriar,
+  podeDesativar,
   onAtualizada,
   onUnidades,
 }: {
   clinica: Clinica;
   podeEditar: boolean;
   podeCriar: boolean;
+  podeDesativar: boolean;
   onAtualizada: (clinica: Clinica) => void;
   onUnidades: (resultado: UnidadeMutacao, unidades: Unidade[]) => void | Promise<void>;
 }) {
@@ -379,6 +381,7 @@ export function ClinicaForm({
         unidades={clinica.unidades}
         podeCriar={podeCriar}
         podeEditar={podeEditar}
+        podeDesativar={podeDesativar}
         onMutacao={onUnidades}
       />
     </div>

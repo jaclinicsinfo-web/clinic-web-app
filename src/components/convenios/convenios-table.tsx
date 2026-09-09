@@ -39,8 +39,9 @@ export function ConveniosTable({ convenios, onInativar, onAtivar, onAtualizado }
   const router = useRouter();
   const plano = useSessaoStore((state) => state.sessao?.plano);
   const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
-  const mostraFaturamento = planoIncluiModulo(plano, "financeiro");
+  const mostraFaturamento = planoIncluiModulo(plano, "financeiro") && temPermissao(permissoes, "financeiro");
   const podeEditar = temPermissao(permissoes, "convenios", "editar");
+  const podeDesativar = temPermissao(permissoes, "convenios", "excluir");
   const [status, setStatus] = React.useState("todos");
   const [autorizacao, setAutorizacao] = React.useState("todas");
   const [editando, setEditando] = React.useState<Convenio | null>(null);
@@ -162,7 +163,7 @@ export function ConveniosTable({ convenios, onInativar, onAtivar, onAtualizado }
                       </a>
                     </DropdownMenuItem>
                   )}
-                  {podeEditar && (
+                  {podeDesativar && (
                     <>
                       <DropdownMenuSeparator />
                       {convenio.status === "ativo" ? (
@@ -185,7 +186,7 @@ export function ConveniosTable({ convenios, onInativar, onAtivar, onAtualizado }
         },
       },
     ],
-    [router, mostraFaturamento, podeEditar],
+    [router, mostraFaturamento, podeEditar, podeDesativar],
   );
 
   return (

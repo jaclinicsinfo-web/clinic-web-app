@@ -119,8 +119,11 @@ export function podeAcessarRota(
   if (rotaExigeAdministrador(pathname) && !isAdministrador(perfilNome)) return false;
   if (rotaExigeAdminOuGestor(pathname)) return isAdminOuGestor(perfilNome);
 
-  if (rotaExigeFinanceiroDoPlano(pathname) && !planoIncluiModulo(plano, "financeiro")) {
-    return false;
+  if (rotaExigeFinanceiroDoPlano(pathname)) {
+    if (!planoIncluiModulo(plano, "financeiro")) return false;
+    if (!pathname.startsWith("/configuracoes/pagamentos") && !temPermissao(permissoes, "financeiro")) {
+      return false;
+    }
   }
 
   const modulo = moduloDaRota(pathname);
@@ -128,7 +131,7 @@ export function podeAcessarRota(
 
   if (moduloEstaReservado(modulo)) {
     if (planoIncluiModulo(plano, modulo)) {
-      return temPermissao(permissoes, modulo) || isAdminOuGestor(perfilNome);
+      return temPermissao(permissoes, modulo);
     }
     return isAdminOuGestor(perfilNome);
   }

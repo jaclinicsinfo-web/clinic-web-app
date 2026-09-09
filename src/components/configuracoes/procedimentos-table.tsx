@@ -65,6 +65,7 @@ export function ProcedimentosTable({
   const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
   const podeCriar = temPermissao(permissoes, "configuracoes", "criar");
   const podeEditar = temPermissao(permissoes, "configuracoes", "editar");
+  const podeDesativar = temPermissao(permissoes, "configuracoes", "excluir");
   const [lista, setLista] = React.useState(procedimentos);
   const [status, setStatus] = React.useState("todos");
   const [categoria, setCategoria] = React.useState("todas");
@@ -160,7 +161,7 @@ export function ProcedimentosTable({
         enableGlobalFilter: false,
         size: 56,
         cell: ({ row }) => {
-          if (!podeEditar) return null;
+          if (!podeEditar && !podeDesativar) return null;
           return (
           <div className="flex justify-end" onClick={(event) => event.stopPropagation()}>
             <DropdownMenu>
@@ -176,18 +177,18 @@ export function ProcedimentosTable({
                     Editar
                   </DropdownMenuItem>
                 )}
-                {podeEditar && row.original.status === "ativo" && (
+                {podeDesativar && row.original.status === "ativo" && (
                   <>
-                    <DropdownMenuSeparator />
+                    {podeEditar ? <DropdownMenuSeparator /> : null}
                     <DropdownMenuItem destructive onSelect={() => setInativando(row.original)}>
                       <Power />
                       Inativar
                     </DropdownMenuItem>
                   </>
                 )}
-                {podeEditar && row.original.status === "inativo" && (
+                {podeDesativar && row.original.status === "inativo" && (
                   <>
-                    <DropdownMenuSeparator />
+                    {podeEditar ? <DropdownMenuSeparator /> : null}
                     <DropdownMenuItem onSelect={() => setAtivando(row.original)}>
                       <Power />
                       Reativar
@@ -201,7 +202,7 @@ export function ProcedimentosTable({
         },
       },
     ],
-    [abrirEdicao, podeEditar],
+    [abrirEdicao, podeEditar, podeDesativar],
   );
 
   return (

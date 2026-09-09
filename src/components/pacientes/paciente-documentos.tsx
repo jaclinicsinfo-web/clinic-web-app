@@ -3,9 +3,12 @@
 import { DocumentosView } from "@/components/pacientes/documentos-view";
 import { usePacientePerfil } from "@/components/pacientes/paciente-perfil-shell";
 import { EmptyState } from "@/components/shared/empty-state";
+import { temPermissao } from "@/lib/permissoes";
+import { useSessaoStore } from "@/hooks/use-sessao";
 
 export function PacienteDocumentos() {
   const { paciente, detalhe, atualizarDetalhe } = usePacientePerfil();
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
 
   if (!detalhe.podeVerProntuario) {
     return (
@@ -22,6 +25,7 @@ export function PacienteDocumentos() {
       pacienteId={paciente.id}
       pacienteNome={paciente.nome}
       podeRegistrar={Boolean(detalhe.podeRegistrarProntuario)}
+      podeExcluir={temPermissao(permissoes, "pacientes", "excluir")}
       onAtualizado={(documentos) => atualizarDetalhe({ documentos })}
     />
   );

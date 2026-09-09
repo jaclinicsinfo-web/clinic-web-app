@@ -16,6 +16,7 @@ interface EstoqueTabsProps {
   dataPadrao: string;
   podeCriar: boolean;
   podeEditar: boolean;
+  podeDesativar: boolean;
   onProdutoSalvo: (produto: Produto) => void;
   onProdutoAtualizado: (produto: Produto) => void;
   onMovimentacao: (produto: Produto, movimentacao: MovimentacaoEstoque) => void;
@@ -31,6 +32,7 @@ export function EstoqueTabs({
   dataPadrao,
   podeCriar,
   podeEditar,
+  podeDesativar,
   onProdutoSalvo,
   onProdutoAtualizado,
   onMovimentacao,
@@ -52,6 +54,7 @@ export function EstoqueTabs({
           dataPadrao={dataPadrao}
           podeCriar={podeCriar}
           podeEditar={podeEditar}
+          podeDesativar={podeDesativar}
           onProdutoSalvo={onProdutoSalvo}
           onProdutoAtualizado={onProdutoAtualizado}
           onMovimentacao={onMovimentacao}

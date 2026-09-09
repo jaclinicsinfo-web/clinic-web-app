@@ -50,6 +50,7 @@ export function EstoqueWorkspace() {
   const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
   const podeCriar = temPermissao(permissoes, "estoque", "criar");
   const podeEditar = temPermissao(permissoes, "estoque", "editar");
+  const podeDesativar = temPermissao(permissoes, "estoque", "excluir");
 
   const [dados, setDados] = React.useState<EstoquePayload | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
@@ -154,6 +155,7 @@ export function EstoqueWorkspace() {
         dataPadrao={dataPadrao}
         podeCriar={podeCriar}
         podeEditar={podeEditar}
+        podeDesativar={podeDesativar}
         onProdutoSalvo={(produto) => aplicarProdutos([...dados.produtos, produto], dados.movimentacoes)}
         onProdutoAtualizado={(produto) =>
           aplicarProdutos(

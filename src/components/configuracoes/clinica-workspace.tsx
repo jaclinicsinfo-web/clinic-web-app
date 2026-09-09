@@ -23,6 +23,7 @@ export function ClinicaWorkspace() {
 
   const podeEditar = temPermissao(permissoes, "configuracoes", "editar");
   const podeCriar = temPermissao(permissoes, "configuracoes", "criar");
+  const podeDesativar = temPermissao(permissoes, "configuracoes", "excluir");
 
   React.useEffect(() => {
     let ativo = true;
@@ -71,6 +72,7 @@ export function ClinicaWorkspace() {
       clinica={clinica}
       podeEditar={podeEditar}
       podeCriar={podeCriar}
+      podeDesativar={podeDesativar}
       onAtualizada={(atualizada) => {
         setClinica(atualizada);
         atualizarClinicaNome(atualizada.nomeFantasia);

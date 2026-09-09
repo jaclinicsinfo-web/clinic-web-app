@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { CheckCircle2, MoreHorizontal, Repeat } from "lucide-react";
+import { CheckCircle2, MoreHorizontal, Repeat, Trash2 } from "lucide-react";
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { DataTable } from "@/components/shared/data-table";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Badge } from "@/components/ui/badge";
@@ -26,14 +27,17 @@ interface ContasAPagarTableProps {
   despesas: Despesa[];
   categorias: string[];
   onPagar: (despesa: Despesa, pagamento: PagamentoRegistrado) => Promise<void> | void;
+  onExcluir: (despesa: Despesa) => Promise<void> | void;
 }
 
-export function ContasAPagarTable({ despesas, categorias, onPagar }: ContasAPagarTableProps) {
+export function ContasAPagarTable({ despesas, categorias, onPagar, onExcluir }: ContasAPagarTableProps) {
   const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
   const podePagar = temPermissao(permissoes, "financeiro", "criar");
+  const podeExcluir = temPermissao(permissoes, "financeiro", "excluir");
   const [status, setStatus] = React.useState("todos");
   const [categoria, setCategoria] = React.useState("todas");
   const [pagando, setPagando] = React.useState<Despesa | null>(null);
+  const [excluindo, setExcluindo] = React.useState<Despesa | null>(null);
 
   const dados = React.useMemo(() => {
     return despesas.filter((despesa) => {
@@ -122,7 +126,7 @@ export function ContasAPagarTable({ despesas, categorias, onPagar }: ContasAPaga
         enableGlobalFilter: false,
         size: 56,
         cell: ({ row }) => {
-          if (!podePagar) return null;
+          if (!podePagar && !podeExcluir) return null;
           const despesa = row.original;
           return (
             <div className="flex justify-end">
@@ -133,10 +137,18 @@ export function ContasAPagarTable({ despesas, categorias, onPagar }: ContasAPaga
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem disabled={despesa.status === "pago"} onSelect={() => setPagando(despesa)}>
-                    <CheckCircle2 />
-                    Dar baixa no pagamento
-                  </DropdownMenuItem>
+                  {podePagar && (
+                    <DropdownMenuItem disabled={despesa.status === "pago"} onSelect={() => setPagando(despesa)}>
+                      <CheckCircle2 />
+                      Dar baixa no pagamento
+                    </DropdownMenuItem>
+                  )}
+                  {podeExcluir && despesa.status !== "pago" && (
+                    <DropdownMenuItem destructive onSelect={() => setExcluindo(despesa)}>
+                      <Trash2 />
+                      Excluir
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -144,7 +156,7 @@ export function ContasAPagarTable({ despesas, categorias, onPagar }: ContasAPaga
         },
       },
     ],
-    [podePagar],
+    [podePagar, podeExcluir],
   );
 
   return (
@@ -211,6 +223,21 @@ export function ContasAPagarTable({ despesas, categorias, onPagar }: ContasAPaga
           if (!pagando) return;
           await onPagar(pagando, pagamento);
           setPagando(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(excluindo)}
+        onOpenChange={(aberto) => {
+          if (!aberto) setExcluindo(null);
+        }}
+        title="Excluir despesa?"
+        description={excluindo ? `${excluindo.descricao} será removida.` : "A despesa será removida."}
+        confirmLabel="Excluir"
+        onConfirm={async () => {
+          if (!excluindo) return;
+          await onExcluir(excluindo);
+          setExcluindo(null);
         }}
       />
     </>

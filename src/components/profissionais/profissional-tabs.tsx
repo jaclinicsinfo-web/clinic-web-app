@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { planoIncluiModulo } from "@/lib/modulos-plano";
+import { temPermissao } from "@/lib/permissoes";
 import { useSessaoStore } from "@/hooks/use-sessao";
 
 const abas = [
@@ -17,9 +18,13 @@ const abas = [
 
 export function ProfissionalTabs({ profissionalId }: { profissionalId: string }) {
   const pathname = usePathname();
-  const plano = useSessaoStore((state) => state.sessao?.plano);
+  const sessao = useSessaoStore((state) => state.sessao);
+  const plano = sessao?.plano;
   const base = `/profissionais/${profissionalId}`;
-  const visiveis = abas.filter((aba) => aba.segmento !== "comissoes" || planoIncluiModulo(plano, "financeiro"));
+  const visiveis = abas.filter((aba) => {
+    if (aba.segmento !== "comissoes") return true;
+    return planoIncluiModulo(plano, "financeiro") && temPermissao(sessao?.permissoes, "financeiro");
+  });
 
   return (
     <nav

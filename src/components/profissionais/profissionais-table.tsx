@@ -39,6 +39,7 @@ export function ProfissionaisTable({ profissionais, especialidades, onInativar, 
   const router = useRouter();
   const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
   const podeEditar = temPermissao(permissoes, "profissionais", "editar");
+  const podeDesativar = temPermissao(permissoes, "profissionais", "excluir");
   const [status, setStatus] = React.useState("todos");
   const [especialidade, setEspecialidade] = React.useState("todas");
   const [vinculo, setVinculo] = React.useState("todos");
@@ -165,7 +166,7 @@ export function ProfissionaisTable({ profissionais, especialidades, onInativar, 
                       Editar
                     </DropdownMenuItem>
                   )}
-                  {podeEditar && (
+                  {podeDesativar && (
                     <>
                       <DropdownMenuSeparator />
                       {profissional.status === "ativo" ? (
@@ -188,7 +189,7 @@ export function ProfissionaisTable({ profissionais, especialidades, onInativar, 
         },
       },
     ],
-    [router, podeEditar],
+    [router, podeEditar, podeDesativar],
   );
 
   return (

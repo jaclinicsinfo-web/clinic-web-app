@@ -12,6 +12,7 @@ import { useEntidadeLabelsStore } from "@/hooks/use-entidade-labels";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { ApiError } from "@/lib/api";
 import { planoIncluiModulo } from "@/lib/modulos-plano";
+import { temPermissao } from "@/lib/permissoes";
 import { obterPacienteApi, type DetalhePacienteResponse } from "@/services/pacientes";
 import type { Paciente } from "@/types";
 
@@ -39,6 +40,7 @@ export function PacientePerfilShell({
 }) {
   const setPacienteNome = useEntidadeLabelsStore((state) => state.setPaciente);
   const plano = useSessaoStore((state) => state.sessao?.plano);
+  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
   const [detalhe, setDetalhe] = React.useState<DetalhePacienteResponse | null>(null);
   const [carregando, setCarregando] = React.useState(true);
   const [erro, setErro] = React.useState<string | null>(null);
@@ -110,7 +112,7 @@ export function PacientePerfilShell({
     ...(detalhe.podeVerProntuario
       ? [{ label: "Documentos", href: `/pacientes/${pacienteId}/documentos` }]
       : []),
-    ...(planoIncluiModulo(plano, "financeiro")
+    ...(planoIncluiModulo(plano, "financeiro") && temPermissao(permissoes, "financeiro")
       ? [{ label: "Financeiro", href: `/pacientes/${pacienteId}/financeiro` }]
       : []),
   ];

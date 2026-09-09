@@ -12,7 +12,7 @@ export default function PermissoesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Perfis e permissões"
-        description="Matriz de acesso por módulo: visualizar, criar, editar e excluir. As regras vêm do perfil real do usuário na clínica."
+        description="Matriz de acesso por módulo: visualizar, criar, editar e desativar. As regras vêm do perfil real do usuário na clínica."
       />
       <PermissoesWorkspace />
     </div>

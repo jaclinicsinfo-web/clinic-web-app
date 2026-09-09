@@ -147,12 +147,14 @@ export function ProfissionalPerfilShell({
                   </Link>
                 </Button>
               </Pode>
-              <Button asChild>
-                <Link href={`/agenda?profissional=${profissional.id}&novo=1`}>
-                  <CalendarPlus />
-                  Novo agendamento
-                </Link>
-              </Button>
+              <Pode modulo="agenda" acao="criar">
+                <Button asChild>
+                  <Link href={`/agenda?profissional=${profissional.id}&novo=1`}>
+                    <CalendarPlus />
+                    Novo agendamento
+                  </Link>
+                </Button>
+              </Pode>
             </div>
           </div>
         </Card>

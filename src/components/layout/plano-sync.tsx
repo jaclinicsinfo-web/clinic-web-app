@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 
 import { ApiError } from "@/lib/api";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { obterSessaoAtual } from "@/services/auth";
 
 export function PlanoSync() {
+  const pathname = usePathname();
   const aplicarContextoPlano = useSessaoStore((state) => state.aplicarContextoPlano);
   const encerrarSessao = useSessaoStore((state) => state.encerrarSessao);
 
@@ -32,7 +34,7 @@ export function PlanoSync() {
     return () => {
       cancelado = true;
     };
-  }, [aplicarContextoPlano, encerrarSessao]);
+  }, [pathname, aplicarContextoPlano, encerrarSessao]);
 
   return null;
 }

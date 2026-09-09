@@ -101,6 +101,7 @@ interface AppointmentSheetProps {
   onSave: (draft: AgendamentoDraft) => void | Promise<void>;
   onChangeStatus?: (id: string, status: AgendamentoStatus) => void;
   onNovoPaciente?: () => void;
+  podeEditar?: boolean;
 }
 
 export function AppointmentSheet({
@@ -119,11 +120,13 @@ export function AppointmentSheet({
   onSave,
   onChangeStatus,
   onNovoPaciente,
+  podeEditar = true,
 }: AppointmentSheetProps) {
   const [busca, setBusca] = React.useState("");
   const [catalogo, setCatalogo] = React.useState(procedimentos);
 
   const edicao = Boolean(agendamento);
+  const somenteLeitura = edicao && !podeEditar;
 
   const {
     handleSubmit,
@@ -269,6 +272,7 @@ export function AppointmentSheet({
         </SheetHeader>
 
         <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit(onSubmit)}>
+          <fieldset disabled={somenteLeitura} className="flex min-h-0 flex-1 flex-col">
           <SheetBody className="space-y-6">
             {agendamento && (
               <div className="flex flex-wrap items-center gap-2">
@@ -279,7 +283,7 @@ export function AppointmentSheet({
                     Lembrete enviado
                   </span>
                 )}
-                {transicoes.map((status) => (
+                {!somenteLeitura && transicoes.map((status) => (
                   <Button
                     key={status}
                     type="button"
@@ -547,14 +551,17 @@ export function AppointmentSheet({
               </FormField>
             </FormSection>
           </SheetBody>
+          </fieldset>
 
           <SheetFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {somenteLeitura ? "Fechar" : "Cancelar"}
             </Button>
-            <Button type="submit" loading={isSubmitting}>
-              {edicao ? "Salvar alterações" : "Confirmar agendamento"}
-            </Button>
+            {!somenteLeitura && (
+              <Button type="submit" loading={isSubmitting}>
+                {edicao ? "Salvar alterações" : "Confirmar agendamento"}
+              </Button>
+            )}
           </SheetFooter>
         </form>
       </SheetContent>

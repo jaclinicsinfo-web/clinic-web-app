@@ -13,7 +13,7 @@ import { StatCard } from "@/components/shared/stat-card";
 import { ApiError } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 import { formaPagamentoLabels } from "@/lib/status";
-import { listarDespesasApi, pagarDespesaApi, type ResumoContasAPagar } from "@/services/financeiro";
+import { listarDespesasApi, pagarDespesaApi, excluirDespesaApi, type ResumoContasAPagar } from "@/services/financeiro";
 import type { Despesa } from "@/types";
 import type { PagamentoRegistrado } from "@/components/financeiro/registrar-pagamento-dialog";
 
@@ -52,6 +52,16 @@ export function ContasAPagarWorkspace() {
   React.useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  async function excluir(despesa: Despesa) {
+    try {
+      await excluirDespesaApi(despesa.id);
+      toast.success("Despesa excluída", { description: despesa.descricao });
+      await carregar();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Não foi possível excluir a despesa.");
+    }
+  }
 
   async function pagar(despesa: Despesa, pagamento: PagamentoRegistrado) {
     try {
@@ -103,7 +113,7 @@ export function ContasAPagarWorkspace() {
         />
       </div>
 
-      <ContasAPagarTable despesas={despesas} categorias={categorias} onPagar={pagar} />
+      <ContasAPagarTable despesas={despesas} categorias={categorias} onPagar={pagar} onExcluir={excluir} />
     </div>
   );
 }

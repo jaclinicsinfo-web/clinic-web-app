@@ -91,7 +91,7 @@ Cada módulo tem quatro ações:
 - **Visualizar** — o item aparece no menu e a rota abre
 - **Criar** — cadastrar registros
 - **Editar** — alterar registros
-- **Excluir** — remover registros
+- **Desativar** — inativar, arquivar, reativar ou remover (a chave no banco continua `excluir`)
 
 Se **visualizar** estiver desligado, o módulo some do menu. Abrir a URL direto redireciona para a primeira tela permitida.
 
@@ -99,7 +99,7 @@ Se **visualizar** estiver desligado, o módulo some do menu. Abrir a URL direto 
 
 ## Matriz padrão
 
-Legenda: **V** visualizar · **C** criar · **E** editar · **X** excluir. Célula vazia = sem acesso ao módulo.
+Legenda: **V** visualizar · **C** criar · **E** editar · **X** desativar (inativar, arquivar ou remover). Célula vazia = sem acesso ao módulo.
 
 ### Administrador
 
@@ -110,17 +110,17 @@ Acesso total em todos os módulos (V C E X).
 | Módulo | V | C | E | X |
 |---|---|---|---|---|
 | Dashboard | ● | | | |
-| Pacientes | ● | ● | ● | |
+| Pacientes | ● | ● | ● | ● |
 | Agenda | ● | ● | ● | ● |
-| Profissionais | ● | ● | ● | |
-| Financeiro | ● | ● | ● | |
-| Convênios | ● | ● | ● | |
-| Estoque | ● | ● | ● | |
+| Profissionais | ● | ● | ● | ● |
+| Financeiro | ● | ● | ● | ● |
+| Convênios | ● | ● | ● | ● |
+| Estoque | ● | ● | ● | ● |
 | Relatórios | ● | | | |
 | Integrações e lembretes | ● | | | |
 | Power BI | ● | | | |
 | Agente de IA | ● | | | |
-| Configurações | | | | |
+| Configurações | ● | | | |
 
 ### Recepção
 
@@ -161,7 +161,7 @@ No dashboard deste perfil, cards de faturamento, contas a receber/pagar, gráfic
 | Agenda | ● | | | |
 | Profissionais | ● | | | |
 | Financeiro | ● | ● | ● | ● |
-| Convênios | ● | ● | ● | |
+| Convênios | ● | ● | ● | ● |
 | Estoque | ● | | | |
 | Relatórios | ● | | | |
 | Configurações | | | | |
@@ -183,7 +183,9 @@ No dashboard deste perfil, cards de faturamento, contas a receber/pagar, gráfic
 | Agente de IA | ● | ● | | | |
 | Configurações | ● | ● | | | |
 
-O Gestor vê Configurações apenas com a aba **Usuários**.
+O Gestor vê Configurações com dados da clínica e procedimentos em leitura, além da aba **Usuários**. Perfis e permissões continua só para o Administrador.
+
+Prontuário, evolução e documentos clínicos seguem **Pacientes**: visualizar para ver, editar para registrar, desativar para apagar anexo. O profissional de saúde continua restrito aos próprios pacientes.
 
 ## Onde isso vive no produto
 

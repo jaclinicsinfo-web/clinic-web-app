@@ -31,6 +31,7 @@ interface ProdutosTableProps {
   dataPadrao: string;
   podeCriar: boolean;
   podeEditar: boolean;
+  podeDesativar: boolean;
   onProdutoSalvo: (produto: Produto) => void;
   onProdutoAtualizado: (produto: Produto) => void;
   onMovimentacao: (produto: Produto, movimentacao: MovimentacaoEstoque) => void;
@@ -44,6 +45,7 @@ export function ProdutosTable({
   dataPadrao,
   podeCriar,
   podeEditar,
+  podeDesativar,
   onProdutoSalvo,
   onProdutoAtualizado,
   onMovimentacao,
@@ -149,7 +151,7 @@ export function ProdutosTable({
                 <ArrowDownUp />
               </Button>
             )}
-            {podeEditar && (
+            {(podeEditar || podeDesativar) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon-sm" aria-label={`Ações de ${row.original.nome}`}>
@@ -157,17 +159,21 @@ export function ProdutosTable({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => setEditando(row.original)}>
-                    <Pencil />
-                    Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    destructive={row.original.ativo !== false}
-                    onSelect={() => setAlternando(row.original)}
-                  >
-                    <Power />
-                    {row.original.ativo === false ? "Reativar" : "Inativar"}
-                  </DropdownMenuItem>
+                  {podeEditar && (
+                    <DropdownMenuItem onSelect={() => setEditando(row.original)}>
+                      <Pencil />
+                      Editar
+                    </DropdownMenuItem>
+                  )}
+                  {podeDesativar && (
+                    <DropdownMenuItem
+                      destructive={row.original.ativo !== false}
+                      onSelect={() => setAlternando(row.original)}
+                    >
+                      <Power />
+                      {row.original.ativo === false ? "Reativar" : "Inativar"}
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
@@ -175,7 +181,7 @@ export function ProdutosTable({
         ),
       },
     ],
-    [podeCriar, podeEditar],
+    [podeCriar, podeEditar, podeDesativar],
   );
 
   return (
