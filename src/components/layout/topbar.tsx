@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Building2, LogOut, Menu, User } from "lucide-react";
+import { Bell, Building2, LogOut, Menu, Moon, Palette, Sun, User } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,9 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { useSessaoStore } from "@/hooks/use-sessao";
+import { useTema } from "@/hooks/use-tema";
 import { getInitials } from "@/lib/format";
+import { temPermissao } from "@/lib/permissoes";
 import { cn } from "@/lib/utils";
 import { listarNotificacoesApi, marcarNotificacaoLidaApi, marcarNotificacoesLidasApi } from "@/services/notificacoes";
 import type { Notificacao } from "@/types";
@@ -35,6 +37,7 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
   const sessao = useSessaoStore((state) => state.sessao);
   const setUnidade = useSessaoStore((state) => state.setUnidade);
   const encerrarSessao = useSessaoStore((state) => state.encerrarSessao);
+  const { toggleTema } = useTema();
 
   const unidades = sessao?.unidades ?? [];
   const [notificacoes, setNotificacoes] = React.useState<Notificacao[]>([]);
@@ -118,6 +121,16 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
           </Select>
         )}
 
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTema}
+          aria-label="Alternar entre tema claro e escuro"
+        >
+          <Sun className="hidden dark:block" />
+          <Moon className="block dark:hidden" />
+        </Button>
+
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative" aria-label="Notificações">
@@ -195,6 +208,14 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{sessao?.email}</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {temPermissao(sessao?.permissoes, "configuracoes") && (
+              <DropdownMenuItem asChild>
+                <Link href="/configuracoes/estilizacao">
+                  <Palette />
+                  Estilização
+                </Link>
+              </DropdownMenuItem>
+            )}
             {sessao?.perfil === "Administrador" && (
               <DropdownMenuItem asChild>
                 <Link href="/configuracoes/usuarios">
@@ -203,7 +224,9 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
                 </Link>
               </DropdownMenuItem>
             )}
-            {sessao?.perfil === "Administrador" && <DropdownMenuSeparator />}
+            {(temPermissao(sessao?.permissoes, "configuracoes") || sessao?.perfil === "Administrador") && (
+              <DropdownMenuSeparator />
+            )}
             <DropdownMenuItem
               destructive
               onSelect={() => {

@@ -17,18 +17,16 @@ import {
 } from "recharts";
 
 import { formatCurrency, formatCurrencyCompact, formatNumber } from "@/lib/format";
+import {
+  CHART_COLORS,
+  chartAxisStyle,
+  chartCursorFill,
+  chartGridStyle,
+  chartLegendStyle,
+  chartTooltipStyle,
+} from "@/lib/chart-theme";
 
-export const CHART_COLORS = ["#0d5c6b", "#2a9d8f", "#e9c46a", "#f4a261", "#6b7fd7"];
-
-const axisStyle = { fontSize: 11, fill: "#5c6b7a" };
-const gridStyle = { stroke: "#e2e6ec" };
-
-const tooltipStyle = {
-  borderRadius: 10,
-  border: "1px solid #e2e6ec",
-  fontSize: 12,
-  boxShadow: "0 8px 24px rgba(15, 26, 36, 0.08)",
-};
+export { CHART_COLORS };
 
 export interface SerieRelatorio {
   key: string;
@@ -60,16 +58,16 @@ export function GraficoEvolucao({
             <stop offset="100%" stopColor={CHART_COLORS[0]} stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} {...gridStyle} />
-        <XAxis dataKey="periodo" tick={axisStyle} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} {...chartGridStyle} />
+        <XAxis dataKey="periodo" tick={chartAxisStyle} tickLine={false} axisLine={false} interval="preserveStartEnd" />
         <YAxis
-          tick={axisStyle}
+          tick={chartAxisStyle}
           tickLine={false}
           axisLine={false}
           width={70}
           tickFormatter={(valor: number) => formatCurrencyCompact(valor)}
         />
-        <Tooltip contentStyle={tooltipStyle} formatter={(valor: number) => [formatCurrency(valor), nomeSerie]} />
+        <Tooltip contentStyle={chartTooltipStyle} formatter={(valor: number) => [formatCurrency(valor), nomeSerie]} />
         <Area
           type="monotone"
           dataKey="valor"
@@ -109,12 +107,12 @@ export function GraficoBarras({
         layout={horizontal ? "vertical" : "horizontal"}
         margin={{ top: 4, right: 16, left: 8, bottom: 0 }}
       >
-        <CartesianGrid strokeDasharray="3 3" horizontal={!horizontal} vertical={horizontal} {...gridStyle} />
+        <CartesianGrid strokeDasharray="3 3" horizontal={!horizontal} vertical={horizontal} {...chartGridStyle} />
         {horizontal ? (
           <>
             <XAxis
               type="number"
-              tick={axisStyle}
+              tick={chartAxisStyle}
               tickLine={false}
               axisLine={false}
               tickFormatter={(valor: number) => (moeda ? formatCurrencyCompact(valor) : formatNumber(valor))}
@@ -122,7 +120,7 @@ export function GraficoBarras({
             <YAxis
               type="category"
               dataKey={categoria}
-              tick={axisStyle}
+              tick={chartAxisStyle}
               tickLine={false}
               axisLine={false}
               width={larguraCategoria}
@@ -130,9 +128,9 @@ export function GraficoBarras({
           </>
         ) : (
           <>
-            <XAxis dataKey={categoria} tick={axisStyle} tickLine={false} axisLine={false} interval={0} height={48} />
+            <XAxis dataKey={categoria} tick={chartAxisStyle} tickLine={false} axisLine={false} interval={0} height={48} />
             <YAxis
-              tick={axisStyle}
+              tick={chartAxisStyle}
               tickLine={false}
               axisLine={false}
               width={moeda ? 70 : 44}
@@ -141,11 +139,11 @@ export function GraficoBarras({
           </>
         )}
         <Tooltip
-          contentStyle={tooltipStyle}
-          cursor={{ fill: "rgba(13, 92, 107, 0.06)" }}
+          contentStyle={chartTooltipStyle}
+          cursor={{ fill: chartCursorFill }}
           formatter={(valor: number, nome: string) => [formatarValor(valor, moeda), nome]}
         />
-        {mostrarLegenda && <Legend verticalAlign="top" height={28} iconType="circle" wrapperStyle={{ fontSize: 12 }} />}
+        {mostrarLegenda && <Legend verticalAlign="top" height={28} iconType="circle" wrapperStyle={chartLegendStyle} />}
         {series.map((serie) => (
           <Bar
             key={serie.key}
@@ -181,13 +179,13 @@ export function GraficoPizza({
           ))}
         </Pie>
         <Tooltip
-          contentStyle={tooltipStyle}
+          contentStyle={chartTooltipStyle}
           formatter={(valor: number, nome: string) => [
             `${formatarValor(valor, moeda)} (${total > 0 ? Math.round((valor / total) * 100) : 0}%)`,
             nome,
           ]}
         />
-        <Legend verticalAlign="bottom" height={28} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+        <Legend verticalAlign="bottom" height={28} iconType="circle" wrapperStyle={chartLegendStyle} />
       </PieChart>
     </ResponsiveContainer>
   );

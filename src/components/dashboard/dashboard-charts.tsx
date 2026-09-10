@@ -19,19 +19,14 @@ import {
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  CHART_COLORS,
+  chartAxisStyle,
+  chartGridStyle,
+  chartLegendStyle,
+  chartTooltipStyle,
+} from "@/lib/chart-theme";
 import { formatCurrency, formatCurrencyCompact } from "@/lib/format";
-
-const CHART_COLORS = ["#0d5c6b", "#2a9d8f", "#e9c46a", "#f4a261", "#6b7fd7", "#8d99ae"];
-
-const axisStyle = { fontSize: 11, fill: "#5c6b7a" };
-const gridStyle = { stroke: "#e2e6ec" };
-
-const tooltipStyle = {
-  borderRadius: 10,
-  border: "1px solid #e2e6ec",
-  fontSize: 12,
-  boxShadow: "0 8px 24px rgba(15, 26, 36, 0.08)",
-};
 
 interface SerieValor {
   periodo: string;
@@ -81,27 +76,27 @@ export function FaturamentoChart({
           <AreaChart data={dados} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="gradFaturamento" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#0d5c6b" stopOpacity={0.28} />
-                <stop offset="100%" stopColor="#0d5c6b" stopOpacity={0.02} />
+                <stop offset="0%" stopColor="var(--color-chart-1)" stopOpacity={0.28} />
+                <stop offset="100%" stopColor="var(--color-chart-1)" stopOpacity={0.02} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} {...gridStyle} />
-            <XAxis dataKey="periodo" tick={axisStyle} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} {...chartGridStyle} />
+            <XAxis dataKey="periodo" tick={chartAxisStyle} tickLine={false} axisLine={false} interval="preserveStartEnd" />
             <YAxis
-              tick={axisStyle}
+              tick={chartAxisStyle}
               tickLine={false}
               axisLine={false}
               width={70}
               tickFormatter={(valor: number) => formatCurrencyCompact(valor)}
             />
             <Tooltip
-              contentStyle={tooltipStyle}
+              contentStyle={chartTooltipStyle}
               formatter={(valor: number) => [formatCurrency(valor), "Faturamento"]}
             />
             <Area
               type="monotone"
               dataKey="valor"
-              stroke="#0d5c6b"
+              stroke="var(--color-chart-1)"
               strokeWidth={2}
               fill="url(#gradFaturamento)"
               name="Faturamento"
@@ -132,18 +127,18 @@ export function AtendimentosPorProfissionalChart({
         ) : (
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={dados} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} {...gridStyle} />
-              <XAxis type="number" tick={axisStyle} tickLine={false} axisLine={false} allowDecimals={false} />
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} {...chartGridStyle} />
+              <XAxis type="number" tick={chartAxisStyle} tickLine={false} axisLine={false} allowDecimals={false} />
               <YAxis
                 type="category"
                 dataKey="profissional"
-                tick={axisStyle}
+                tick={chartAxisStyle}
                 tickLine={false}
                 axisLine={false}
                 width={110}
               />
-              <Tooltip contentStyle={tooltipStyle} formatter={(valor: number) => [valor, "Atendimentos"]} />
-              <Bar dataKey="atendimentos" fill="#0d5c6b" radius={[0, 6, 6, 0]} barSize={16} name="Atendimentos" />
+              <Tooltip contentStyle={chartTooltipStyle} formatter={(valor: number) => [valor, "Atendimentos"]} />
+              <Bar dataKey="atendimentos" fill="var(--color-chart-1)" radius={[0, 6, 6, 0]} barSize={16} name="Atendimentos" />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -175,13 +170,13 @@ export function OrigemAtendimentoChart({ dados }: { dados: { nome: string; valor
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={tooltipStyle}
+                contentStyle={chartTooltipStyle}
                 formatter={(valor: number, nome: string) => [
                   `${valor} (${Math.round((valor / total) * 100)}%)`,
                   nome,
                 ]}
               />
-              <Legend verticalAlign="bottom" height={28} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+              <Legend verticalAlign="bottom" height={28} iconType="circle" wrapperStyle={chartLegendStyle} />
             </PieChart>
           </ResponsiveContainer>
         )}

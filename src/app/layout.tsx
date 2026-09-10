@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Toaster } from "sonner";
 
 import { SessaoProvider } from "@/hooks/use-sessao";
+import { TemaProvider } from "@/hooks/use-tema";
+import { ThemedToaster } from "@/components/layout/themed-toaster";
 
 import "./globals.css";
 
@@ -11,6 +12,8 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
 });
+
+const temaScript = `(function(){try{var t=localStorage.getItem("clinicerp.tema");if(t==="escuro"){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark"}else{document.documentElement.style.colorScheme="light"}}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: {
@@ -27,12 +30,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} h-full overflow-hidden`}>
+    <html lang="pt-BR" className={`${inter.variable} h-full overflow-hidden`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: temaScript }} />
+      </head>
       <body className="flex h-full min-h-0 flex-col overflow-hidden">
-        <SessaoProvider>
-          {children}
-          <Toaster position="top-right" richColors closeButton />
-        </SessaoProvider>
+        <TemaProvider>
+          <SessaoProvider>
+            {children}
+            <ThemedToaster />
+          </SessaoProvider>
+        </TemaProvider>
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
+import { CHART_COLORS } from "@/lib/chart-theme";
 import { formatCurrency, formatPercent } from "@/lib/format";
 
 interface LinhaDre {
@@ -12,8 +13,6 @@ interface DreSimplificadoProps {
   despesas: LinhaDre[];
   className?: string;
 }
-
-const CHART_COLORS = ["#0d5c6b", "#2a9d8f", "#e9c46a", "#f4a261", "#6b7fd7"];
 
 function ListaDre({
   titulo,

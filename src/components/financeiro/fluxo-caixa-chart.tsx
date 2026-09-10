@@ -15,18 +15,14 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  chartAxisStyle,
+  chartGridStyle,
+  chartLegendStyle,
+  chartTooltipStyle,
+} from "@/lib/chart-theme";
 import { formatCurrency, formatCurrencyCompact } from "@/lib/format";
 import type { FluxoCaixaPonto } from "@/types";
-
-const axisStyle = { fontSize: 11, fill: "#5c6b7a" };
-const gridStyle = { stroke: "#e2e6ec" };
-
-const tooltipStyle = {
-  borderRadius: 10,
-  border: "1px solid #e2e6ec",
-  fontSize: 12,
-  boxShadow: "0 8px 24px rgba(15, 26, 36, 0.08)",
-};
 
 interface FluxoCaixaChartProps {
   diario: FluxoCaixaPonto[];
@@ -86,20 +82,20 @@ export function FluxoCaixaChart({
       <CardContent className="space-y-4">
         <ResponsiveContainer width="100%" height={height}>
           <ComposedChart data={dados} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} {...gridStyle} />
-            <XAxis dataKey="periodo" tick={axisStyle} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} {...chartGridStyle} />
+            <XAxis dataKey="periodo" tick={chartAxisStyle} tickLine={false} axisLine={false} interval="preserveStartEnd" />
             <YAxis
-              tick={axisStyle}
+              tick={chartAxisStyle}
               tickLine={false}
               axisLine={false}
               width={70}
               tickFormatter={(valor: number) => formatCurrencyCompact(valor)}
             />
-            <Tooltip contentStyle={tooltipStyle} formatter={(valor: number, nome: string) => [formatCurrency(valor), nome]} />
-            <Legend verticalAlign="top" height={28} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="entradas" name="Entradas" fill="#2a9d8f" radius={[4, 4, 0, 0]} maxBarSize={22} />
-            <Bar dataKey="saidas" name="Saídas" fill="#f4a261" radius={[4, 4, 0, 0]} maxBarSize={22} />
-            <Line type="monotone" dataKey="saldo" name="Saldo" stroke="#0d5c6b" strokeWidth={2} dot={false} />
+            <Tooltip contentStyle={chartTooltipStyle} formatter={(valor: number, nome: string) => [formatCurrency(valor), nome]} />
+            <Legend verticalAlign="top" height={28} iconType="circle" wrapperStyle={chartLegendStyle} />
+            <Bar dataKey="entradas" name="Entradas" fill="var(--color-chart-2)" radius={[4, 4, 0, 0]} maxBarSize={22} />
+            <Bar dataKey="saidas" name="Saídas" fill="var(--color-chart-4)" radius={[4, 4, 0, 0]} maxBarSize={22} />
+            <Line type="monotone" dataKey="saldo" name="Saldo" stroke="var(--color-chart-1)" strokeWidth={2} dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
 

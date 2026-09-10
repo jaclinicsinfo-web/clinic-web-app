@@ -20,7 +20,7 @@ const SheetContent = React.forwardRef<
   <DialogPrimitive.Portal>
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 bg-overlay backdrop-blur-sm"
     />
     <DialogPrimitive.Content
       ref={ref}

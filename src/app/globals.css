@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-background: #f6f7f9;
   --color-foreground: #0f1a24;
@@ -30,6 +32,7 @@
   --color-border: #e2e6ec;
   --color-input: #d6dce4;
   --color-ring: #0d5c6b;
+  --color-overlay: rgb(15 26 36 / 0.4);
 
   --color-success: #15803d;
   --color-success-bg: #dcfce7;
@@ -53,11 +56,71 @@
   --color-chart-3: #e9c46a;
   --color-chart-4: #f4a261;
   --color-chart-5: #6b7fd7;
+  --color-chart-6: #8d99ae;
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   --radius-xl: 0.875rem;
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --color-background: #101828;
+  --color-foreground: #f2f4f7;
+
+  --color-card: #1a2231;
+  --color-card-foreground: #f2f4f7;
+
+  --color-popover: #1a2231;
+  --color-popover-foreground: #f2f4f7;
+
+  --color-primary: #1a9aab;
+  --color-primary-hover: #22b4c7;
+  --color-primary-foreground: #ffffff;
+  --color-primary-subtle: #14343c;
+
+  --color-secondary: #1d2939;
+  --color-secondary-foreground: #e4e7ec;
+
+  --color-muted: #1d2939;
+  --color-muted-foreground: #98a2b3;
+
+  --color-accent: #14343c;
+  --color-accent-foreground: #5ec8d6;
+
+  --color-destructive: #f04438;
+  --color-destructive-foreground: #ffffff;
+
+  --color-border: #344054;
+  --color-input: #344054;
+  --color-ring: #1a9aab;
+  --color-overlay: rgb(0 0 0 / 0.55);
+
+  --color-success: #32d583;
+  --color-success-bg: #053321;
+  --color-warning: #f79009;
+  --color-warning-bg: #2e1c04;
+  --color-danger: #f97066;
+  --color-danger-bg: #3b1219;
+  --color-info: #84adff;
+  --color-info-bg: #102a56;
+  --color-neutral: #98a2b3;
+  --color-neutral-bg: #1d2939;
+
+  --color-sidebar: #1a2236;
+  --color-sidebar-foreground: #d0d5dd;
+  --color-sidebar-muted: #98a2b3;
+  --color-sidebar-active: #2a3a54;
+  --color-sidebar-border: #2a3347;
+
+  --color-chart-1: #465fff;
+  --color-chart-2: #12b76a;
+  --color-chart-3: #f79009;
+  --color-chart-4: #9b8afb;
+  --color-chart-5: #36c5f0;
+  --color-chart-6: #98a2b3;
 }
 
 @layer base {
@@ -70,6 +133,10 @@
     height: 100dvh;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
+  }
+
+  html:not(.dark) {
+    color-scheme: light;
   }
 
   body {
@@ -87,6 +154,20 @@
   ::placeholder {
     color: var(--color-muted-foreground);
     opacity: 1;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-primary) 28%, transparent);
+    color: var(--color-foreground);
+  }
+
+  input:-webkit-autofill,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: var(--color-foreground);
+    caret-color: var(--color-foreground);
+    box-shadow: 0 0 0 1000px var(--color-card) inset;
+    transition: background-color 99999s ease-out;
   }
 }
 
