@@ -423,6 +423,7 @@ export interface Usuario {
   unidadesAcesso: string[];
   status: "ativo" | "inativo";
   ultimoAcesso?: string;
+  tema?: "claro" | "escuro";
 }
 
 export type CodigoPlano = "essencial" | "profissional" | "ilimitado";
@@ -462,6 +463,7 @@ export interface SessaoUsuario {
   plano: PlanoAtual | null;
   usoUsuarios: UsoUsuarios | null;
   planoEvento: "upgrade" | "downgrade" | null;
+  tema?: "claro" | "escuro";
 }
 
 export interface Clinica {

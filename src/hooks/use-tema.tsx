@@ -2,7 +2,9 @@
 
 import * as React from "react";
 
+import { useSessaoStore } from "@/hooks/use-sessao";
 import { aplicarTema, lerTema, TEMA_STORAGE_KEY, temaValido, type TemaSistema } from "@/lib/tema";
+import { salvarTemaApi } from "@/services/auth";
 
 interface TemaContextValue {
   tema: TemaSistema;
@@ -14,10 +16,19 @@ const TemaContext = React.createContext<TemaContextValue | null>(null);
 
 export function TemaProvider({ children }: { children: React.ReactNode }) {
   const [tema, setTemaState] = React.useState<TemaSistema>("claro");
+  const sessaoId = useSessaoStore((state) => state.sessao?.id);
+  const temaSessao = useSessaoStore((state) => state.sessao?.tema);
+  const atualizarTemaSessao = useSessaoStore((state) => state.atualizarTemaSessao);
 
   React.useEffect(() => {
     setTemaState(lerTema());
   }, []);
+
+  React.useEffect(() => {
+    if (!temaValido(temaSessao)) return;
+    setTemaState(temaSessao);
+    aplicarTema(temaSessao);
+  }, [temaSessao]);
 
   React.useEffect(() => {
     function sincronizar(event: StorageEvent) {
@@ -30,10 +41,18 @@ export function TemaProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", sincronizar);
   }, []);
 
-  const setTema = React.useCallback((proximo: TemaSistema) => {
-    setTemaState(proximo);
-    aplicarTema(proximo);
-  }, []);
+  const setTema = React.useCallback(
+    (proximo: TemaSistema) => {
+      setTemaState(proximo);
+      aplicarTema(proximo);
+      atualizarTemaSessao(proximo);
+      if (!sessaoId) return;
+      void salvarTemaApi(proximo).catch(() => {
+        // Preferência local já foi aplicada; a API sincroniza no próximo login.
+      });
+    },
+    [atualizarTemaSessao, sessaoId],
+  );
 
   const toggleTema = React.useCallback(() => {
     setTema(tema === "escuro" ? "claro" : "escuro");

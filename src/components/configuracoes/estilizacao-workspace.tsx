@@ -34,7 +34,7 @@ export function EstilizacaoWorkspace() {
     <div className="space-y-6">
       <PageHeader
         title="Estilização"
-        description="Escolha o tema visual do sistema. A preferência vale para todas as telas neste dispositivo."
+        description="Escolha o tema visual do sistema. A preferência é salva na sua conta e vale em qualquer dispositivo."
       />
 
       <div className="grid gap-4 md:grid-cols-2">

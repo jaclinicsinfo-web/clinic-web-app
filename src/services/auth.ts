@@ -127,6 +127,10 @@ export async function obterSessaoAtual(): Promise<ContextoAuth | null> {
   }
 }
 
+export async function salvarTemaApi(tema: "claro" | "escuro") {
+  return api.patch<{ tema: "claro" | "escuro" }>("/auth/tema", { tema });
+}
+
 export async function encerrarSessaoApi() {
   try {
     await api.post("/auth/logout");

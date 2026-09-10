@@ -38,6 +38,7 @@ function montarSessao(
     plano,
     usoUsuarios,
     planoEvento,
+    tema: usuario.tema === "escuro" ? "escuro" : "claro",
   };
 }
 
@@ -106,6 +107,7 @@ function lerStorage(): SessaoUsuario | null {
       usoUsuarios: parsed.usoUsuarios ?? null,
       planoEvento: resolverEvento(null, parsed.plano, parsed.usoUsuarios),
       clinicaNome: parsed.clinicaNome ?? null,
+      tema: parsed.tema === "escuro" ? "escuro" : parsed.tema === "claro" ? "claro" : undefined,
     };
   } catch {
     return null;
@@ -154,10 +156,12 @@ interface SessaoState {
     usoUsuarios: UsoUsuarios | null;
     permissoes?: Permissao[] | null;
     perfilId?: string;
+    tema?: "claro" | "escuro";
   }) => void;
   atualizarUso: (usoUsuarios: UsoUsuarios) => void;
   atualizarClinicaNome: (clinicaNome: string) => void;
   atualizarUnidadesSessao: (unidades: Unidade[]) => void;
+  atualizarTemaSessao: (tema: "claro" | "escuro") => void;
   dispensarAvisoUpgrade: () => void;
   setUnidade: (unidadeAtualId: string) => Promise<void>;
   encerrarSessao: () => void;
@@ -211,6 +215,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       plano: input.plano,
       usoUsuarios: input.usoUsuarios,
       planoEvento: evento,
+      tema: input.usuario?.tema ?? input.tema ?? atual.tema,
     };
     gravarStorage(sessao, get().lembrar);
     if (input.plano && evento !== "upgrade") gravarPlanoVisto(input.plano.codigo);
@@ -240,6 +245,13 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       unidades,
       unidadesAcesso: unidades.map((item) => item.id),
     };
+    gravarStorage(sessao, get().lembrar);
+    set({ sessao });
+  },
+  atualizarTemaSessao: (tema) => {
+    const atual = get().sessao;
+    if (!atual || atual.tema === tema) return;
+    const sessao = { ...atual, tema };
     gravarStorage(sessao, get().lembrar);
     set({ sessao });
   },
