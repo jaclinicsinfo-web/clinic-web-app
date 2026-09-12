@@ -844,11 +844,11 @@ O módulo **Integrações e lembretes** (plano Ilimitado) configura WhatsApp ofi
 Menu **Integrações e lembretes**:
 
 - **Dashboard:** totais de envios, custos, taxas de sucesso/falha e agendamentos impactados, com filtro de período, canal, status e tipo.
-- **Configurações:** WhatsApp (token, Phone Number ID, webhook), e-mail SMTP e ativar/desativar lembretes. A tabela de custos de disparo aparece só para consulta (o valor de repasse é definido no contrato, não pela clínica).
+- **Configurações:** WhatsApp (token, Phone Number ID, WABA, webhook), e-mail SMTP, **conta de cobrança** (clínica ou repasse da plataforma) e ativar/desativar lembretes. A tabela de custos de disparo aparece só para consulta.
 - **Lembretes:** regras (por exemplo 24 h antes, 2 h antes, confirmação, cancelamento) e templates. Sempre ligados a um agendamento da agenda.
-- **Histórico de envios:** auditoria (paciente, profissional, canal, status, custo, erro).
+- **Histórico de envios:** auditoria (paciente, profissional, canal, status, custo estimado ou a faturar, erro).
 
-Os custos dos disparos não são absorvidos pela empresa do sistema: cada envio registra o valor configurado para posterior cobrança da clínica.
+A Meta cobra a WABA que envia a mensagem; o SMTP cobra o dono da conta. O modo recomendado é **conta da clínica**: o cliente cadastra o pagamento no Gerenciador de Negócios da Meta (não neste painel) e vocês não antecipam o custo. O modo **repasse da plataforma** é o fallback: vocês pagam e faturam depois pela tabela do contrato.
 
 ---
 

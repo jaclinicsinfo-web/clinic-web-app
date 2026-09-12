@@ -1,4 +1,4 @@
-import type { CanalLembrete, DestinatarioLembrete, TipoLembrete } from "@/services/integracoes";
+import type { CanalLembrete, DestinatarioLembrete, ModoCobranca, TipoLembrete } from "@/services/integracoes";
 
 export const tipoLembreteLabels: Record<TipoLembrete, string> = {
   antecedencia: "Antecedência",
@@ -17,6 +17,15 @@ export const destinatarioLabels: Record<DestinatarioLembrete, string> = {
   profissional: "Profissional",
   ambos: "Paciente e profissional",
 };
+
+export const cobrancaModoLabels: Record<ModoCobranca, string> = {
+  conta_clinica: "Conta da clínica",
+  repasse_plataforma: "Repasse da plataforma",
+};
+
+export function dicaCustoCobranca(modo?: ModoCobranca) {
+  return modo === "repasse_plataforma" ? "A faturar pela plataforma" : "Cobrado na conta da clínica";
+}
 
 export const categoriaCustoLabels: Record<string, string> = {
   utility: "Utilidade (WhatsApp)",

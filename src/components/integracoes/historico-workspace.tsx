@@ -90,7 +90,8 @@ export function HistoricoEnviosWorkspace() {
       {
         accessorKey: "custo",
         header: "Custo",
-        cell: ({ row }) => formatCurrency(row.original.custo),
+        cell: ({ row }) =>
+          `${formatCurrency(row.original.custo)}${row.original.custoEstimado ? " · estimado" : " · a faturar"}`,
       },
       {
         accessorKey: "erro",

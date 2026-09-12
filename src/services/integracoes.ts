@@ -3,6 +3,7 @@ import { api } from "@/lib/api";
 export type CanalLembrete = "whatsapp" | "email";
 export type TipoLembrete = "antecedencia" | "confirmacao" | "reagendamento" | "cancelamento";
 export type DestinatarioLembrete = "paciente" | "profissional" | "ambos";
+export type ModoCobranca = "conta_clinica" | "repasse_plataforma";
 export type StatusEnvio =
   | "pendente"
   | "processando"
@@ -72,6 +73,10 @@ export interface EnvioLembrete {
 
 export interface IntegracoesDashboard {
   resumo: IntegracoesResumo;
+  cobranca: {
+    whatsapp: ModoCobranca;
+    email: ModoCobranca;
+  };
   envios: EnvioLembrete[];
 }
 
@@ -89,6 +94,7 @@ export interface IntegracaoConfiguracao {
     accessTokenMascarado: string | null;
     appSecretMascarado: string | null;
     verifyTokenMascarado: string | null;
+    cobrancaModo: ModoCobranca;
   };
   email: {
     ativo: boolean;
@@ -100,6 +106,7 @@ export interface IntegracaoConfiguracao {
     smtpRemetente: string | null;
     smtpRemetenteNome: string | null;
     smtpSeguro: string;
+    cobrancaModo: ModoCobranca;
   };
 }
 

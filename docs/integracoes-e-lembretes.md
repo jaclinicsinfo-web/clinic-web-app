@@ -57,11 +57,22 @@ Regras configuráveis, por exemplo:
 
 Destinatários usam o cadastro já existente (paciente/profissional). Sem e-mail ou WhatsApp, o envio fica **falhou** com o motivo, sem inventar contato.
 
-## Custos e repasse
+## Conta de cobrança (quem a Meta/SMTP cobra)
 
-O custo **não é absorvido** pela empresa do sistema e **a clínica não define o preço**.
+O cartão **não** é cadastrado neste ERP. A Meta cobra a **WhatsApp Business Account (WABA)** que envia a mensagem; o SMTP cobra o dono da conta de e-mail.
 
-Vocês controlam a tabela no deploy da API (mesmo padrão do `PLANO`):
+Em **Integrações › Configurações**, cada canal tem o modo:
+
+| Modo | O que acontece |
+|---|---|
+| **Conta da clínica** (padrão, recomendado) | A clínica usa o próprio WABA / SMTP e cadastra o pagamento no Gerenciador de Negócios da Meta (ou no provedor de e-mail). Vocês **não antecipam** o custo. O histórico grava só uma **estimativa** da tabela vigente. |
+| **Repasse da plataforma** | Vocês enviam pelo WABA/SMTP da plataforma, pagam a Meta/provedor e faturam a clínica depois. O histórico grava o valor **a faturar**. |
+
+Para o cliente pagar 100% direto: modo **conta da clínica** + credenciais do WABA dela + forma de pagamento em [business.facebook.com](https://business.facebook.com).
+
+## Custos e tabela de referência
+
+A clínica **não define o preço**. Vocês controlam a tabela no deploy da API (mesmo padrão do `PLANO`):
 
 ```
 CUSTO_WHATSAPP_UTILITY=0.42
@@ -71,7 +82,7 @@ CUSTO_WHATSAPP_SERVICE=0
 CUSTO_EMAIL=0.05
 ```
 
-O painel só **exibe** os valores vigentes. Cada envio grava o custo daquele momento no histórico, para faturar a clínica. Se a Meta mudar a tabela, vocês atualizam o `.env` (ou as env vars no Render) e reiniciam a API.
+O painel só **exibe** os valores vigentes. Cada envio grava o custo daquele momento. Se a Meta mudar a tabela, atualizem o `.env` (ou as env vars no Render) e reiniciem a API.
 
 ## Idempotência
 

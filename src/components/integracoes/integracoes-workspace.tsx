@@ -15,7 +15,7 @@ import {
 
 import { Pode } from "@/components/auth/pode";
 import { IntegracoesCharts } from "@/components/integracoes/integracoes-charts";
-import { canalLabels, tipoLembreteLabels } from "@/components/integracoes/labels";
+import { canalLabels, dicaCustoCobranca, tipoLembreteLabels } from "@/components/integracoes/labels";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -94,13 +94,20 @@ export function IntegracoesWorkspace() {
     );
   }
 
-  const { resumo } = dados;
+  const { resumo, cobranca } = dados;
+  const ambosClinica = cobranca?.whatsapp !== "repasse_plataforma" && cobranca?.email !== "repasse_plataforma";
+  const ambosRepasse = cobranca?.whatsapp === "repasse_plataforma" && cobranca?.email === "repasse_plataforma";
+  const descricaoDashboard = ambosClinica
+    ? "Lembretes gerados pela agenda. WhatsApp e e-mail cobram a clínica direto (Meta e SMTP). Os valores abaixo são estimativa da tabela vigente."
+    : ambosRepasse
+      ? "Lembretes gerados pela agenda, com custos a faturar pela plataforma."
+      : "Lembretes gerados pela agenda. Cada canal pode cobrar a clínica direto ou ser faturado pela plataforma — veja a dica em cada card de custo.";
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Integrações e lembretes"
-        description="Envios gerados a partir da agenda, com custos de WhatsApp e e-mail para repasse à clínica."
+        description={descricaoDashboard}
         actions={
           <>
             <Button variant="outline" asChild>
@@ -174,9 +181,24 @@ export function IntegracoesWorkspace() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Custo total" value={formatCurrency(resumo.custoTotal)} icon={Wallet} hint="Repasse à clínica" />
-        <StatCard label="Custo WhatsApp" value={formatCurrency(resumo.custoWhatsapp)} icon={MessageCircle} />
-        <StatCard label="Custo e-mail" value={formatCurrency(resumo.custoEmail)} icon={Mail} />
+        <StatCard
+          label="Custo total"
+          value={formatCurrency(resumo.custoTotal)}
+          icon={Wallet}
+          hint={ambosClinica ? "Estimativa — cobrado na conta da clínica" : ambosRepasse ? "A faturar pela plataforma" : "Misto: veja WhatsApp e e-mail"}
+        />
+        <StatCard
+          label="Custo WhatsApp"
+          value={formatCurrency(resumo.custoWhatsapp)}
+          icon={MessageCircle}
+          hint={dicaCustoCobranca(cobranca?.whatsapp)}
+        />
+        <StatCard
+          label="Custo e-mail"
+          value={formatCurrency(resumo.custoEmail)}
+          icon={Mail}
+          hint={dicaCustoCobranca(cobranca?.email)}
+        />
         <StatCard label="Custo médio" value={formatCurrency(resumo.custoMedio)} icon={Wallet} hint="Por envio no período" />
       </div>
 
@@ -213,7 +235,10 @@ export function IntegracoesWorkspace() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm tabular-nums text-muted-foreground">{formatCurrency(envio.custo)}</span>
+                    <span className="text-sm tabular-nums text-muted-foreground">
+                      {formatCurrency(envio.custo)}
+                      {envio.custoEstimado ? " · estimado" : " · a faturar"}
+                    </span>
                     <StatusBadge domain="envio" status={envio.status} />
                   </div>
                 </li>

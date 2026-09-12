@@ -4,7 +4,6 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { Pode } from "@/components/auth/pode";
-import { categoriaCustoLabels } from "@/components/integracoes/labels";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FormField, FormSection } from "@/components/shared/form-section";
 import { PageHeader } from "@/components/shared/page-header";
@@ -16,16 +15,13 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api";
-import { formatCurrency } from "@/lib/format";
 import { temPermissao } from "@/lib/permissoes";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import {
-  listarCustosEnvioApi,
   obterConfiguracaoIntegracoesApi,
   salvarConfiguracaoIntegracoesApi,
   testarEmailApi,
   testarWhatsappApi,
-  type CustoEnvio,
   type IntegracaoConfiguracao,
 } from "@/services/integracoes";
 
@@ -33,7 +29,6 @@ export function IntegracoesConfiguracoesWorkspace() {
   const sessao = useSessaoStore((state) => state.sessao);
   const podeEditar = temPermissao(sessao?.permissoes, "integracoes", "editar");
   const [config, setConfig] = React.useState<IntegracaoConfiguracao | null>(null);
-  const [custos, setCustos] = React.useState<CustoEnvio[]>([]);
   const [erro, setErro] = React.useState<string | null>(null);
   const [salvando, setSalvando] = React.useState(false);
   const [testeWhatsapp, setTesteWhatsapp] = React.useState("");
@@ -47,6 +42,7 @@ export function IntegracoesConfiguracoesWorkspace() {
     appSecret: "",
     verifyToken: "",
     ambiente: "producao",
+    cobrancaModo: "conta_clinica" as "conta_clinica" | "repasse_plataforma",
   });
   const [email, setEmail] = React.useState({
     smtpHost: "",
@@ -56,15 +52,15 @@ export function IntegracoesConfiguracoesWorkspace() {
     smtpRemetente: "",
     smtpRemetenteNome: "",
     smtpSeguro: "tls",
+    cobrancaModo: "conta_clinica" as "conta_clinica" | "repasse_plataforma",
   });
 
   React.useEffect(() => {
     let ativo = true;
-    Promise.all([obterConfiguracaoIntegracoesApi(), listarCustosEnvioApi()])
-      .then(([cfg, listaCustos]) => {
+    obterConfiguracaoIntegracoesApi()
+      .then((cfg) => {
         if (!ativo) return;
         setConfig(cfg);
-        setCustos(listaCustos);
         setWhatsapp({
           phoneNumberId: cfg.whatsapp.phoneNumberId ?? "",
           wabaId: cfg.whatsapp.wabaId ?? "",
@@ -73,6 +69,7 @@ export function IntegracoesConfiguracoesWorkspace() {
           appSecret: cfg.whatsapp.appSecretMascarado ?? "",
           verifyToken: cfg.whatsapp.verifyTokenMascarado ?? "",
           ambiente: cfg.whatsapp.ambiente,
+          cobrancaModo: cfg.whatsapp.cobrancaModo ?? "conta_clinica",
         });
         setEmail({
           smtpHost: cfg.email.smtpHost ?? "",
@@ -82,6 +79,7 @@ export function IntegracoesConfiguracoesWorkspace() {
           smtpRemetente: cfg.email.smtpRemetente ?? "",
           smtpRemetenteNome: cfg.email.smtpRemetenteNome ?? "",
           smtpSeguro: cfg.email.smtpSeguro ?? "tls",
+          cobrancaModo: cfg.email.cobrancaModo ?? "conta_clinica",
         });
       })
       .catch((error) => {
@@ -103,6 +101,7 @@ export function IntegracoesConfiguracoesWorkspace() {
         whatsappAppSecret: whatsapp.appSecret,
         whatsappVerifyToken: whatsapp.verifyToken,
         whatsappAmbiente: whatsapp.ambiente,
+        whatsappCobrancaModo: whatsapp.cobrancaModo,
       });
       setConfig(atualizado);
       toast.success("Configuração do WhatsApp salva.");
@@ -124,6 +123,7 @@ export function IntegracoesConfiguracoesWorkspace() {
         smtpRemetente: email.smtpRemetente,
         smtpRemetenteNome: email.smtpRemetenteNome,
         smtpSeguro: email.smtpSeguro,
+        emailCobrancaModo: email.cobrancaModo,
       });
       setConfig(atualizado);
       toast.success("Configuração de e-mail salva.");
@@ -178,7 +178,6 @@ export function IntegracoesConfiguracoesWorkspace() {
         <TabsList>
           <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
           <TabsTrigger value="email">E-mail</TabsTrigger>
-          <TabsTrigger value="custos">Custos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="whatsapp" className="space-y-4">
@@ -193,11 +192,36 @@ export function IntegracoesConfiguracoesWorkspace() {
               <Switch checked={config.whatsapp.ativo} disabled={!podeEditar} onCheckedChange={(valor) => void alternar("whatsappAtivo", valor)} />
             </CardHeader>
             <CardContent className="space-y-6">
+              <FormSection
+                title="Conta de cobrança"
+                description="A Meta cobra a WhatsApp Business Account (WABA) cadastrada. O cartão ou boleto é cadastrado no Gerenciador de Negócios da Meta, não neste painel."
+              >
+                <FormField label="Quem a Meta cobra" htmlFor="whatsappCobranca" full>
+                  <Select
+                    value={whatsapp.cobrancaModo}
+                    disabled={!podeEditar}
+                    onValueChange={(valor) =>
+                      setWhatsapp((a) => ({ ...a, cobrancaModo: valor as "conta_clinica" | "repasse_plataforma" }))
+                    }
+                  >
+                    <SelectTrigger id="whatsappCobranca"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="conta_clinica">Conta Business da clínica (recomendado)</SelectItem>
+                      <SelectItem value="repasse_plataforma">Conta da plataforma (repasse posterior)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+                <p className="col-span-full text-sm text-muted-foreground">
+                  {whatsapp.cobrancaModo === "conta_clinica"
+                    ? "Use o WABA e o token da própria clínica e peça para ela adicionar a forma de pagamento em business.facebook.com. A Meta fatura direto o cliente; vocês não antecipam o custo."
+                    : "Use o WABA da plataforma. Vocês pagam a Meta e faturam a clínica depois, com a tabela de custos do deploy."}
+                </p>
+              </FormSection>
               <FormSection title="Conta da Meta" description="Dados do app e do número oficial. Tokens nunca são exibidos por completo.">
                 <FormField label="Phone Number ID" htmlFor="phoneNumberId">
                   <Input id="phoneNumberId" value={whatsapp.phoneNumberId} disabled={!podeEditar} onChange={(e) => setWhatsapp((a) => ({ ...a, phoneNumberId: e.target.value }))} />
                 </FormField>
-                <FormField label="WhatsApp Business Account ID" htmlFor="wabaId">
+                <FormField label="WhatsApp Business Account ID" htmlFor="wabaId" hint="Esta é a conta que a Meta fatura quando o modo é “conta da clínica”.">
                   <Input id="wabaId" value={whatsapp.wabaId} disabled={!podeEditar} onChange={(e) => setWhatsapp((a) => ({ ...a, wabaId: e.target.value }))} />
                 </FormField>
                 <FormField label="Meta App ID" htmlFor="appId">
@@ -262,6 +286,31 @@ export function IntegracoesConfiguracoesWorkspace() {
               <Switch checked={config.email.ativo} disabled={!podeEditar} onCheckedChange={(valor) => void alternar("emailAtivo", valor)} />
             </CardHeader>
             <CardContent className="space-y-6">
+              <FormSection
+                title="Conta de cobrança"
+                description="O provedor de e-mail cobra quem for dono do SMTP. Não cadastre cartão neste painel."
+              >
+                <FormField label="Quem o SMTP cobra" htmlFor="emailCobranca" full>
+                  <Select
+                    value={email.cobrancaModo}
+                    disabled={!podeEditar}
+                    onValueChange={(valor) =>
+                      setEmail((a) => ({ ...a, cobrancaModo: valor as "conta_clinica" | "repasse_plataforma" }))
+                    }
+                  >
+                    <SelectTrigger id="emailCobranca"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="conta_clinica">SMTP da clínica (recomendado)</SelectItem>
+                      <SelectItem value="repasse_plataforma">SMTP da plataforma (repasse posterior)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+                <p className="col-span-full text-sm text-muted-foreground">
+                  {email.cobrancaModo === "conta_clinica"
+                    ? "Use o servidor da clínica (Google Workspace, Microsoft 365, etc.). O provedor fatura o cliente; vocês não antecipam o custo."
+                    : "Use o SMTP do servidor. Vocês pagam o provedor e faturam a clínica depois, com a tabela de custos do deploy."}
+                </p>
+              </FormSection>
               <FormSection title="Servidor" columns={2}>
                 <FormField label="Host" htmlFor="smtpHost">
                   <Input id="smtpHost" value={email.smtpHost} disabled={!podeEditar} onChange={(e) => setEmail((a) => ({ ...a, smtpHost: e.target.value }))} />
@@ -313,25 +362,6 @@ export function IntegracoesConfiguracoesWorkspace() {
                   </Button>
                 </div>
               </Pode>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="custos">
-          <Card>
-            <CardHeader>
-              <CardTitle>Custos de disparo</CardTitle>
-              <CardDescription>
-                Tabela de repasse definida no contrato da clínica. Os valores não são editáveis neste painel — cada envio registra o custo vigente para faturamento.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {custos.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 border-b border-border py-2 last:border-0">
-                  <p className="text-sm font-medium text-foreground">{categoriaCustoLabels[item.categoria] ?? `${item.canal} · ${item.categoria}`}</p>
-                  <p className="text-sm tabular-nums font-medium text-foreground">{formatCurrency(item.valor)}</p>
-                </div>
-              ))}
             </CardContent>
           </Card>
         </TabsContent>
