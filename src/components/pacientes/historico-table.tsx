@@ -8,6 +8,9 @@ import { DataTable } from "@/components/shared/data-table";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
+import { temPermissao } from "@/lib/permissoes";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import type { Agendamento } from "@/types";
 
 function origemAgendamento(agendamento: Agendamento) {
@@ -18,6 +21,9 @@ function origemAgendamento(agendamento: Agendamento) {
 type Periodo = "todos" | "30d" | "6m" | "12m";
 
 export function HistoricoTable({ agendamentos }: { agendamentos: Agendamento[] }) {
+  const sessao = useSessaoStore((state) => state.sessao);
+  const mostraFinanceiro =
+    planoIncluiModulo(sessao?.plano, "financeiro") && temPermissao(sessao?.permissoes, "financeiro");
   const [status, setStatus] = React.useState("todos");
   const [periodo, setPeriodo] = React.useState<Periodo>("todos");
 
@@ -67,12 +73,18 @@ export function HistoricoTable({ agendamentos }: { agendamentos: Agendamento[] }
         header: "Origem",
         cell: ({ getValue }) => <span className="text-muted-foreground">{getValue() as string}</span>,
       },
-      {
-        id: "valor",
-        accessorFn: (row) => row.valor,
-        header: "Valor",
-        cell: ({ row }) => <span className="tabular-nums">{formatCurrency(row.original.valor)}</span>,
-      },
+      ...(mostraFinanceiro
+        ? [
+            {
+              id: "valor",
+              accessorFn: (row: Agendamento) => row.valor,
+              header: "Valor",
+              cell: ({ row }: { row: { original: Agendamento } }) => (
+                <span className="tabular-nums">{formatCurrency(row.original.valor)}</span>
+              ),
+            } satisfies ColumnDef<Agendamento, unknown>,
+          ]
+        : []),
       {
         id: "status",
         accessorFn: (row) => row.status,
@@ -80,7 +92,7 @@ export function HistoricoTable({ agendamentos }: { agendamentos: Agendamento[] }
         cell: ({ row }) => <StatusBadge domain="agendamento" status={row.original.status} />,
       },
     ],
-    [],
+    [mostraFinanceiro],
   );
 
   return (

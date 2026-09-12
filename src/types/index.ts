@@ -380,6 +380,52 @@ export interface Notificacao {
   criadoEm: string;
 }
 
+export type StatusPonto = "completo" | "em_andamento" | "incompleto";
+export type TipoBatida = "entrada" | "saida_intervalo" | "retorno_intervalo" | "saida";
+export type OrigemPonto = "manual" | "proprio";
+
+export interface UsuarioRh {
+  id: string;
+  nome: string;
+  email: string;
+  status: "ativo" | "inativo";
+  perfilNome: string;
+}
+
+export interface RegistroPonto {
+  id: string;
+  usuarioId: string;
+  usuarioNome: string;
+  usuarioEmail: string;
+  perfilNome: string;
+  data: string;
+  entrada: string | null;
+  saidaIntervalo: string | null;
+  retornoIntervalo: string | null;
+  saida: string | null;
+  observacao: string | null;
+  origem: OrigemPonto;
+  status: StatusPonto;
+  minutosTrabalhados: number | null;
+  horasTrabalhadas: string | null;
+  registradoPorNome: string;
+  atualizadoEm: string;
+}
+
+export interface Holerite {
+  id: string;
+  usuarioId: string;
+  usuarioNome: string;
+  usuarioEmail: string;
+  perfilNome: string;
+  competencia: string;
+  nomeArquivo: string;
+  mimeType: string;
+  tamanhoKb: number;
+  criadoPorNome: string;
+  criadoEm: string;
+}
+
 // ------------------------------------------------------- Usuários e permissões
 
 export type ModuloSistema =
@@ -391,6 +437,7 @@ export type ModuloSistema =
   | "convenios"
   | "estoque"
   | "relatorios"
+  | "rh"
   | "configuracoes"
   | "integracoes"
   | "powerbi"

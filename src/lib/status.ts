@@ -59,6 +59,20 @@ export const statusMaps = {
     aprovada: { label: "Aprovada", tone: "info" },
     paga: { label: "Paga", tone: "success" },
   },
+  ponto: {
+    completo: { label: "Completo", tone: "success" },
+    em_andamento: { label: "Em andamento", tone: "info" },
+    incompleto: { label: "Incompleto", tone: "warning" },
+  },
+  envio: {
+    pendente: { label: "Pendente", tone: "warning" },
+    processando: { label: "Processando", tone: "info" },
+    enviado: { label: "Enviado", tone: "success" },
+    entregue: { label: "Entregue", tone: "success" },
+    lido: { label: "Lido", tone: "info" },
+    falhou: { label: "Falhou", tone: "danger" },
+    cancelado: { label: "Cancelado", tone: "neutral" },
+  },
   generico: {
     ativo: { label: "Ativo", tone: "success" },
     inativo: { label: "Inativo", tone: "neutral" },

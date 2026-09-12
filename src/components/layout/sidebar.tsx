@@ -9,7 +9,7 @@ import { PlanoAtualIndicador } from "@/components/layout/plano-atual-indicador";
 import { navGroups, type NavItem } from "@/lib/navigation";
 import { temPermissao } from "@/lib/permissoes";
 import { nomeDoPlano, isAdministrador, isAdminOuGestor } from "@/lib/plano";
-import { moduloEstaReservado, planoIncluiModulo, planoMinimoDoModulo } from "@/lib/modulos-plano";
+import { moduloVisivelForaDoPlano, planoIncluiModulo, planoMinimoDoModulo } from "@/lib/modulos-plano";
 import { cn } from "@/lib/utils";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -22,7 +22,8 @@ interface SidebarProps {
 }
 
 function isItemActive(pathname: string, item: NavItem) {
-  const base = item.children ? item.children[0].href.split("/")[1] : item.href.split("/")[1];
+  const href = item.children?.[0]?.href ?? item.href;
+  const base = href.split("/")[1];
   return pathname === item.href || pathname.startsWith(`/${base}/`) || pathname === `/${base}`;
 }
 
@@ -41,7 +42,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
       items: grupo.items
         .filter((item) => {
           const noPlano = planoIncluiModulo(plano, item.modulo);
-          if (item.reservado || moduloEstaReservado(item.modulo)) {
+          if (item.reservado || moduloVisivelForaDoPlano(item.modulo)) {
             if (noPlano) return temPermissao(permissoes, item.modulo);
             return adminOuGestor;
           }
@@ -58,9 +59,18 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
             if (child.href.startsWith("/configuracoes/permissoes")) return admin;
             return temPermissao(permissoes, item.modulo);
           });
-          return { ...item, href: children[0]?.href ?? item.href, children };
+          return {
+            ...item,
+            href: children[0]?.href ?? item.href,
+            children: children.length > 0 ? children : undefined,
+          };
         })
-        .filter((item) => !item.children || item.children.length > 0),
+        .filter((item) => {
+          const vitrineForaDoPlano =
+            (item.reservado || moduloVisivelForaDoPlano(item.modulo)) && !planoIncluiModulo(plano, item.modulo);
+          if (vitrineForaDoPlano) return true;
+          return !item.children || item.children.length > 0;
+        }),
     }))
     .filter((grupo) => grupo.items.length > 0);
 
@@ -133,7 +143,8 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
                   const Icon = item.icon;
                   const hasChildren = Boolean(item.children);
                   const expanded = openGroups[item.label] ?? false;
-                  const bloqueado = (item.reservado || moduloEstaReservado(item.modulo)) && !planoIncluiModulo(plano, item.modulo);
+                  const bloqueado =
+                    (item.reservado || moduloVisivelForaDoPlano(item.modulo)) && !planoIncluiModulo(plano, item.modulo);
                   const dicaBloqueio = bloqueado ? `Disponível no plano ${nomeDoPlano(planoMinimoDoModulo(item.modulo))}` : item.label;
 
                   const linkContent = (

@@ -58,7 +58,7 @@ Já persiste:
 - Reagendamento
 - Bloqueio de horários (almoço, folga)
 - Lista de espera (inclusão e encaixe)
-- Indicador de lembrete enviado (envio real de WhatsApp/e-mail continua opcional)
+- Indicador de lembrete enviado (envio real por WhatsApp Cloud API / e-mail no módulo Integrações)
 
 Ao marcar o atendimento como **atendido**, o sistema gera a cobrança correspondente (se ainda não existir).
 
@@ -176,7 +176,7 @@ Já persiste:
 
 Unidades novas são liberadas automaticamente para o administrador que cadastrou e para os demais administradores ativos. O seletor da topbar e o nome no menu lateral usam esses registros.
 
-Ainda mock nesta área: **modelos de mensagem** e **integrações** (gateway, WhatsApp, calendário externo).
+Ainda mock nesta área: **calendário externo** e **gateway de pagamento**. WhatsApp/e-mail de lembretes estão no módulo Integrações.
 
 ## 8. Estoque
 
@@ -211,7 +211,7 @@ Recepção e Financeiro não veem prontuário nem documentos clínicos.
 - ~~Recuperação e redefinição de senha~~ — feito (`/esqueci-senha` e `/redefinir-senha`; envio por SMTP se configurado)
 - ~~Centro de notificações (sino)~~ — feito (estoque baixo, despesas vencidas, carteirinhas)
 - Documentos do **profissional** (contratos/certidões) — os do paciente já existem
-- Envio real de lembretes (WhatsApp/e-mail)
+- Envio real de lembretes (WhatsApp Cloud API / e-mail) — feito (`/integracoes`)
 
 Busca global na topbar **não entra** no produto: a busca continua só nas tabelas de cada tela.
 
@@ -232,6 +232,6 @@ Segue a seção 17 da especificação, ajustada ao que já existe:
 9. ~~Dashboard~~ — feito (números reais; recorte por perfil)
 10. ~~Relatórios~~ — feito (período, abas, CSV)
 
-Os itens que restam não são módulo de menu pronto: documentos do profissional, envio real de lembretes, modelos de mensagem e as telas de Integrações, Power BI e Agente de IA (já reservadas no menu do Ilimitado).
+Os itens que restam não são módulo de menu pronto: documentos do profissional, calendário externo, gateway de pagamento, Power BI e Agente de IA. Integrações e lembretes estão em [`integracoes-e-lembretes.md`](./integracoes-e-lembretes.md).
 
 Cada módulo deve seguir o padrão já usado: Model → Controller → View na API, e `src/services` no painel sem mock.

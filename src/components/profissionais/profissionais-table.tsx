@@ -23,6 +23,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatPercent, getInitials } from "@/lib/format";
 import { ApiError } from "@/lib/api";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
 import { temPermissao } from "@/lib/permissoes";
 import { formaRemuneracaoLabels, tipoVinculoLabels } from "@/lib/status";
 import { useSessaoStore } from "@/hooks/use-sessao";
@@ -37,9 +38,11 @@ interface ProfissionaisTableProps {
 
 export function ProfissionaisTable({ profissionais, especialidades, onInativar, onAtivar }: ProfissionaisTableProps) {
   const router = useRouter();
-  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const sessao = useSessaoStore((state) => state.sessao);
+  const permissoes = sessao?.permissoes;
   const podeEditar = temPermissao(permissoes, "profissionais", "editar");
   const podeDesativar = temPermissao(permissoes, "profissionais", "excluir");
+  const mostraFinanceiro = planoIncluiModulo(sessao?.plano, "financeiro") && temPermissao(permissoes, "financeiro");
   const [status, setStatus] = React.useState("todos");
   const [especialidade, setEspecialidade] = React.useState("todas");
   const [vinculo, setVinculo] = React.useState("todos");
@@ -115,19 +118,23 @@ export function ProfissionaisTable({ profissionais, especialidades, onInativar, 
           </div>
         ),
       },
-      {
-        id: "percentualComissao",
-        accessorFn: (row) => row.percentualComissao,
-        header: "Comissão",
-        cell: ({ row }) => {
-          const percentual = row.original.percentualComissao;
-          return percentual > 0 ? (
-            <span className="font-medium tabular-nums text-foreground">{formatPercent(percentual, 0)}</span>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          );
-        },
-      },
+      ...(mostraFinanceiro
+        ? [
+            {
+              id: "percentualComissao",
+              accessorFn: (row: Profissional) => row.percentualComissao,
+              header: "Comissão",
+              cell: ({ row }: { row: { original: Profissional } }) => {
+                const percentual = row.original.percentualComissao;
+                return percentual > 0 ? (
+                  <span className="font-medium tabular-nums text-foreground">{formatPercent(percentual, 0)}</span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                );
+              },
+            } satisfies ColumnDef<Profissional, unknown>,
+          ]
+        : []),
       {
         id: "status",
         accessorFn: (row) => row.status,
@@ -189,7 +196,7 @@ export function ProfissionaisTable({ profissionais, especialidades, onInativar, 
         },
       },
     ],
-    [router, podeEditar, podeDesativar],
+    [router, podeEditar, podeDesativar, mostraFinanceiro],
   );
 
   return (

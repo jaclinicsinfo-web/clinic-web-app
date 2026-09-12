@@ -26,7 +26,7 @@ const acoes = [
   { chave: "excluir" as const, label: "Desativar" },
 ];
 
-const somenteVisualizar = new Set(["dashboard", "relatorios", "integracoes", "powerbi", "agenteia"]);
+const somenteVisualizar = new Set(["dashboard", "relatorios", "powerbi", "agenteia"]);
 
 export function PermissoesWorkspace() {
   const plano = useSessaoStore((state) => state.sessao?.plano);

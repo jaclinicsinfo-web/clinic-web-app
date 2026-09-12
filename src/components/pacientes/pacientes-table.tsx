@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { ApiError } from "@/lib/api";
 import { calculateAge, formatCurrency, formatDate, formatPhone } from "@/lib/format";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
 import { temPermissao } from "@/lib/permissoes";
 import type { Paciente } from "@/types";
 
@@ -49,10 +50,12 @@ export function PacientesTable({
   onArquivar,
 }: PacientesTableProps) {
   const router = useRouter();
-  const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const sessao = useSessaoStore((state) => state.sessao);
+  const permissoes = sessao?.permissoes;
   const podeEditar = temPermissao(permissoes, "pacientes", "editar");
   const podeDesativar = temPermissao(permissoes, "pacientes", "excluir");
   const podeAgendar = temPermissao(permissoes, "agenda", "criar");
+  const mostraFinanceiro = planoIncluiModulo(sessao?.plano, "financeiro") && temPermissao(permissoes, "financeiro");
   const [status, setStatus] = React.useState("todos");
   const [profissional, setProfissional] = React.useState("todos");
   const [faixa, setFaixa] = React.useState<FaixaEtaria>("todas");
@@ -135,19 +138,23 @@ export function PacientesTable({
           );
         },
       },
-      {
-        id: "saldoDevedor",
-        accessorFn: (row) => row.saldoDevedor,
-        header: "Em aberto",
-        cell: ({ row }) => {
-          const valor = row.original.saldoDevedor;
-          return valor > 0 ? (
-            <span className="font-medium tabular-nums text-danger">{formatCurrency(valor)}</span>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          );
-        },
-      },
+      ...(mostraFinanceiro
+        ? [
+            {
+              id: "saldoDevedor",
+              accessorFn: (row: Paciente) => row.saldoDevedor,
+              header: "Em aberto",
+              cell: ({ row }: { row: { original: Paciente } }) => {
+                const valor = row.original.saldoDevedor;
+                return valor > 0 ? (
+                  <span className="font-medium tabular-nums text-danger">{formatCurrency(valor)}</span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                );
+              },
+            } satisfies ColumnDef<Paciente, unknown>,
+          ]
+        : []),
       {
         id: "status",
         accessorFn: (row) => row.status,
@@ -204,7 +211,7 @@ export function PacientesTable({
         },
       },
     ],
-    [router, podeEditar, podeDesativar, podeAgendar],
+    [router, podeEditar, podeDesativar, podeAgendar, mostraFinanceiro],
   );
 
   return (

@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { useEntidadeLabelsStore } from "@/hooks/use-entidade-labels";
 import { ApiError } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
+import { temPermissao } from "@/lib/permissoes";
 import { isProfissionalSaude } from "@/lib/plano";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import {
@@ -33,9 +35,12 @@ const resumoVazio: ResumoPacientes = {
 };
 
 export function PacientesWorkspace() {
-  const perfil = useSessaoStore((state) => state.sessao?.perfil);
+  const sessao = useSessaoStore((state) => state.sessao);
+  const perfil = sessao?.perfil;
   const setPacienteNome = useEntidadeLabelsStore((state) => state.setPaciente);
   const profissionalSaude = isProfissionalSaude(perfil);
+  const mostraFinanceiro =
+    planoIncluiModulo(sessao?.plano, "financeiro") && temPermissao(sessao?.permissoes, "financeiro");
 
   const [pacientes, setPacientes] = React.useState<Paciente[]>([]);
   const [resumo, setResumo] = React.useState<ResumoPacientes>(resumoVazio);
@@ -91,7 +96,9 @@ export function PacientesWorkspace() {
         description={
           somenteProprios
             ? "Cadastro e acompanhamento dos pacientes vinculados a você."
-            : "Cadastro, acompanhamento e situação financeira dos pacientes da clínica."
+            : mostraFinanceiro
+              ? "Cadastro, acompanhamento e situação financeira dos pacientes da clínica."
+              : "Cadastro e acompanhamento dos pacientes da clínica."
         }
         actions={
           <Pode modulo="pacientes" acao="criar">
@@ -113,13 +120,17 @@ export function PacientesWorkspace() {
           icon={UserCheck}
           hint={`${resumo.inativos} inativos · ${resumo.arquivados} arquivados`}
         />
-        <StatCard
-          label="Com pendência financeira"
-          value={String(resumo.comPendencia)}
-          icon={AlertCircle}
-          hint="Cobranças pendentes ou em atraso"
-        />
-        <StatCard label="Valor em aberto" value={formatCurrency(resumo.valorEmAberto)} icon={AlertCircle} />
+        {mostraFinanceiro && (
+          <>
+            <StatCard
+              label="Com pendência financeira"
+              value={String(resumo.comPendencia)}
+              icon={AlertCircle}
+              hint="Cobranças pendentes ou em atraso"
+            />
+            <StatCard label="Valor em aberto" value={formatCurrency(resumo.valorEmAberto)} icon={AlertCircle} />
+          </>
+        )}
       </div>
 
       {erro ? (

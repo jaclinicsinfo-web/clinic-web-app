@@ -143,14 +143,18 @@ export function ConvenioDetalheWorkspace({
           <p className="text-xs text-muted-foreground">Atendimentos no mês</p>
           <p className="mt-1 text-xl font-semibold tabular-nums">{indicadores.atendimentosMes}</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">Faturamento do mês</p>
-          <p className="mt-1 text-xl font-semibold tabular-nums">{formatCurrency(indicadores.faturamentoMes)}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">Taxa de glosa</p>
-          <p className="mt-1 text-xl font-semibold tabular-nums">{formatPercent(indicadores.taxaGlosa)}</p>
-        </Card>
+        {mostraFaturamento && (
+          <>
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">Faturamento do mês</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums">{formatCurrency(indicadores.faturamentoMes)}</p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">Taxa de glosa</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums">{formatPercent(indicadores.taxaGlosa)}</p>
+            </Card>
+          </>
+        )}
       </div>
 
       <ConvenioTabelaPrecos convenio={convenio} procedimentos={procedimentos} onSalvo={carregar} />

@@ -41,9 +41,11 @@ export function PacienteHeader({ paciente }: { paciente: Paciente }) {
                   {alergia}
                 </Badge>
               ))}
-              {paciente.saldoDevedor > 0 && (
-                <Badge tone="warning">Em aberto: {formatCurrency(paciente.saldoDevedor)}</Badge>
-              )}
+              <Pode modulo="financeiro">
+                {paciente.saldoDevedor > 0 && (
+                  <Badge tone="warning">Em aberto: {formatCurrency(paciente.saldoDevedor)}</Badge>
+                )}
+              </Pode>
             </div>
 
             <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-1.5 text-xs text-muted-foreground">

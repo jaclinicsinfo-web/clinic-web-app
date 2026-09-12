@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Lock, MessageCircle, Sparkles } from "lucide-react";
+import { BarChart3, Boxes, FileBarChart, Lock, MessageCircle, Sparkles, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-header";
@@ -11,6 +11,9 @@ import { nomeDoPlano } from "@/lib/plano";
 import type { ModuloSistema } from "@/types";
 
 const icones: Partial<Record<ModuloSistema, LucideIcon>> = {
+  financeiro: Wallet,
+  estoque: Boxes,
+  relatorios: FileBarChart,
   integracoes: MessageCircle,
   powerbi: BarChart3,
   agenteia: Sparkles,

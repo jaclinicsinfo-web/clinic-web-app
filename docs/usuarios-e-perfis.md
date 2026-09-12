@@ -55,7 +55,7 @@ O número de contas ativas e de unidades segue o plano configurado no deploy (`e
 | Profissional | até 20 | várias | Núcleo + financeiro completo, relatórios e estoque |
 | Ilimitado | sem limite | sem limite | Tudo + integrações e lembretes, Power BI e agente de IA |
 
-O plano corta o módulo mesmo que o perfil tenha a permissão marcada. Integrações, Power BI e Agente de IA já aparecem no menu (com cadeado fora do Ilimitado); as telas ainda são reservadas para implementação.
+O plano corta o módulo mesmo que o perfil tenha a permissão marcada. Integrações, Power BI e Agente de IA já aparecem no menu (com cadeado fora do Ilimitado). Integrações e lembretes estão implementados no plano Ilimitado.
 
 ### Unidade
 

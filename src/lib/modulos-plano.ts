@@ -6,6 +6,7 @@ export const MODULOS_NUCLEO: ModuloSistema[] = [
   "agenda",
   "profissionais",
   "convenios",
+  "rh",
   "configuracoes",
 ];
 
@@ -45,4 +46,9 @@ export function planoMinimoDoModulo(modulo: ModuloSistema): CodigoPlano {
 
 export function moduloEstaReservado(modulo: ModuloSistema): boolean {
   return MODULOS_RESERVADOS.includes(modulo);
+}
+
+/** Módulos que continuam no menu (com cadeado) mesmo fora do plano, para mostrar que existem. */
+export function moduloVisivelForaDoPlano(modulo: ModuloSistema): boolean {
+  return MODULOS_RESERVADOS.includes(modulo) || MODULOS_GESTAO.includes(modulo);
 }

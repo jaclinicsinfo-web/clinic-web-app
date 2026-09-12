@@ -19,7 +19,7 @@ import { listarFormasPagamentoApi, salvarFormasPagamentoApi, type FormaPagamento
 
 export function FormasPagamentoView() {
   const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
-  const podeEditar = temPermissao(permissoes, "configuracoes", "editar");
+  const podeEditar = temPermissao(permissoes, "financeiro", "editar");
   const [itens, setItens] = React.useState<FormaPagamentoCadastro[]>([]);
   const [carregando, setCarregando] = React.useState(true);
   const [salvando, setSalvando] = React.useState(false);
@@ -73,7 +73,7 @@ export function FormasPagamentoView() {
         title="Formas de pagamento"
         description="Canais aceitos no caixa e no faturamento particular."
         actions={
-          <Pode modulo="configuracoes" acao="editar">
+          <Pode modulo="financeiro" acao="editar">
             <Button onClick={() => void salvar()} loading={salvando} disabled={carregando}>
               Salvar
             </Button>

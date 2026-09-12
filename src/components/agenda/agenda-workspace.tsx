@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ApiError } from "@/lib/api";
 import { formatCurrency, formatISODate, parseLocalDate } from "@/lib/format";
 import { temPermissao } from "@/lib/permissoes";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
 import { getStatusMeta } from "@/lib/status";
 import { cn } from "@/lib/utils";
 import { useSessaoStore } from "@/hooks/use-sessao";
@@ -85,8 +86,10 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
+  const plano = useSessaoStore((state) => state.sessao?.plano);
   const podeCriar = temPermissao(permissoes, "agenda", "criar");
   const podeEditar = temPermissao(permissoes, "agenda", "editar");
+  const mostraFinanceiro = planoIncluiModulo(plano, "financeiro") && temPermissao(permissoes, "financeiro");
   const pacienteInicialId = searchParams.get("paciente") ?? undefined;
   const profissionalInicialId = searchParams.get("profissional") ?? undefined;
   const abrirNovo = searchParams.get("novo") === "1" || Boolean(pacienteInicialId);
@@ -390,7 +393,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
         <StatCard label="Atendimentos do dia" value={String(resumo.total)} />
         <StatCard label="Confirmados / check-in" value={String(resumo.confirmados)} />
         <StatCard label="Em atendimento" value={String(resumo.emAtendimento)} />
-        <StatCard label="Previsto no dia" value={formatCurrency(resumo.faturamento)} />
+        {mostraFinanceiro && <StatCard label="Previsto no dia" value={formatCurrency(resumo.faturamento)} />}
       </div>
 
       <Card>

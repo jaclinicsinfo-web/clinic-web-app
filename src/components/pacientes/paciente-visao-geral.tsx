@@ -88,9 +88,11 @@ export function PacienteVisaoGeral() {
                       </p>
                     </div>
                     <div className="hidden shrink-0 text-right sm:block">
-                      <p className="text-sm font-medium tabular-nums text-foreground">
-                        {formatCurrency(agendamento.valor)}
-                      </p>
+                      {mostraFinanceiro && (
+                        <p className="text-sm font-medium tabular-nums text-foreground">
+                          {formatCurrency(agendamento.valor)}
+                        </p>
+                      )}
                       <p className="text-xs text-muted-foreground">
                         {agendamento.particular
                           ? "Particular"

@@ -1,5 +1,5 @@
 import { navGroups } from "@/lib/navigation";
-import { moduloEstaReservado, planoIncluiModulo } from "@/lib/modulos-plano";
+import { moduloVisivelForaDoPlano, planoIncluiModulo } from "@/lib/modulos-plano";
 import { isAdministrador, isAdminOuGestor } from "@/lib/plano";
 import type { AcaoPermissao, ModuloSistema, Permissao, PlanoAtual } from "@/types";
 
@@ -12,6 +12,7 @@ export const MODULOS: ModuloSistema[] = [
   "convenios",
   "estoque",
   "relatorios",
+  "rh",
   "configuracoes",
   "integracoes",
   "powerbi",
@@ -27,6 +28,7 @@ const ROTA_PARA_MODULO: Record<string, ModuloSistema> = {
   convenios: "convenios",
   estoque: "estoque",
   relatorios: "relatorios",
+  rh: "rh",
   configuracoes: "configuracoes",
   integracoes: "integracoes",
   "power-bi": "powerbi",
@@ -129,7 +131,7 @@ export function podeAcessarRota(
   const modulo = moduloDaRota(pathname);
   if (!modulo) return true;
 
-  if (moduloEstaReservado(modulo)) {
+  if (moduloVisivelForaDoPlano(modulo)) {
     if (planoIncluiModulo(plano, modulo)) {
       return temPermissao(permissoes, modulo);
     }

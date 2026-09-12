@@ -12,6 +12,9 @@ import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { formatPercent } from "@/lib/format";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
+import { temPermissao } from "@/lib/permissoes";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import {
   ativarProfissionalApi,
   inativarProfissionalApi,
@@ -28,6 +31,9 @@ const resumoVazio: ResumoProfissionais = {
 };
 
 export function ProfissionaisWorkspace() {
+  const sessao = useSessaoStore((state) => state.sessao);
+  const mostraFinanceiro =
+    planoIncluiModulo(sessao?.plano, "financeiro") && temPermissao(sessao?.permissoes, "financeiro");
   const [profissionais, setProfissionais] = React.useState<Profissional[]>([]);
   const [especialidades, setEspecialidades] = React.useState<string[]>([]);
   const [resumo, setResumo] = React.useState<ResumoProfissionais>(resumoVazio);
@@ -71,7 +77,11 @@ export function ProfissionaisWorkspace() {
     <div className="space-y-6">
       <PageHeader
         title="Profissionais"
-        description="Corpo clínico da clínica: vínculos, comissionamento e disponibilidade na agenda."
+        description={
+          mostraFinanceiro
+            ? "Corpo clínico da clínica: vínculos, comissionamento e disponibilidade na agenda."
+            : "Corpo clínico da clínica: vínculos e disponibilidade na agenda."
+        }
         actions={
           <Pode modulo="profissionais" acao="criar">
             <Button asChild>
@@ -102,12 +112,14 @@ export function ProfissionaisWorkspace() {
               icon={Stethoscope}
               hint="Especialidades distintas no corpo clínico"
             />
-            <StatCard
-              label="Comissão média"
-              value={formatPercent(resumo.comissaoMedia)}
-              icon={Percent}
-              hint="Entre profissionais comissionados"
-            />
+            {mostraFinanceiro && (
+              <StatCard
+                label="Comissão média"
+                value={formatPercent(resumo.comissaoMedia)}
+                icon={Percent}
+                hint="Entre profissionais comissionados"
+              />
+            )}
           </div>
 
           <ProfissionaisTable

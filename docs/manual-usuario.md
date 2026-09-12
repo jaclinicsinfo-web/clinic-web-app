@@ -14,7 +14,7 @@ Use este arquivo como **única fonte** para gerar um PDF de manual do usuário f
 6. **Exportação:** nas telas o botão se chama **Exportar**. Gera um arquivo **CSV** (abre no Excel, Google Planilhas e similares), com as linhas já filtradas e as colunas visíveis. Não é um arquivo `.xlsx` nativo.
 7. **Multiunidade:** a clínica pode ter várias unidades. O usuário só vê as unidades liberadas na conta e troca o contexto na barra superior.
 8. **O que cada perfil vê** deve aparecer cedo no PDF (capítulo próprio), porque o menu muda conforme o acesso.
-9. **Não invente** telas, campos ou integrações que não estejam neste briefing (WhatsApp automático, gateway de pagamento, portal do paciente, busca global na barra superior e modelos de mensagem **não existem** no produto atual).
+9. **Não invente** telas, campos ou integrações que não estejam neste briefing (gateway de pagamento, portal do paciente, busca global na barra superior e calendário externo **não existem** no produto atual). WhatsApp e e-mail de lembretes existem no módulo Integrações (plano Ilimitado).
 10. Quando um recurso for restrito a um perfil, deixe isso explícito no capítulo correspondente.
 
 ---
@@ -500,7 +500,7 @@ Agendado → Confirmado → Check-in → Em atendimento → Atendido
 
 Ao marcar **Atendido**, o sistema **gera a cobrança** correspondente (se ainda não existir).
 
-Há indicador de **lembrete enviado**. O envio automático por WhatsApp/e-mail não está ligado no produto atual; o indicador registra se o lembrete foi marcado.
+Há indicador de **lembrete enviado**. No plano Ilimitado, o módulo Integrações envia o lembrete de verdade por WhatsApp (API oficial da Meta) e/ou e-mail, conforme as regras da clínica.
 
 ### 7.4 Outras ações
 
@@ -837,7 +837,18 @@ Canais usados no caixa e no faturamento particular. Clínicas novas já nascem c
 
 Botão **Salvar**.
 
-Não há, neste momento, telas de **modelos de mensagem** nem de **integrações** (gateway, WhatsApp, calendário externo).
+O módulo **Integrações e lembretes** (plano Ilimitado) configura WhatsApp oficial da Meta, e-mail SMTP, regras de lembrete, custos de disparo e o histórico. Gateway de pagamento e calendário externo continuam fora do produto.
+
+### 13.7 Integrações e lembretes (plano Ilimitado)
+
+Menu **Integrações e lembretes**:
+
+- **Dashboard:** totais de envios, custos, taxas de sucesso/falha e agendamentos impactados, com filtro de período, canal, status e tipo.
+- **Configurações:** WhatsApp (token, Phone Number ID, webhook), e-mail SMTP e ativar/desativar lembretes. A tabela de custos de disparo aparece só para consulta (o valor de repasse é definido no contrato, não pela clínica).
+- **Lembretes:** regras (por exemplo 24 h antes, 2 h antes, confirmação, cancelamento) e templates. Sempre ligados a um agendamento da agenda.
+- **Histórico de envios:** auditoria (paciente, profissional, canal, status, custo, erro).
+
+Os custos dos disparos não são absorvidos pela empresa do sistema: cada envio registra o valor configurado para posterior cobrança da clínica.
 
 ---
 
@@ -930,9 +941,8 @@ Para a IA do PDF: **não descreva** estes itens como disponíveis.
 
 - Portal do paciente (app externo).
 - Cadastro rápido de paciente de dentro da agenda.
-- Envio automático de lembrete por WhatsApp, SMS ou e-mail (existe só o indicador “lembrete enviado”).
 - Busca global na barra superior (além da busca de cada tabela).
-- Modelos de mensagem e integrações (gateway de pagamento, WhatsApp API, Google Calendar etc.).
+- Gateway de pagamento e calendário externo.
 - Exportação nativa em PDF das telas (a exportação das listas é CSV para Excel).
 
 ---

@@ -19,7 +19,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { formatCpf, formatCurrency, formatMinutes, formatPhone } from "@/lib/format";
 import { ApiError } from "@/lib/api";
+import { planoIncluiModulo } from "@/lib/modulos-plano";
+import { temPermissao } from "@/lib/permissoes";
 import { diasSemana, formaRemuneracaoLabels, tipoVinculoLabels } from "@/lib/status";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import { atualizarProfissionalApi, criarProfissionalApi, type UsuarioVinculo } from "@/services/profissionais";
 import type { Profissional } from "@/types";
 
@@ -148,6 +151,9 @@ function valoresIniciais(profissional?: Profissional): ProfissionalFormValues {
 export function ProfissionalForm({ especialidades, procedimentos, usuarios = [], profissional }: ProfissionalFormProps) {
   const router = useRouter();
   const edicao = Boolean(profissional);
+  const sessao = useSessaoStore((state) => state.sessao);
+  const mostraFinanceiro =
+    planoIncluiModulo(sessao?.plano, "financeiro") && temPermissao(sessao?.permissoes, "financeiro");
 
   const {
     register,
@@ -448,6 +454,7 @@ export function ProfissionalForm({ especialidades, procedimentos, usuarios = [],
           </FormField>
         </FormSection>
 
+        {mostraFinanceiro && (
         <FormSection title="Comissionamento" description="Percentual aplicado sobre o faturamento gerado.">
           <FormField
             label="Percentual de comissão"
@@ -490,6 +497,7 @@ export function ProfissionalForm({ especialidades, procedimentos, usuarios = [],
             </div>
           </FormField>
         </FormSection>
+        )}
 
         <FormSection
           title="Horários de atendimento"

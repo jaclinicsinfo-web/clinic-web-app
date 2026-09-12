@@ -10,6 +10,7 @@ export const modulosLabels: Record<ModuloSistema, string> = {
   convenios: "Convênios",
   estoque: "Estoque",
   relatorios: "Relatórios",
+  rh: "RH",
   configuracoes: "Configurações",
   integracoes: "Integrações e lembretes",
   powerbi: "Power BI",
