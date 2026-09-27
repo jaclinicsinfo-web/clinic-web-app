@@ -24,10 +24,7 @@ import { formatNumber } from "@/lib/format";
 import type { IntegracoesResumo } from "@/services/integracoes";
 
 export function IntegracoesCharts({ resumo }: { resumo: IntegracoesResumo }) {
-  const canais = [
-    { nome: "WhatsApp", valor: resumo.whatsapp },
-    { nome: "E-mail", valor: resumo.email },
-  ];
+  const canais = [{ nome: "WhatsApp", valor: resumo.whatsapp }];
   const status = [
     { nome: "Enviados", valor: resumo.enviados },
     { nome: "Entregues", valor: resumo.entregues },

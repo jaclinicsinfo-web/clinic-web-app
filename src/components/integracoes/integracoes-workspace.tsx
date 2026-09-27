@@ -7,7 +7,6 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock,
-  Mail,
   MessageCircle,
   Settings,
   Wallet,
@@ -29,7 +28,6 @@ import { ApiError } from "@/lib/api";
 import { formatCurrency, formatDate, formatISODate, formatPercent } from "@/lib/format";
 import {
   obterDashboardIntegracoesApi,
-  type CanalLembrete,
   type FiltroIntegracoes,
   type IntegracoesDashboard,
   type StatusEnvio,
@@ -95,13 +93,10 @@ export function IntegracoesWorkspace() {
   }
 
   const { resumo, cobranca } = dados;
-  const ambosClinica = cobranca?.whatsapp !== "repasse_plataforma" && cobranca?.email !== "repasse_plataforma";
-  const ambosRepasse = cobranca?.whatsapp === "repasse_plataforma" && cobranca?.email === "repasse_plataforma";
-  const descricaoDashboard = ambosClinica
-    ? "Lembretes gerados pela agenda. WhatsApp e e-mail cobram a clínica direto (Meta e SMTP). Os valores abaixo são estimativa da tabela vigente."
-    : ambosRepasse
-      ? "Lembretes gerados pela agenda, com custos a faturar pela plataforma."
-      : "Lembretes gerados pela agenda. Cada canal pode cobrar a clínica direto ou ser faturado pela plataforma — veja a dica em cada card de custo.";
+  const descricaoDashboard =
+    cobranca?.whatsapp === "repasse_plataforma"
+      ? "Lembretes de WhatsApp gerados pela agenda, com custos a faturar pela plataforma."
+      : "Lembretes de WhatsApp gerados pela agenda. A Meta cobra a conta da clínica. Os valores abaixo são estimativa da tabela vigente.";
 
   return (
     <div className="space-y-6">
@@ -135,17 +130,6 @@ export function IntegracoesWorkspace() {
           <Input type="date" value={filtro.ate ?? ""} onChange={(event) => setFiltro((atual) => ({ ...atual, ate: event.target.value }))} />
         </label>
         <Select
-          value={filtro.canal || "todos"}
-          onValueChange={(valor) => setFiltro((atual) => ({ ...atual, canal: valor === "todos" ? "" : (valor as CanalLembrete) }))}
-        >
-          <SelectTrigger className="w-40"><SelectValue placeholder="Canal" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os canais</SelectItem>
-            <SelectItem value="whatsapp">WhatsApp</SelectItem>
-            <SelectItem value="email">E-mail</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
           value={filtro.status || "todos"}
           onValueChange={(valor) => setFiltro((atual) => ({ ...atual, status: valor === "todos" ? "" : (valor as StatusEnvio) }))}
         >
@@ -175,7 +159,7 @@ export function IntegracoesWorkspace() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total de envios" value={String(resumo.total)} icon={MessageCircle} hint={`${resumo.hoje} hoje`} />
-        <StatCard label="WhatsApp" value={String(resumo.whatsapp)} icon={MessageCircle} hint={`${resumo.email} por e-mail`} />
+        <StatCard label="WhatsApp" value={String(resumo.whatsapp)} icon={MessageCircle} hint="Canal dos lembretes" />
         <StatCard label="Enviados" value={String(resumo.enviados)} icon={CheckCircle2} hint={`${resumo.entregues} entregues · ${resumo.falhos} falhos`} />
         <StatCard label="Pendentes" value={String(resumo.pendentes)} icon={Clock} hint={`${resumo.agendamentosImpactados} agendamentos impactados`} />
       </div>
@@ -185,19 +169,13 @@ export function IntegracoesWorkspace() {
           label="Custo total"
           value={formatCurrency(resumo.custoTotal)}
           icon={Wallet}
-          hint={ambosClinica ? "Estimativa — cobrado na conta da clínica" : ambosRepasse ? "A faturar pela plataforma" : "Misto: veja WhatsApp e e-mail"}
+          hint={dicaCustoCobranca(cobranca?.whatsapp)}
         />
         <StatCard
           label="Custo WhatsApp"
           value={formatCurrency(resumo.custoWhatsapp)}
           icon={MessageCircle}
           hint={dicaCustoCobranca(cobranca?.whatsapp)}
-        />
-        <StatCard
-          label="Custo e-mail"
-          value={formatCurrency(resumo.custoEmail)}
-          icon={Mail}
-          hint={dicaCustoCobranca(cobranca?.email)}
         />
         <StatCard label="Custo médio" value={formatCurrency(resumo.custoMedio)} icon={Wallet} hint="Por envio no período" />
       </div>

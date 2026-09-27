@@ -12,7 +12,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api";
 import { temPermissao } from "@/lib/permissoes";
@@ -20,7 +19,6 @@ import { useSessaoStore } from "@/hooks/use-sessao";
 import {
   obterConfiguracaoIntegracoesApi,
   salvarConfiguracaoIntegracoesApi,
-  testarEmailApi,
   testarWhatsappApi,
   type IntegracaoConfiguracao,
 } from "@/services/integracoes";
@@ -32,7 +30,6 @@ export function IntegracoesConfiguracoesWorkspace() {
   const [erro, setErro] = React.useState<string | null>(null);
   const [salvando, setSalvando] = React.useState(false);
   const [testeWhatsapp, setTesteWhatsapp] = React.useState("");
-  const [testeEmail, setTesteEmail] = React.useState(sessao?.email ?? "");
 
   const [whatsapp, setWhatsapp] = React.useState({
     phoneNumberId: "",
@@ -42,16 +39,6 @@ export function IntegracoesConfiguracoesWorkspace() {
     appSecret: "",
     verifyToken: "",
     ambiente: "producao",
-    cobrancaModo: "conta_clinica" as "conta_clinica" | "repasse_plataforma",
-  });
-  const [email, setEmail] = React.useState({
-    smtpHost: "",
-    smtpPort: 587,
-    smtpUsuario: "",
-    smtpSenha: "",
-    smtpRemetente: "",
-    smtpRemetenteNome: "",
-    smtpSeguro: "tls",
     cobrancaModo: "conta_clinica" as "conta_clinica" | "repasse_plataforma",
   });
 
@@ -70,16 +57,6 @@ export function IntegracoesConfiguracoesWorkspace() {
           verifyToken: cfg.whatsapp.verifyTokenMascarado ?? "",
           ambiente: cfg.whatsapp.ambiente,
           cobrancaModo: cfg.whatsapp.cobrancaModo ?? "conta_clinica",
-        });
-        setEmail({
-          smtpHost: cfg.email.smtpHost ?? "",
-          smtpPort: cfg.email.smtpPort ?? 587,
-          smtpUsuario: cfg.email.smtpUsuario ?? "",
-          smtpSenha: cfg.email.smtpSenhaMascarada ?? "",
-          smtpRemetente: cfg.email.smtpRemetente ?? "",
-          smtpRemetenteNome: cfg.email.smtpRemetenteNome ?? "",
-          smtpSeguro: cfg.email.smtpSeguro ?? "tls",
-          cobrancaModo: cfg.email.cobrancaModo ?? "conta_clinica",
         });
       })
       .catch((error) => {
@@ -112,29 +89,7 @@ export function IntegracoesConfiguracoesWorkspace() {
     }
   }
 
-  async function salvarEmail() {
-    setSalvando(true);
-    try {
-      const atualizado = await salvarConfiguracaoIntegracoesApi({
-        smtpHost: email.smtpHost,
-        smtpPort: email.smtpPort,
-        smtpUsuario: email.smtpUsuario,
-        smtpSenha: email.smtpSenha,
-        smtpRemetente: email.smtpRemetente,
-        smtpRemetenteNome: email.smtpRemetenteNome,
-        smtpSeguro: email.smtpSeguro,
-        emailCobrancaModo: email.cobrancaModo,
-      });
-      setConfig(atualizado);
-      toast.success("Configuração de e-mail salva.");
-    } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Não foi possível salvar o e-mail.");
-    } finally {
-      setSalvando(false);
-    }
-  }
-
-  async function alternar(campo: "lembretesAtivos" | "whatsappAtivo" | "emailAtivo", valor: boolean) {
+  async function alternar(campo: "lembretesAtivos" | "whatsappAtivo", valor: boolean) {
     try {
       const atualizado = await salvarConfiguracaoIntegracoesApi({ [campo]: valor });
       setConfig(atualizado);
@@ -157,7 +112,7 @@ export function IntegracoesConfiguracoesWorkspace() {
     <div className="space-y-6">
       <PageHeader
         title="Configurações de integrações"
-        description="Credenciais da Meta, SMTP da clínica, ativação dos lembretes e valores de repasse."
+        description="Credenciais da Meta, ativação dos lembretes e valores de repasse. O e-mail fica só na recuperação de senha."
       />
 
       <Card>
@@ -174,14 +129,7 @@ export function IntegracoesConfiguracoesWorkspace() {
         </CardHeader>
       </Card>
 
-      <Tabs defaultValue="whatsapp">
-        <TabsList>
-          <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
-          <TabsTrigger value="email">E-mail</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="whatsapp" className="space-y-4">
-          <Card>
+      <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>WhatsApp Business (Meta Cloud API)</CardTitle>
@@ -272,100 +220,6 @@ export function IntegracoesConfiguracoesWorkspace() {
               </Pode>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="email">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>E-mail (SMTP)</CardTitle>
-                <CardDescription>
-                  {config.email.configurado ? "Servidor configurado para esta clínica." : "Use o SMTP da clínica ou o fallback do servidor."}
-                </CardDescription>
-              </div>
-              <Switch checked={config.email.ativo} disabled={!podeEditar} onCheckedChange={(valor) => void alternar("emailAtivo", valor)} />
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <FormSection
-                title="Conta de cobrança"
-                description="O provedor de e-mail cobra quem for dono do SMTP. Não cadastre cartão neste painel."
-              >
-                <FormField label="Quem o SMTP cobra" htmlFor="emailCobranca" full>
-                  <Select
-                    value={email.cobrancaModo}
-                    disabled={!podeEditar}
-                    onValueChange={(valor) =>
-                      setEmail((a) => ({ ...a, cobrancaModo: valor as "conta_clinica" | "repasse_plataforma" }))
-                    }
-                  >
-                    <SelectTrigger id="emailCobranca"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="conta_clinica">SMTP da clínica (recomendado)</SelectItem>
-                      <SelectItem value="repasse_plataforma">SMTP da plataforma (repasse posterior)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormField>
-                <p className="col-span-full text-sm text-muted-foreground">
-                  {email.cobrancaModo === "conta_clinica"
-                    ? "Use o servidor da clínica (Google Workspace, Microsoft 365, etc.). O provedor fatura o cliente; vocês não antecipam o custo."
-                    : "Use o SMTP do servidor. Vocês pagam o provedor e faturam a clínica depois, com a tabela de custos do deploy."}
-                </p>
-              </FormSection>
-              <FormSection title="Servidor" columns={2}>
-                <FormField label="Host" htmlFor="smtpHost">
-                  <Input id="smtpHost" value={email.smtpHost} disabled={!podeEditar} onChange={(e) => setEmail((a) => ({ ...a, smtpHost: e.target.value }))} />
-                </FormField>
-                <FormField label="Porta" htmlFor="smtpPort">
-                  <Input id="smtpPort" type="number" value={email.smtpPort} disabled={!podeEditar} onChange={(e) => setEmail((a) => ({ ...a, smtpPort: Number(e.target.value) }))} />
-                </FormField>
-                <FormField label="Usuário" htmlFor="smtpUsuario">
-                  <Input id="smtpUsuario" value={email.smtpUsuario} disabled={!podeEditar} onChange={(e) => setEmail((a) => ({ ...a, smtpUsuario: e.target.value }))} />
-                </FormField>
-                <FormField label="Senha" htmlFor="smtpSenha" hint="Deixe a máscara para manter a senha atual.">
-                  <Input id="smtpSenha" type="password" autoComplete="off" value={email.smtpSenha} disabled={!podeEditar} onChange={(e) => setEmail((a) => ({ ...a, smtpSenha: e.target.value }))} />
-                </FormField>
-                <FormField label="Remetente" htmlFor="smtpRemetente">
-                  <Input id="smtpRemetente" value={email.smtpRemetente} disabled={!podeEditar} onChange={(e) => setEmail((a) => ({ ...a, smtpRemetente: e.target.value }))} />
-                </FormField>
-                <FormField label="Nome do remetente" htmlFor="smtpRemetenteNome">
-                  <Input id="smtpRemetenteNome" value={email.smtpRemetenteNome} disabled={!podeEditar} onChange={(e) => setEmail((a) => ({ ...a, smtpRemetenteNome: e.target.value }))} />
-                </FormField>
-                <FormField label="Segurança" htmlFor="smtpSeguro">
-                  <Select value={email.smtpSeguro} disabled={!podeEditar} onValueChange={(valor) => setEmail((a) => ({ ...a, smtpSeguro: valor }))}>
-                    <SelectTrigger id="smtpSeguro"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="tls">TLS</SelectItem>
-                      <SelectItem value="ssl">SSL</SelectItem>
-                      <SelectItem value="none">Nenhuma</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormField>
-              </FormSection>
-              <Pode modulo="integracoes" acao="editar">
-                <div className="flex flex-wrap items-end gap-3">
-                  <FormField label="E-mail para teste" htmlFor="testeEmail">
-                    <Input id="testeEmail" value={testeEmail} onChange={(e) => setTesteEmail(e.target.value)} />
-                  </FormField>
-                  <Button
-                    variant="outline"
-                    disabled={!testeEmail}
-                    onClick={() => {
-                      testarEmailApi(testeEmail)
-                        .then((res) => toast.success(res.message))
-                        .catch((error) => toast.error(error instanceof ApiError ? error.message : "Falha no teste."));
-                    }}
-                  >
-                    Testar envio
-                  </Button>
-                  <Button loading={salvando} onClick={() => void salvarEmail()}>
-                    Salvar e-mail
-                  </Button>
-                </div>
-              </Pode>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }

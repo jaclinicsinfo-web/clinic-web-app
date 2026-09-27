@@ -147,9 +147,8 @@ export function HistoricoEnviosWorkspace() {
         >
           <SelectTrigger className="w-40"><SelectValue placeholder="Canal" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="todos">Todos os canais</SelectItem>
+            <SelectItem value="todos">Todos</SelectItem>
             <SelectItem value="whatsapp">WhatsApp</SelectItem>
-            <SelectItem value="email">E-mail</SelectItem>
           </SelectContent>
         </Select>
         <Select

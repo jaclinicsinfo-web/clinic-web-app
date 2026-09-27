@@ -96,18 +96,6 @@ export interface IntegracaoConfiguracao {
     verifyTokenMascarado: string | null;
     cobrancaModo: ModoCobranca;
   };
-  email: {
-    ativo: boolean;
-    configurado: boolean;
-    smtpHost: string | null;
-    smtpPort: number | null;
-    smtpUsuario: string | null;
-    smtpSenhaMascarada: string | null;
-    smtpRemetente: string | null;
-    smtpRemetenteNome: string | null;
-    smtpSeguro: string;
-    cobrancaModo: ModoCobranca;
-  };
 }
 
 export interface RegraLembrete {
@@ -174,10 +162,6 @@ export async function salvarConfiguracaoIntegracoesApi(body: Record<string, unkn
 
 export async function testarWhatsappApi(para: string) {
   return api.post<{ ok: boolean; message: string }>("/integracoes/whatsapp/teste", { para });
-}
-
-export async function testarEmailApi(para: string) {
-  return api.post<{ ok: boolean; message: string }>("/integracoes/email/teste", { para });
 }
 
 export async function listarRegrasLembreteApi() {

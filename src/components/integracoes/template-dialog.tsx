@@ -28,9 +28,7 @@ import { atualizarTemplateMensagemApi, criarTemplateMensagemApi, type TemplateMe
 
 const schema = z.object({
   nome: z.string().min(3, "Informe o nome."),
-  canal: z.enum(["whatsapp", "email"]),
   tipo: z.enum(["antecedencia", "confirmacao", "reagendamento", "cancelamento"]),
-  assunto: z.string(),
   corpo: z.string().min(3, "Informe o conteúdo."),
   whatsappNomeTemplate: z.string(),
   whatsappIdioma: z.string(),
@@ -58,9 +56,7 @@ export function TemplateDialog({
     defaultValues: template
       ? {
           nome: template.nome,
-          canal: template.canal,
           tipo: template.tipo,
-          assunto: template.assunto ?? "",
           corpo: template.corpo,
           whatsappNomeTemplate: template.whatsappNomeTemplate ?? "",
           whatsappIdioma: template.whatsappIdioma,
@@ -69,9 +65,7 @@ export function TemplateDialog({
         }
       : {
           nome: "",
-          canal: "whatsapp",
           tipo: "antecedencia",
-          assunto: "",
           corpo: "Olá {{paciente.nome}}, sua consulta com {{profissional.nome}} é em {{data}} às {{horario}}.",
           whatsappNomeTemplate: "",
           whatsappIdioma: "pt_BR",
@@ -80,12 +74,11 @@ export function TemplateDialog({
         },
   });
 
-  const canal = form.watch("canal");
-
   async function onSubmit(values: FormValues) {
     const payload = {
       ...values,
-      assunto: values.assunto || null,
+      canal: "whatsapp" as const,
+      assunto: null,
       whatsappNomeTemplate: values.whatsappNomeTemplate || null,
     };
     try {
@@ -113,15 +106,6 @@ export function TemplateDialog({
               <FormField label="Nome" htmlFor="nome" error={form.formState.errors.nome?.message}>
                 <Input id="nome" disabled={!podeEditar} {...form.register("nome")} />
               </FormField>
-              <FormField label="Canal">
-                <Select value={canal} disabled={!podeEditar} onValueChange={(valor) => form.setValue("canal", valor as FormValues["canal"])}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                    <SelectItem value="email">E-mail</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormField>
               <FormField label="Tipo de evento">
                 <Select value={form.watch("tipo")} disabled={!podeEditar} onValueChange={(valor) => form.setValue("tipo", valor as FormValues["tipo"])}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -133,35 +117,27 @@ export function TemplateDialog({
                   </SelectContent>
                 </Select>
               </FormField>
-              {canal === "email" ? (
-                <FormField label="Assunto" htmlFor="assunto">
-                  <Input id="assunto" disabled={!podeEditar} {...form.register("assunto")} />
-                </FormField>
-              ) : (
-                <>
-                  <FormField label="Nome do template na Meta" htmlFor="whatsappNomeTemplate" hint="Ex.: lembrete_consulta (já aprovado).">
-                    <Input id="whatsappNomeTemplate" disabled={!podeEditar} {...form.register("whatsappNomeTemplate")} />
-                  </FormField>
-                  <FormField label="Idioma" htmlFor="whatsappIdioma">
-                    <Input id="whatsappIdioma" disabled={!podeEditar} {...form.register("whatsappIdioma")} />
-                  </FormField>
-                  <FormField label="Categoria">
-                    <Select
-                      value={form.watch("whatsappCategoria")}
-                      disabled={!podeEditar}
-                      onValueChange={(valor) => form.setValue("whatsappCategoria", valor as FormValues["whatsappCategoria"])}
-                    >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="utility">Utility</SelectItem>
-                        <SelectItem value="marketing">Marketing</SelectItem>
-                        <SelectItem value="authentication">Authentication</SelectItem>
-                        <SelectItem value="service">Service</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormField>
-                </>
-              )}
+              <FormField label="Nome do template na Meta" htmlFor="whatsappNomeTemplate" hint="Ex.: lembrete_consulta (já aprovado).">
+                <Input id="whatsappNomeTemplate" disabled={!podeEditar} {...form.register("whatsappNomeTemplate")} />
+              </FormField>
+              <FormField label="Idioma" htmlFor="whatsappIdioma">
+                <Input id="whatsappIdioma" disabled={!podeEditar} {...form.register("whatsappIdioma")} />
+              </FormField>
+              <FormField label="Categoria">
+                <Select
+                  value={form.watch("whatsappCategoria")}
+                  disabled={!podeEditar}
+                  onValueChange={(valor) => form.setValue("whatsappCategoria", valor as FormValues["whatsappCategoria"])}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="utility">Utility</SelectItem>
+                    <SelectItem value="marketing">Marketing</SelectItem>
+                    <SelectItem value="authentication">Authentication</SelectItem>
+                    <SelectItem value="service">Service</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
               <FormField label="Corpo" htmlFor="corpo" error={form.formState.errors.corpo?.message}>
                 <Textarea id="corpo" rows={5} disabled={!podeEditar} {...form.register("corpo")} />
               </FormField>
