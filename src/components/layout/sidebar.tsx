@@ -3,8 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, HeartPulse, Lock, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, Lock, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { PlanoAtualIndicador } from "@/components/layout/plano-atual-indicador";
 import { navGroups, type NavItem } from "@/lib/navigation";
 import { temPermissao } from "@/lib/permissoes";
@@ -101,8 +102,8 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <HeartPulse className="size-5" />
+                <span className="flex size-10 shrink-0 items-center justify-center">
+                  <BrandLogo variant="mark" onDark className="size-9" />
                 </span>
               </TooltipTrigger>
               <TooltipContent side="right">
@@ -113,9 +114,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
           ) : (
             <>
               <div className="flex items-center gap-2.5 px-1">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <HeartPulse className="size-5" />
-                </span>
+                <BrandLogo variant="mark" onDark className="size-10 shrink-0" />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-white">
                     {sessao?.clinicaNome || "J.A. Clinics"}

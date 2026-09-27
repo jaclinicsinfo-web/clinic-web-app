@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   },
   description:
     "ERP para gestão administrativa de clínicas: pacientes, agenda, prontuário, financeiro, convênios e relatórios.",
+  icons: {
+    icon: "/brand/marca-ja-clinics.png",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({
