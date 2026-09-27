@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 
 const ASSETS = {
   full: { src: "/brand/logo-ja-clinics.png", width: 940, height: 680 },
+  compact: { src: "/brand/logo-ja-clinics-compacta.png", width: 890, height: 520 },
   mark: { src: "/brand/marca-ja-clinics.png", width: 560, height: 560 },
 } as const;
 

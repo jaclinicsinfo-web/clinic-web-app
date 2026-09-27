@@ -16,7 +16,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         />
 
         <div className="relative flex flex-col items-center text-center">
-          <BrandLogo variant="full" onDark priority className="w-[min(22rem,78%)]" />
+          <BrandLogo variant="compact" onDark priority className="w-[min(16rem,70%)]" />
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-sidebar-muted">{FEATURES.join(" · ")}</p>
         </div>
       </aside>
@@ -24,7 +24,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <main className="flex w-full items-center justify-center overflow-y-auto bg-card px-6 py-12 lg:w-[52%]">
         <div className="w-full max-w-md">
           <div className="mb-10 flex flex-col items-center text-center lg:hidden">
-            <BrandLogo variant="full" priority className="w-44" />
+            <BrandLogo variant="compact" priority className="w-36" />
           </div>
           {children}
         </div>
