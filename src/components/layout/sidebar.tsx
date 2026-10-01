@@ -31,6 +31,15 @@ function isItemActive(pathname: string, item: NavItem) {
 export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProps) {
   const pathname = usePathname();
   const sessao = useSessaoStore((state) => state.sessao);
+  const [toque, setToque] = React.useState(false);
+
+  React.useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse)");
+    const atualizar = () => setToque(mq.matches);
+    atualizar();
+    mq.addEventListener("change", atualizar);
+    return () => mq.removeEventListener("change", atualizar);
+  }, []);
   const permissoes = sessao?.permissoes;
   const admin = isAdministrador(sessao?.perfil);
   const adminOuGestor = isAdminOuGestor(sessao?.perfil);
@@ -160,7 +169,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
                   );
 
                   const baseClasses = cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex w-full touch-manipulation items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
                     bloqueado
                       ? "text-sidebar-muted/80 hover:bg-sidebar-active/40 hover:text-sidebar-foreground"
@@ -187,7 +196,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
                         >
                           {linkContent}
                         </button>
-                      ) : collapsed || bloqueado ? (
+                      ) : (collapsed || bloqueado) && !toque ? (
                         <Tooltip>
                           <TooltipTrigger asChild>{link}</TooltipTrigger>
                           <TooltipContent side="right">{dicaBloqueio}</TooltipContent>
@@ -206,7 +215,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
                                   href={child.href}
                                   onClick={onNavigate}
                                   className={cn(
-                                    "block rounded-md px-3 py-2 text-[13px] transition-colors",
+                                    "block touch-manipulation rounded-md px-3 py-2 text-[13px] transition-colors",
                                     childActive
                                       ? "bg-sidebar-active text-white"
                                       : "text-sidebar-muted hover:bg-sidebar-active/50 hover:text-white",
@@ -232,7 +241,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
             type="button"
             onClick={onToggleCollapse}
             className={cn(
-              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-muted transition-colors hover:bg-sidebar-active/60 hover:text-white",
+              "flex w-full touch-manipulation items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-muted transition-colors hover:bg-sidebar-active/60 hover:text-white",
               collapsed && "justify-center px-0",
             )}
             aria-label={collapsed ? "Expandir menu" : "Recolher menu"}

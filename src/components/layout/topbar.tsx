@@ -87,7 +87,7 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 lg:px-6">
-      <Button variant="ghost" size="icon" className="lg:hidden" onClick={onOpenMobileMenu} aria-label="Abrir menu">
+      <Button variant="ghost" size="icon" className="touch-manipulation lg:hidden" onClick={onOpenMobileMenu} aria-label="Abrir menu">
         <Menu />
       </Button>
 

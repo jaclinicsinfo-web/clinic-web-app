@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 
 import { GuardaModulo } from "@/components/auth/guarda-modulo";
@@ -10,6 +11,33 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { Loader2 } from "lucide-react";
+
+function MenuMobile({ onClose }: { onClose: () => void }) {
+  const [montado, setMontado] = React.useState(false);
+
+  React.useEffect(() => {
+    setMontado(true);
+  }, []);
+
+  if (!montado) return null;
+
+  // Duas camadas fixed irmãs, no body: no iPad o Safari entrega o toque
+  // para o overlay de tela cheia mesmo quando o menu está por cima no z-index.
+  return createPortal(
+    <>
+      <button
+        type="button"
+        className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+        onClick={onClose}
+        aria-label="Fechar menu"
+      />
+      <div className="fixed inset-y-0 left-0 z-50 h-full w-64 touch-manipulation shadow-xl lg:hidden">
+        <Sidebar collapsed={false} onToggleCollapse={onClose} onNavigate={onClose} />
+      </div>
+    </>,
+    document.body,
+  );
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -28,19 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed((value) => !value)} />
       </div>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
-          <button
-            type="button"
-            className="absolute inset-0 bg-overlay backdrop-blur-sm"
-            onClick={() => setMobileOpen(false)}
-            aria-label="Fechar menu"
-          />
-          <div className="relative z-10 h-full max-h-full">
-            <Sidebar collapsed={false} onToggleCollapse={() => setMobileOpen(false)} onNavigate={() => setMobileOpen(false)} />
-          </div>
-        </div>
-      )}
+      {mobileOpen && <MenuMobile onClose={() => setMobileOpen(false)} />}
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />

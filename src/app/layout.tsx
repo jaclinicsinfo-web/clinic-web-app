@@ -34,11 +34,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} h-full overflow-hidden`} suppressHydrationWarning>
+    <html lang="pt-BR" className={`${inter.variable} h-full`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: temaScript }} />
       </head>
-      <body className="flex h-full min-h-0 flex-col overflow-hidden">
+      <body className="flex h-full min-h-0 flex-col">
         <TemaProvider>
           <SessaoProvider>
             {children}
