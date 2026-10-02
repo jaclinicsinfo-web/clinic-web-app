@@ -6,6 +6,7 @@ import { ChevronRight, Home } from "lucide-react";
 
 import { segmentLabels } from "@/lib/navigation";
 import { useEntidadeLabelsStore } from "@/hooks/use-entidade-labels";
+import { cn } from "@/lib/utils";
 
 /** Resolve rótulos de segmentos dinâmicos ([id]) para o nome da entidade. */
 function resolveDynamicLabel(
@@ -36,23 +37,29 @@ export function Breadcrumbs() {
   });
 
   return (
-    <nav aria-label="Trilha de navegação" className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
-      <Link href="/dashboard" className="flex items-center transition-colors hover:text-foreground" aria-label="Início">
+    <nav aria-label="Trilha de navegação" className="flex min-w-0 items-center gap-1.5 overflow-hidden text-sm text-muted-foreground">
+      <Link href="/dashboard" className="flex shrink-0 items-center transition-colors hover:text-foreground" aria-label="Início">
         <Home className="size-4" />
       </Link>
 
-      {crumbs.map((crumb) => (
-        <span key={crumb.href} className="flex items-center gap-1.5">
-          <ChevronRight className="size-3.5 shrink-0 opacity-60" />
-          {crumb.isLast ? (
-            <span className="max-w-52 truncate font-medium text-foreground">{crumb.label}</span>
-          ) : (
-            <Link href={crumb.href} className="max-w-40 truncate transition-colors hover:text-foreground">
-              {crumb.label}
-            </Link>
-          )}
-        </span>
-      ))}
+      {crumbs.map((crumb, index) => {
+        const esconderNoMobile = !crumb.isLast && crumbs.length > 2 && index < crumbs.length - 1;
+        return (
+          <span
+            key={crumb.href}
+            className={cn("flex min-w-0 items-center gap-1.5", esconderNoMobile && "hidden sm:flex")}
+          >
+            <ChevronRight className="size-3.5 shrink-0 opacity-60" />
+            {crumb.isLast ? (
+              <span className="truncate font-medium text-foreground">{crumb.label}</span>
+            ) : (
+              <Link href={crumb.href} className="truncate transition-colors hover:text-foreground">
+                {crumb.label}
+              </Link>
+            )}
+          </span>
+        );
+      })}
     </nav>
   );
 }

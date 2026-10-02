@@ -41,7 +41,6 @@ const profissionalSchema = z
     rg: z.string(),
     email: z.string().min(1, "Informe o e-mail.").email("E-mail inválido."),
     telefone: z.string().min(14, "Informe um telefone válido."),
-    fotoUrl: z.string(),
     especialidades: z.array(z.string()).min(1, "Selecione ao menos uma especialidade."),
     conselho: z.string().min(1, "Selecione o conselho de classe."),
     registroConselho: z.string().min(3, "Informe o número do registro."),
@@ -105,7 +104,6 @@ function valoresIniciais(profissional?: Profissional): ProfissionalFormValues {
       rg: "",
       email: "",
       telefone: "",
-      fotoUrl: "",
       especialidades: [],
       conselho: "",
       registroConselho: "",
@@ -126,7 +124,6 @@ function valoresIniciais(profissional?: Profissional): ProfissionalFormValues {
     rg: profissional.rg ?? "",
     email: profissional.email,
     telefone: formatPhone(profissional.telefone),
-    fotoUrl: profissional.fotoUrl ?? "",
     especialidades: profissional.especialidades,
     conselho: profissional.conselho,
     registroConselho: profissional.registroConselho,
@@ -207,7 +204,7 @@ export function ProfissionalForm({ especialidades, procedimentos, usuarios = [],
       rg: values.rg.trim() ? values.rg.trim() : null,
       email: values.email,
       telefone: values.telefone,
-      fotoUrl: values.fotoUrl.trim() ? values.fotoUrl.trim() : null,
+      fotoUrl: null,
       especialidades: values.especialidades,
       conselho: values.conselho,
       registroConselho: values.registroConselho,
@@ -331,14 +328,6 @@ export function ProfissionalForm({ especialidades, procedimentos, usuarios = [],
             </Select>
           </FormField>
 
-          <FormField
-            label="Foto"
-            htmlFor="fotoUrl"
-            error={errors.fotoUrl?.message}
-            hint="Endereço da imagem exibida no perfil e na agenda."
-          >
-            <Input id="fotoUrl" placeholder="https://..." {...register("fotoUrl")} />
-          </FormField>
         </FormSection>
 
         <FormSection

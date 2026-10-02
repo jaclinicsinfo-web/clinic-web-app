@@ -14,6 +14,8 @@ interface StatCardProps {
   hint?: string;
   /** Quando true, uma variação positiva é ruim (ex.: taxa de faltas). */
   invertVariation?: boolean;
+  valueClassName?: string;
+  iconClassName?: string;
   className?: string;
 }
 
@@ -25,6 +27,8 @@ export function StatCard({
   variationLabel = "vs. período anterior",
   hint,
   invertVariation = false,
+  valueClassName,
+  iconClassName,
   className,
 }: StatCardProps) {
   const hasVariation = typeof variation === "number";
@@ -37,13 +41,18 @@ export function StatCard({
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
         {Icon && (
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-subtle text-primary">
+          <span
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-subtle text-primary",
+              iconClassName,
+            )}
+          >
             <Icon className="size-4" />
           </span>
         )}
       </div>
 
-      <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
+      <p className={cn("mt-3 text-2xl font-semibold tracking-tight text-foreground", valueClassName)}>{value}</p>
 
       {hasVariation ? (
         <div className="mt-2 flex items-center gap-1.5 text-xs">

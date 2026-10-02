@@ -77,6 +77,8 @@ export function FluxoCaixaWorkspace() {
           icon={TrendingDown}
           variation={carregando ? undefined : resumo.variacaoSaidas}
           invertVariation
+          valueClassName="text-danger"
+          iconClassName="bg-danger-bg text-danger"
         />
         <StatCard
           label="Saldo do mês"

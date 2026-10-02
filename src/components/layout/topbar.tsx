@@ -86,16 +86,16 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
   }
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 lg:px-6">
-      <Button variant="ghost" size="icon" className="touch-manipulation lg:hidden" onClick={onOpenMobileMenu} aria-label="Abrir menu">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-3 sm:h-16 sm:gap-3 sm:px-4 lg:px-6">
+      <Button variant="ghost" size="icon" className="touch-manipulation shrink-0 lg:hidden" onClick={onOpenMobileMenu} aria-label="Abrir menu">
         <Menu />
       </Button>
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 overflow-hidden">
         <Breadcrumbs />
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
         {sessao && unidades.length > 0 && (
           <Select
             value={sessao.unidadeAtualId}
@@ -140,7 +140,7 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-80 p-0">
+          <PopoverContent align="end" className="w-[min(20rem,calc(100vw-1.5rem))] p-0">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <p className="text-sm font-semibold">Notificações</p>
               <div className="flex items-center gap-2">

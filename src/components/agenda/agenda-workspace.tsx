@@ -433,7 +433,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
               onValueChange={setProfissionalFiltro}
               disabled={somenteProprios}
             >
-              <SelectTrigger className="w-48" aria-label="Filtrar por profissional">
+              <SelectTrigger className="w-full sm:w-48" aria-label="Filtrar por profissional">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -447,7 +447,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
             </Select>
 
             <Select value={salaFiltro} onValueChange={setSalaFiltro}>
-              <SelectTrigger className="w-40" aria-label="Filtrar por sala">
+              <SelectTrigger className="w-full sm:w-40" aria-label="Filtrar por sala">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -461,7 +461,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
             </Select>
 
             <Select value={statusFiltroAtual} onValueChange={setStatusFiltroAtual}>
-              <SelectTrigger className="w-40" aria-label="Filtrar por status">
+              <SelectTrigger className="w-full sm:w-40" aria-label="Filtrar por status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

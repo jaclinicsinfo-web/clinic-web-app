@@ -8,7 +8,7 @@ import { ProfissionalTabs } from "@/components/profissionais/profissional-tabs";
 import { Pode } from "@/components/auth/pode";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -107,7 +107,6 @@ export function ProfissionalPerfilShell({
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex min-w-0 gap-4">
               <Avatar className="size-16">
-                {profissional.fotoUrl && <AvatarImage src={profissional.fotoUrl} alt={profissional.nome} />}
                 <AvatarFallback className="text-lg">{getInitials(profissional.nome)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0">

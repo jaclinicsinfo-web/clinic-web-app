@@ -4,7 +4,7 @@ const FEATURES = ["Agenda", "Prontuário", "Financeiro", "Convênios", "Multi-un
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full min-h-0">
+    <div className="flex h-full min-h-0 w-full min-w-0 overflow-x-clip">
       <aside className="relative hidden w-[48%] flex-col items-center justify-center overflow-hidden bg-sidebar px-12 py-16 lg:flex">
         <div
           aria-hidden
@@ -21,10 +21,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
       </aside>
 
-      <main className="flex w-full items-center justify-center overflow-y-auto bg-card px-6 py-12 lg:w-[52%]">
+      <main className="flex w-full min-w-0 items-center justify-center overflow-x-clip overflow-y-auto bg-card px-4 py-8 sm:px-6 sm:py-12 lg:w-[52%]">
         <div className="w-full max-w-md">
-          <div className="mb-10 flex flex-col items-center text-center lg:hidden">
-            <BrandLogo variant="compact" priority className="w-36" />
+          <div className="mb-8 flex flex-col items-center text-center sm:mb-10 lg:hidden">
+            <BrandLogo variant="compact" priority className="w-32 sm:w-36" />
           </div>
           {children}
         </div>
