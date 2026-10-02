@@ -39,20 +39,22 @@ export function IntegracoesCharts({ resumo }: { resumo: IntegracoesResumo }) {
           <CardTitle>Envios por canal</CardTitle>
           <CardDescription>Volume no período filtrado.</CardDescription>
         </CardHeader>
-        <CardContent className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={canais} dataKey="valor" nameKey="nome" innerRadius={50} outerRadius={80} paddingAngle={2}>
-                {canais.map((item, index) => (
-                  <Cell key={item.nome} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={chartTooltipStyle}
-                formatter={(valor: number) => [formatNumber(valor), "Envios"]}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+        <CardContent className="h-64 min-w-0 overflow-hidden">
+          <div className="h-full w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={canais} dataKey="valor" nameKey="nome" innerRadius={50} outerRadius={80} paddingAngle={2}>
+                  {canais.map((item, index) => (
+                    <Cell key={item.nome} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={chartTooltipStyle}
+                  formatter={(valor: number) => [formatNumber(valor), "Envios"]}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 
@@ -61,16 +63,18 @@ export function IntegracoesCharts({ resumo }: { resumo: IntegracoesResumo }) {
           <CardTitle>Status dos envios</CardTitle>
           <CardDescription>Distribuição operacional no período.</CardDescription>
         </CardHeader>
-        <CardContent className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={status}>
-              <CartesianGrid strokeDasharray="3 3" style={chartGridStyle} />
-              <XAxis dataKey="nome" tick={chartAxisStyle} />
-              <YAxis tick={chartAxisStyle} allowDecimals={false} />
-              <Tooltip contentStyle={chartTooltipStyle} />
-              <Bar dataKey="valor" name="Quantidade" fill="var(--color-chart-1)" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <CardContent className="h-64 min-w-0 overflow-hidden">
+          <div className="h-full w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={status}>
+                <CartesianGrid strokeDasharray="3 3" style={chartGridStyle} />
+                <XAxis dataKey="nome" tick={chartAxisStyle} />
+                <YAxis tick={chartAxisStyle} allowDecimals={false} width={36} />
+                <Tooltip contentStyle={chartTooltipStyle} />
+                <Bar dataKey="valor" name="Quantidade" fill="var(--color-chart-1)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </div>

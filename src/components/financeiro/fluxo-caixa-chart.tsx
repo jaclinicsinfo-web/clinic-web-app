@@ -51,8 +51,8 @@ export function FluxoCaixaChart({
 
   return (
     <Card>
-      <CardHeader className="flex-row items-start justify-between gap-4">
-        <div>
+      <CardHeader className="flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
           <CardTitle>{title}</CardTitle>
           <CardDescription>
             {periodo === "30d"
@@ -60,7 +60,7 @@ export function FluxoCaixaChart({
               : "Entradas, saídas e saldo mensal dos últimos 12 meses"}
           </CardDescription>
         </div>
-        <div className="flex shrink-0 gap-1 rounded-lg bg-muted p-1">
+        <div className="flex shrink-0 gap-1 self-start rounded-lg bg-muted p-1">
           <Button
             size="sm"
             variant={periodo === "30d" ? "default" : "ghost"}
@@ -79,25 +79,27 @@ export function FluxoCaixaChart({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <ResponsiveContainer width="100%" height={height}>
-          <ComposedChart data={dados} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} {...chartGridStyle} />
-            <XAxis dataKey="periodo" tick={chartAxisStyle} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-            <YAxis
-              tick={chartAxisStyle}
-              tickLine={false}
-              axisLine={false}
-              width={70}
-              tickFormatter={(valor: number) => formatCurrencyCompact(valor)}
-            />
-            <Tooltip contentStyle={chartTooltipStyle} formatter={(valor: number, nome: string) => [formatCurrency(valor), nome]} />
-            <Legend verticalAlign="top" height={28} iconType="circle" wrapperStyle={chartLegendStyle} />
-            <Bar dataKey="entradas" name="Entradas" fill="var(--color-chart-2)" radius={[4, 4, 0, 0]} maxBarSize={22} />
-            <Bar dataKey="saidas" name="Saídas" fill="var(--color-chart-4)" radius={[4, 4, 0, 0]} maxBarSize={22} />
-            <Line type="monotone" dataKey="saldo" name="Saldo" stroke="var(--color-chart-1)" strokeWidth={2} dot={false} />
-          </ComposedChart>
-        </ResponsiveContainer>
+      <CardContent className="min-w-0 space-y-4 overflow-hidden">
+        <div className="w-full min-w-0" style={{ height }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={dados} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} {...chartGridStyle} />
+              <XAxis dataKey="periodo" tick={chartAxisStyle} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+              <YAxis
+                tick={chartAxisStyle}
+                tickLine={false}
+                axisLine={false}
+                width={56}
+                tickFormatter={(valor: number) => formatCurrencyCompact(valor)}
+              />
+              <Tooltip contentStyle={chartTooltipStyle} formatter={(valor: number, nome: string) => [formatCurrency(valor), nome]} />
+              <Legend verticalAlign="top" height={28} iconType="circle" wrapperStyle={chartLegendStyle} />
+              <Bar dataKey="entradas" name="Entradas" fill="var(--color-chart-2)" radius={[4, 4, 0, 0]} maxBarSize={22} />
+              <Bar dataKey="saidas" name="Saídas" fill="var(--color-danger)" radius={[4, 4, 0, 0]} maxBarSize={22} />
+              <Line type="monotone" dataKey="saldo" name="Saldo" stroke="var(--color-chart-1)" strokeWidth={2} dot={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
 
         <div className="grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-3">
           <div>

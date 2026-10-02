@@ -31,7 +31,7 @@ export function GuardaModulo({ children }: { children: React.ReactNode }) {
   if (!permitido) return null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain scrollbar-thin">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-x-clip overflow-y-auto overscroll-contain scrollbar-thin">
       {children}
     </div>
   );

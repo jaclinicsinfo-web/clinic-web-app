@@ -97,26 +97,26 @@ export function DashboardWorkspace() {
   const financeiro = dados.financeiro;
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <PageHeader
         title="Dashboard"
         description="Visão consolidada da operação da clínica no dia e no mês corrente."
         actions={
-          <>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <Pode modulo="relatorios">
-              <Button variant="outline" asChild>
+              <Button variant="outline" asChild className="w-full sm:w-auto">
                 <Link href="/relatorios">Ver relatórios</Link>
               </Button>
             </Pode>
             <Pode modulo="agenda">
-              <Button asChild>
+              <Button asChild className="w-full sm:w-auto">
                 <Link href="/agenda">
                   <CalendarDays />
                   Abrir agenda
                 </Link>
               </Button>
             </Pode>
-          </>
+          </div>
         }
       />
 
@@ -205,20 +205,20 @@ export function DashboardWorkspace() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
-          <CardHeader className="flex-row items-center justify-between">
-            <div>
+        <Card className="min-w-0 xl:col-span-2">
+          <CardHeader className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <CardTitle>Próximos atendimentos</CardTitle>
               <CardDescription>Agenda do restante do dia</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm" asChild className="self-start">
               <Link href="/agenda">
                 Ver agenda
                 <ArrowRight />
               </Link>
             </Button>
           </CardHeader>
-          <CardContent className="px-0 pb-0">
+          <CardContent className="min-w-0 px-0 pb-0">
             {dados.proximos.length === 0 ? (
               <EmptyState
                 title="Nenhum atendimento restante hoje"
@@ -228,8 +228,8 @@ export function DashboardWorkspace() {
             ) : (
               <ul className="divide-y divide-border">
                 {dados.proximos.map((agendamento) => (
-                  <li key={agendamento.id} className="flex items-center gap-4 px-5 py-3">
-                    <div className="w-14 shrink-0 text-sm font-semibold tabular-nums text-foreground">
+                  <li key={agendamento.id} className="flex items-start gap-3 px-4 py-3 sm:items-center sm:gap-4 sm:px-5">
+                    <div className="w-12 shrink-0 text-sm font-semibold tabular-nums text-foreground sm:w-14">
                       {agendamento.horaInicio}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -243,6 +243,9 @@ export function DashboardWorkspace() {
                         {agendamento.procedimentoNome} · {agendamento.profissionalNome}
                         {agendamento.sala ? ` · ${agendamento.sala}` : ""}
                       </p>
+                      <div className="mt-1.5 sm:hidden">
+                        <StatusBadge domain="agendamento" status={agendamento.status} />
+                      </div>
                     </div>
                     {financeiro ? (
                       <Pode modulo="financeiro">
@@ -256,7 +259,9 @@ export function DashboardWorkspace() {
                         </div>
                       </Pode>
                     ) : null}
-                    <StatusBadge domain="agendamento" status={agendamento.status} />
+                    <div className="hidden shrink-0 sm:block">
+                      <StatusBadge domain="agendamento" status={agendamento.status} />
+                    </div>
                   </li>
                 ))}
               </ul>

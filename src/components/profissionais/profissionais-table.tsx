@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { DataTable } from "@/components/shared/data-table";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,7 +68,6 @@ export function ProfissionaisTable({ profissionais, especialidades, onInativar, 
           return (
             <div className="flex min-w-0 items-center gap-3">
               <Avatar className="size-9">
-                {profissional.fotoUrl && <AvatarImage src={profissional.fotoUrl} alt={profissional.nome} />}
                 <AvatarFallback>{getInitials(profissional.nome)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0">

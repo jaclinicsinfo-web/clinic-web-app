@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 
 import { SessaoProvider } from "@/hooks/use-sessao";
@@ -26,6 +26,24 @@ export const metadata: Metadata = {
     icon: "/brand/marca-ja-clinics.png",
     apple: "/apple-icon.png",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "J.A. Clinics",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f7f9" },
+    { media: "(prefers-color-scheme: dark)", color: "#101828" },
+  ],
 };
 
 export default function RootLayout({
@@ -38,7 +56,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: temaScript }} />
       </head>
-      <body className="flex h-full min-h-0 flex-col">
+      <body className="flex h-full min-h-0 flex-col overflow-x-clip">
         <TemaProvider>
           <SessaoProvider>
             {children}

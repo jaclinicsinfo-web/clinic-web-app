@@ -333,31 +333,32 @@ function VisaoMes({ dataIso, agendamentos, onSelectDia }: CalendarViewProps) {
   const hoje = new Date();
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="grid grid-cols-7 border-b border-border bg-muted/40">
-        {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((dia) => (
-          <div key={dia} className="px-3 py-2 text-xs font-medium text-muted-foreground">
-            {dia}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7">
-        {dias.map((dia) => {
-          const iso = formatISODate(dia);
-          const doDia = agendamentos.filter((agendamento) => agendamento.data === iso);
-          const foraDoMes = !isSameMonth(dia, referencia);
-          const ehHoje = isSameDay(dia, hoje);
+    <div className="overflow-x-auto overflow-y-hidden rounded-xl border border-border bg-card">
+      <div className="min-w-[560px]">
+        <div className="grid grid-cols-7 border-b border-border bg-muted/40">
+          {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((dia) => (
+            <div key={dia} className="px-1.5 py-2 text-center text-[11px] font-medium text-muted-foreground sm:px-3 sm:text-left sm:text-xs">
+              {dia}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7">
+          {dias.map((dia) => {
+            const iso = formatISODate(dia);
+            const doDia = agendamentos.filter((agendamento) => agendamento.data === iso);
+            const foraDoMes = !isSameMonth(dia, referencia);
+            const ehHoje = isSameDay(dia, hoje);
 
-          return (
-            <button
-              key={iso}
-              type="button"
-              onClick={() => onSelectDia(iso)}
-              className={cn(
-                "min-h-[112px] border-b border-r border-border p-2 text-left last:border-r-0 hover:bg-muted/50",
-                foraDoMes && "bg-muted/30 text-muted-foreground",
-              )}
-            >
+            return (
+              <button
+                key={iso}
+                type="button"
+                onClick={() => onSelectDia(iso)}
+                className={cn(
+                  "min-h-[88px] border-b border-r border-border p-1.5 text-left last:border-r-0 hover:bg-muted/50 sm:min-h-[112px] sm:p-2",
+                  foraDoMes && "bg-muted/30 text-muted-foreground",
+                )}
+              >
               <span
                 className={cn(
                   "inline-flex size-6 items-center justify-center rounded-full text-xs font-medium tabular-nums",
@@ -385,6 +386,7 @@ function VisaoMes({ dataIso, agendamentos, onSelectDia }: CalendarViewProps) {
             </button>
           );
         })}
+        </div>
       </div>
     </div>
   );
