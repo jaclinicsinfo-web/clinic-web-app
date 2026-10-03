@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
-
-import { SetupForm } from "@/components/auth/setup-form";
-
-export const metadata: Metadata = {
-  title: "Configurar clínica",
-};
+import { redirect } from "next/navigation";
 
 export default function SetupPage() {
-  return <SetupForm />;
+  redirect("/login");
 }

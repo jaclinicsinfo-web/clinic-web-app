@@ -7,6 +7,7 @@ import { clearToken, getToken } from "@/lib/api";
 import { comparouPlanos, LIMITES_PLANO, planoEstaAcimaDoTeto } from "@/lib/plano";
 import { LIMITES_UNIDADES, modulosDoPlano } from "@/lib/modulos-plano";
 import { encerrarSessaoApi, selecionarUnidade } from "@/services/auth";
+import { useEntidadeLabelsStore } from "@/hooks/use-entidade-labels";
 import { normalizarPermissoes } from "@/lib/permissoes";
 import type { CodigoPlano, Permissao, PlanoAtual, SessaoUsuario, Unidade, UsoUsuarios, Usuario } from "@/types";
 
@@ -23,6 +24,8 @@ function montarSessao(
   planoEvento: SessaoUsuario["planoEvento"],
   permissoes: Permissao[] | null,
   clinicaNome: string | null,
+  clinicaId: string | null,
+  primeiroAcesso = false,
 ): SessaoUsuario {
   return {
     id: usuario.id,
@@ -35,20 +38,27 @@ function montarSessao(
     unidadesAcesso: usuario.unidadesAcesso,
     unidades,
     clinicaNome,
+    clinicaId,
     plano,
     usoUsuarios,
     planoEvento,
     tema: usuario.tema === "escuro" ? "escuro" : "claro",
+    primeiroAcesso,
   };
 }
 
-function lerPlanoVisto() {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(STORAGE_PLANO_VISTO);
+function chavePlanoVisto(clinicaId: string | null | undefined) {
+  return clinicaId ? `${STORAGE_PLANO_VISTO}.${clinicaId}` : STORAGE_PLANO_VISTO;
 }
 
-function gravarPlanoVisto(codigo: string) {
-  window.localStorage.setItem(STORAGE_PLANO_VISTO, codigo);
+function lerPlanoVisto(clinicaId: string | null | undefined) {
+  if (typeof window === "undefined") return null;
+  if (!clinicaId) return window.localStorage.getItem(STORAGE_PLANO_VISTO);
+  return window.localStorage.getItem(chavePlanoVisto(clinicaId)) ?? window.localStorage.getItem(STORAGE_PLANO_VISTO);
+}
+
+function gravarPlanoVisto(codigo: string, clinicaId: string | null | undefined) {
+  window.localStorage.setItem(chavePlanoVisto(clinicaId), codigo);
 }
 
 function asCodigoPlano(valor: string | null): CodigoPlano | null {
@@ -60,11 +70,12 @@ function resolverEvento(
   planoAnterior: PlanoAtual | null | undefined,
   plano: PlanoAtual | null,
   uso: UsoUsuarios | null,
+  clinicaId: string | null | undefined,
 ): SessaoUsuario["planoEvento"] {
   if (planoEstaAcimaDoTeto(uso)) return "downgrade";
   if (!plano) return null;
 
-  const visto = asCodigoPlano(lerPlanoVisto());
+  const visto = asCodigoPlano(lerPlanoVisto(clinicaId));
   const referencia: PlanoAtual | null =
     planoAnterior ??
     (visto
@@ -105,8 +116,9 @@ function lerStorage(): SessaoUsuario | null {
           }
         : null,
       usoUsuarios: parsed.usoUsuarios ?? null,
-      planoEvento: resolverEvento(null, parsed.plano, parsed.usoUsuarios),
+      planoEvento: resolverEvento(null, parsed.plano, parsed.usoUsuarios, parsed.clinicaId),
       clinicaNome: parsed.clinicaNome ?? null,
+      clinicaId: parsed.clinicaId ?? null,
       tema: parsed.tema === "escuro" ? "escuro" : parsed.tema === "claro" ? "claro" : undefined,
     };
   } catch {
@@ -146,12 +158,15 @@ interface SessaoState {
     usoUsuarios?: UsoUsuarios | null,
     permissoes?: Permissao[] | null,
     clinicaNome?: string | null,
+    clinicaId?: string | null,
+    primeiroAcesso?: boolean,
   ) => void;
   aplicarContextoPlano: (input: {
     usuario?: Usuario;
     unidades?: Unidade[];
     unidadeAtualId?: string | null;
     clinicaNome?: string | null;
+    clinicaId?: string | null;
     plano: PlanoAtual | null;
     usoUsuarios: UsoUsuarios | null;
     permissoes?: Permissao[] | null;
@@ -182,8 +197,9 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
     }
     set({ sessao: lerStorage(), hidratado: true, lembrar: persistida });
   },
-  iniciarSessao: (usuario, unidadeAtualId, unidades, lembrar, plano = null, usoUsuarios = null, permissoes = null, clinicaNome = null) => {
-    const evento = resolverEvento(null, plano, usoUsuarios);
+  iniciarSessao: (usuario, unidadeAtualId, unidades, lembrar, plano = null, usoUsuarios = null, permissoes = null, clinicaNome = null, clinicaId = null, primeiroAcesso = false) => {
+    useEntidadeLabelsStore.getState().limpar();
+    const evento = resolverEvento(null, plano, usoUsuarios, clinicaId);
     const sessao = montarSessao(
       usuario,
       unidadeAtualId,
@@ -193,15 +209,18 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       evento,
       permissoes == null ? null : normalizarPermissoes(permissoes),
       clinicaNome,
+      clinicaId,
+      primeiroAcesso,
     );
-    if (plano && evento !== "upgrade") gravarPlanoVisto(plano.codigo);
+    if (plano && evento !== "upgrade") gravarPlanoVisto(plano.codigo, clinicaId);
     gravarStorage(sessao, lembrar);
     set({ sessao, lembrar });
   },
   aplicarContextoPlano: (input) => {
     const atual = get().sessao;
     if (!atual) return;
-    const evento = resolverEvento(atual.plano, input.plano, input.usoUsuarios);
+    const clinicaId = input.clinicaId ?? atual.clinicaId;
+    const evento = resolverEvento(atual.plano, input.plano, input.usoUsuarios, clinicaId);
     const sessao: SessaoUsuario = {
       ...atual,
       nome: input.usuario?.nome ?? atual.nome,
@@ -211,6 +230,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       permissoes: input.permissoes !== undefined ? normalizarPermissoes(input.permissoes) : atual.permissoes,
       unidades: input.unidades ?? atual.unidades,
       clinicaNome: input.clinicaNome ?? atual.clinicaNome,
+      clinicaId,
       unidadeAtualId: input.unidadeAtualId ?? atual.unidadeAtualId,
       plano: input.plano,
       usoUsuarios: input.usoUsuarios,
@@ -218,15 +238,15 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       tema: input.usuario?.tema ?? input.tema ?? atual.tema,
     };
     gravarStorage(sessao, get().lembrar);
-    if (input.plano && evento !== "upgrade") gravarPlanoVisto(input.plano.codigo);
+    if (input.plano && evento !== "upgrade") gravarPlanoVisto(input.plano.codigo, clinicaId);
     set({ sessao });
   },
   atualizarUso: (usoUsuarios) => {
     const atual = get().sessao;
     if (!atual) return;
-    const evento = resolverEvento(atual.plano, atual.plano, usoUsuarios);
+    const evento = resolverEvento(atual.plano, atual.plano, usoUsuarios, atual.clinicaId);
     const sessao = { ...atual, usoUsuarios, planoEvento: evento };
-    if (evento !== "downgrade" && atual.plano) gravarPlanoVisto(atual.plano.codigo);
+    if (evento !== "downgrade" && atual.plano) gravarPlanoVisto(atual.plano.codigo, atual.clinicaId);
     gravarStorage(sessao, get().lembrar);
     set({ sessao });
   },
@@ -258,7 +278,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
   dispensarAvisoUpgrade: () => {
     const atual = get().sessao;
     if (!atual?.plano) return;
-    gravarPlanoVisto(atual.plano.codigo);
+    gravarPlanoVisto(atual.plano.codigo, atual.clinicaId);
     const sessao = { ...atual, planoEvento: null };
     gravarStorage(sessao, get().lembrar);
     set({ sessao });
@@ -276,6 +296,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
     void encerrarSessaoApi();
     clearToken();
     limparStorage();
+    useEntidadeLabelsStore.getState().limpar();
     set({ sessao: null });
   },
 }));
