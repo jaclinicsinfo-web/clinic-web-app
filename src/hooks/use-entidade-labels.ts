@@ -9,6 +9,7 @@ interface EntidadeLabelsState {
   setPaciente: (id: string, nome: string) => void;
   setProfissional: (id: string, nome: string) => void;
   setConvenio: (id: string, nome: string) => void;
+  limpar: () => void;
 }
 
 export const useEntidadeLabelsStore = create<EntidadeLabelsState>((set) => ({
@@ -19,4 +20,5 @@ export const useEntidadeLabelsStore = create<EntidadeLabelsState>((set) => ({
   setProfissional: (id, nome) =>
     set((state) => ({ profissionais: { ...state.profissionais, [id]: nome } })),
   setConvenio: (id, nome) => set((state) => ({ convenios: { ...state.convenios, [id]: nome } })),
+  limpar: () => set({ pacientes: {}, profissionais: {}, convenios: {} }),
 }));

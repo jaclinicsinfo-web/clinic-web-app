@@ -507,10 +507,12 @@ export interface SessaoUsuario {
   unidadesAcesso: string[];
   unidades: Unidade[];
   clinicaNome: string | null;
+  clinicaId: string | null;
   plano: PlanoAtual | null;
   usoUsuarios: UsoUsuarios | null;
   planoEvento: "upgrade" | "downgrade" | null;
   tema?: "claro" | "escuro";
+  primeiroAcesso?: boolean;
 }
 
 export interface Clinica {

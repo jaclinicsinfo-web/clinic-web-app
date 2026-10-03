@@ -12,12 +12,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const sessao = useSessaoStore((state) => state.sessao);
 
   React.useEffect(() => {
-    if (hidratado && !sessao) {
+    if (!hidratado) return;
+    if (!sessao) {
       router.replace("/login");
+      return;
+    }
+    if (sessao.primeiroAcesso) {
+      router.replace("/primeiro-acesso");
     }
   }, [hidratado, sessao, router]);
 
-  if (!hidratado || !sessao) {
+  if (!hidratado || !sessao || sessao.primeiroAcesso) {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-background">
         <Loader2 className="size-6 animate-spin text-primary" aria-label="Carregando" />

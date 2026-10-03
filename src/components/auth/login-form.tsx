@@ -16,7 +16,6 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FormField } from "@/components/shared/form-section";
 import { autenticar, selecionarUnidade } from "@/services/auth";
-import { consultarSetup } from "@/services/setup";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
@@ -38,6 +37,7 @@ interface LoginPendente {
   usoUsuarios: UsoUsuarios | null;
   permissoes: Permissao[] | null;
   clinicaNome: string | null;
+  clinicaId: string | null;
 }
 
 export function LoginForm() {
@@ -51,7 +51,6 @@ export function LoginForm() {
   const [pendente, setPendente] = React.useState<LoginPendente | null>(null);
   const [unidadeId, setUnidadeId] = React.useState("");
   const [confirmandoUnidade, setConfirmandoUnidade] = React.useState(false);
-  const [setup, setSetup] = React.useState<"checando" | "pronto" | "redirecionando">("checando");
 
   const {
     register,
@@ -67,28 +66,8 @@ export function LoginForm() {
   React.useEffect(() => {
     if (!hidratado) return;
     if (sessao) {
-      router.replace("/dashboard");
-      return;
+      router.replace(sessao.primeiroAcesso ? "/primeiro-acesso" : "/dashboard");
     }
-
-    let ativo = true;
-    consultarSetup()
-      .then((data) => {
-        if (!ativo) return;
-        if (data.precisaSetup) {
-          setSetup("redirecionando");
-          router.replace("/setup");
-          return;
-        }
-        setSetup("pronto");
-      })
-      .catch(() => {
-        if (ativo) setSetup("pronto");
-      });
-
-    return () => {
-      ativo = false;
-    };
   }, [hidratado, sessao, router]);
 
   function concluir(
@@ -100,8 +79,25 @@ export function LoginForm() {
     usoUsuarios: UsoUsuarios | null,
     permissoes: Permissao[] | null,
     clinicaNome: string | null,
+    clinicaId: string | null,
+    primeiroAcesso = false,
   ) {
-    iniciarSessao(usuario, unidadeAtualId, unidades, lembrar, plano, usoUsuarios, permissoes, clinicaNome);
+    iniciarSessao(
+      usuario,
+      unidadeAtualId,
+      unidades,
+      lembrar,
+      plano,
+      usoUsuarios,
+      permissoes,
+      clinicaNome,
+      clinicaId,
+      primeiroAcesso,
+    );
+    if (primeiroAcesso) {
+      router.push("/primeiro-acesso");
+      return;
+    }
     toast.success(`Olá, ${usuario.nome.split(" ")[0]}!`, {
       description: `${usuario.perfilNome} · sessão iniciada`,
     });
@@ -114,6 +110,22 @@ export function LoginForm() {
 
     if (!resultado.ok) {
       setErroAuth(resultado.erro);
+      return;
+    }
+
+    if (resultado.primeiroAcesso) {
+      concluir(
+        resultado.usuario,
+        resultado.unidadeAtualId ?? resultado.unidades[0]?.id ?? "",
+        values.lembrar,
+        resultado.unidades,
+        resultado.plano,
+        resultado.usoUsuarios,
+        resultado.permissoes,
+        resultado.clinicaNome,
+        resultado.clinicaId,
+        true,
+      );
       return;
     }
 
@@ -132,6 +144,7 @@ export function LoginForm() {
         resultado.usoUsuarios,
         resultado.permissoes,
         resultado.clinicaNome,
+        resultado.clinicaId,
       );
       return;
     }
@@ -145,6 +158,7 @@ export function LoginForm() {
       usoUsuarios: resultado.usoUsuarios,
       permissoes: resultado.permissoes,
       clinicaNome: resultado.clinicaNome,
+      clinicaId: resultado.clinicaId,
     });
   }
 
@@ -164,6 +178,7 @@ export function LoginForm() {
         pendente.usoUsuarios,
         pendente.permissoes,
         pendente.clinicaNome,
+        pendente.clinicaId,
       );
     } catch (error) {
       setConfirmandoUnidade(false);
@@ -171,7 +186,7 @@ export function LoginForm() {
     }
   }
 
-  if (!hidratado || sessao || setup !== "pronto") {
+  if (!hidratado || sessao) {
     return (
       <div className="flex h-40 items-center justify-center">
         <Loader2 className="size-5 animate-spin text-primary" aria-label="Carregando" />

@@ -10,10 +10,12 @@ export type ResultadoLogin =
       unidades: Unidade[];
       unidadeAtualId: string | null;
       clinicaNome: string | null;
+      clinicaId: string | null;
       plano: PlanoAtual | null;
       usoUsuarios: UsoUsuarios | null;
       permissoes: Permissao[] | null;
       perfilId: string;
+      primeiroAcesso: boolean;
     }
   | { ok: false; erro: string };
 
@@ -22,6 +24,7 @@ export interface ContextoAuth {
   unidades: Unidade[];
   unidadeAtualId: string | null;
   clinicaNome: string | null;
+  clinicaId: string | null;
   plano: PlanoAtual | null;
   usoUsuarios: UsoUsuarios | null;
   permissoes: Permissao[] | null;
@@ -31,6 +34,7 @@ export interface ContextoAuth {
 export interface SessaoApi extends ContextoAuth {
   token: string;
   perfil?: PerfilSessao;
+  primeiroAcesso?: boolean;
 }
 
 interface SelecionarUnidadeResponse {
@@ -82,10 +86,12 @@ export function persistirSessao(data: SessaoApi, lembrar: boolean): Extract<Resu
     unidades: data.unidades,
     unidadeAtualId: data.unidadeAtualId,
     clinicaNome: data.clinicaNome ?? null,
+    clinicaId: data.clinicaId ?? null,
     plano: lerPlano(data),
     usoUsuarios: lerUso(data),
     permissoes: lerPermissoes(data),
     perfilId: data.perfil?.id ?? data.usuario.perfilId,
+    primeiroAcesso: Boolean(data.primeiroAcesso),
   };
 }
 
@@ -98,6 +104,14 @@ export async function autenticar(email: string, senha: string, lembrar: boolean)
   } catch (error) {
     return { ok: false, erro: mensagemErro(error, "Não foi possível entrar. Tente novamente.") };
   }
+}
+
+export async function concluirPrimeiroAcesso(
+  dados: { unidadeNome: string; unidadeCidade: string; adminNome: string },
+  lembrar: boolean,
+) {
+  const data = await api.post<SessaoApi>("/auth/primeiro-acesso", dados);
+  return persistirSessao(data, lembrar);
 }
 
 export async function selecionarUnidade(unidadeId: string, lembrar: boolean) {
@@ -114,6 +128,7 @@ export async function obterSessaoAtual(): Promise<ContextoAuth | null> {
       unidades: data.unidades,
       unidadeAtualId: data.unidadeAtualId,
       clinicaNome: data.clinicaNome ?? null,
+      clinicaId: data.clinicaId ?? null,
       plano: lerPlano(data),
       usoUsuarios: lerUso(data),
       permissoes: lerPermissoes(data),
