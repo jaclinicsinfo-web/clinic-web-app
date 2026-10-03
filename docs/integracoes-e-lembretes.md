@@ -72,7 +72,7 @@ Para o cliente pagar 100% direto: modo **conta da clínica** + credenciais do WA
 
 ## Custos e tabela de referência
 
-A clínica **não define o preço**. Vocês controlam a tabela no deploy da API (mesmo padrão do `PLANO`):
+A clínica **não define o preço**. Vocês controlam a tabela no deploy da API:
 
 ```
 CUSTO_WHATSAPP_UTILITY=0.42
@@ -109,7 +109,7 @@ Nunca coloque tokens no código, no frontend ou nos logs.
 
 ## Como testar
 
-1. Plano `PLANO=ilimitado`.
+1. Clínica no plano ilimitado.
 2. Ative lembretes, WhatsApp e/ou e-mail.
 3. Preencha o **nome do template na Meta** nos templates de WhatsApp.
 4. Use **Testar conexão** / **Testar envio**.
