@@ -9,6 +9,9 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 const TOKEN_LOCAL = "clinicerp.token";
 const TOKEN_TEMP = "clinicerp.token.temp";
 
+/** Token de login multi-unidade: só em memória até a unidade ser escolhida. */
+let memoryToken: string | null = null;
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -21,11 +24,19 @@ export class ApiError extends Error {
 }
 
 export function getToken() {
+  if (memoryToken) return memoryToken;
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(TOKEN_LOCAL) ?? window.sessionStorage.getItem(TOKEN_TEMP);
 }
 
+/** Mantém o JWT só em RAM (não sobrevive a refresh) — usado entre login e seleção de unidade. */
+export function setMemoryToken(token: string | null) {
+  memoryToken = token;
+}
+
 export function setToken(token: string, lembrar = true) {
+  memoryToken = null;
+
   if (lembrar) {
     window.localStorage.setItem(TOKEN_LOCAL, token);
     window.sessionStorage.removeItem(TOKEN_TEMP);
@@ -37,6 +48,7 @@ export function setToken(token: string, lembrar = true) {
 }
 
 export function clearToken() {
+  memoryToken = null;
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(TOKEN_LOCAL);
   window.sessionStorage.removeItem(TOKEN_TEMP);

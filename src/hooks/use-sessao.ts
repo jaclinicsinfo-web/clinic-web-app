@@ -6,7 +6,7 @@ import { create } from "zustand";
 import { clearToken, getToken } from "@/lib/api";
 import { comparouPlanos, LIMITES_PLANO, planoEstaAcimaDoTeto } from "@/lib/plano";
 import { LIMITES_UNIDADES, modulosDoPlano } from "@/lib/modulos-plano";
-import { encerrarSessaoApi, selecionarUnidade } from "@/services/auth";
+import { encerrarSessaoApi, gravarUltimaUnidade, selecionarUnidade } from "@/services/auth";
 import { useEntidadeLabelsStore } from "@/hooks/use-entidade-labels";
 import { normalizarPermissoes } from "@/lib/permissoes";
 import type { CodigoPlano, Permissao, PlanoAtual, SessaoUsuario, Unidade, UsoUsuarios, Usuario } from "@/types";
@@ -104,6 +104,8 @@ function lerStorage(): SessaoUsuario | null {
   try {
     const parsed = JSON.parse(raw) as SessaoUsuario;
     if (!parsed?.id || !Array.isArray(parsed.unidades)) return null;
+    // Sem unidade e sem primeiro acesso: sessão inválida (não reabrir módulos).
+    if (!parsed.primeiroAcesso && !parsed.unidadeAtualId?.trim()) return null;
     return {
       ...parsed,
       perfilId: parsed.perfilId ?? "",
@@ -195,9 +197,21 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       set({ sessao: null, hidratado: true, lembrar: persistida });
       return;
     }
-    set({ sessao: lerStorage(), hidratado: true, lembrar: persistida });
+    const sessao = lerStorage();
+    if (!sessao) {
+      clearToken();
+      limparStorage();
+      set({ sessao: null, hidratado: true, lembrar: false });
+      return;
+    }
+    set({ sessao, hidratado: true, lembrar: persistida });
   },
   iniciarSessao: (usuario, unidadeAtualId, unidades, lembrar, plano = null, usoUsuarios = null, permissoes = null, clinicaNome = null, clinicaId = null, primeiroAcesso = false) => {
+    // Não persiste sessão de módulos sem unidade escolhida.
+    if (!primeiroAcesso && !unidadeAtualId?.trim()) {
+      return;
+    }
+
     useEntidadeLabelsStore.getState().limpar();
     const evento = resolverEvento(null, plano, usoUsuarios, clinicaId);
     const sessao = montarSessao(
@@ -213,6 +227,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       primeiroAcesso,
     );
     if (plano && evento !== "upgrade") gravarPlanoVisto(plano.codigo, clinicaId);
+    if (clinicaId && unidadeAtualId) gravarUltimaUnidade(clinicaId, unidadeAtualId);
     gravarStorage(sessao, lembrar);
     set({ sessao, lembrar });
   },
@@ -289,6 +304,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
 
     const resultado = await selecionarUnidade(unidadeAtualId, get().lembrar);
     const sessao = { ...atual, unidadeAtualId: resultado.unidadeAtualId };
+    gravarUltimaUnidade(atual.clinicaId, resultado.unidadeAtualId);
     gravarStorage(sessao, get().lembrar);
     set({ sessao });
   },

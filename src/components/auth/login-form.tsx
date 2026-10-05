@@ -15,7 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FormField } from "@/components/shared/form-section";
-import { autenticar, selecionarUnidade } from "@/services/auth";
+import {
+  autenticar,
+  descartarLoginPendente,
+  gravarUltimaUnidade,
+  lerUltimaUnidade,
+  selecionarUnidade,
+} from "@/services/auth";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
@@ -98,6 +104,9 @@ export function LoginForm() {
       router.push("/primeiro-acesso");
       return;
     }
+    if (clinicaId && unidadeAtualId) {
+      gravarUltimaUnidade(clinicaId, unidadeAtualId);
+    }
     toast.success(`Olá, ${usuario.nome.split(" ")[0]}!`, {
       description: `${usuario.perfilNome} · sessão iniciada`,
     });
@@ -137,7 +146,7 @@ export function LoginForm() {
     if (resultado.unidades.length === 1) {
       concluir(
         resultado.usuario,
-        resultado.unidades[0].id,
+        resultado.unidadeAtualId ?? resultado.unidades[0].id,
         values.lembrar,
         resultado.unidades,
         resultado.plano,
@@ -149,7 +158,12 @@ export function LoginForm() {
       return;
     }
 
-    setUnidadeId(resultado.unidadeAtualId ?? resultado.unidades[0].id);
+    // Token ficou só em memória (auth.ts). Sessão persistida só após Continuar.
+    const ultima = lerUltimaUnidade(resultado.clinicaId);
+    const preSelecionada =
+      (ultima && resultado.unidades.some((unidade) => unidade.id === ultima) ? ultima : null) ??
+      resultado.unidades[0].id;
+    setUnidadeId(preSelecionada);
     setPendente({
       usuario: resultado.usuario,
       unidades: resultado.unidades,
@@ -169,6 +183,7 @@ export function LoginForm() {
 
     try {
       await selecionarUnidade(unidadeId, pendente.lembrar);
+      gravarUltimaUnidade(pendente.clinicaId, unidadeId);
       concluir(
         pendente.usuario,
         unidadeId,
@@ -200,7 +215,10 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => {
+            descartarLoginPendente();
             setPendente(null);
+            setUnidadeId("");
+            setConfirmandoUnidade(false);
             setErroAuth(null);
           }}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"

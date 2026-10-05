@@ -1,7 +1,19 @@
-import { api, ApiError, clearToken, setToken } from "@/lib/api";
+import { api, ApiError, clearToken, setMemoryToken, setToken } from "@/lib/api";
 import { modulosDoPlano } from "@/lib/modulos-plano";
 import { normalizarPermissoes } from "@/lib/permissoes";
 import type { PerfilSessao, Permissao, PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
+
+const STORAGE_ULTIMA_UNIDADE = "clinicerp.ultimaUnidade";
+
+export function lerUltimaUnidade(clinicaId: string | null | undefined): string | null {
+  if (typeof window === "undefined" || !clinicaId) return null;
+  return window.localStorage.getItem(`${STORAGE_ULTIMA_UNIDADE}.${clinicaId}`);
+}
+
+export function gravarUltimaUnidade(clinicaId: string | null | undefined, unidadeId: string) {
+  if (typeof window === "undefined" || !clinicaId || !unidadeId) return;
+  window.localStorage.setItem(`${STORAGE_ULTIMA_UNIDADE}.${clinicaId}`, unidadeId);
+}
 
 export type ResultadoLogin =
   | {
@@ -78,8 +90,7 @@ function lerPermissoes(raw: Partial<SessaoApi> | null | undefined): Permissao[] 
   return normalizarPermissoes(bruto);
 }
 
-export function persistirSessao(data: SessaoApi, lembrar: boolean): Extract<ResultadoLogin, { ok: true }> {
-  setToken(data.token, lembrar);
+function montarResultadoLogin(data: SessaoApi): Extract<ResultadoLogin, { ok: true }> {
   return {
     ok: true,
     usuario: data.usuario,
@@ -95,11 +106,29 @@ export function persistirSessao(data: SessaoApi, lembrar: boolean): Extract<Resu
   };
 }
 
+export function persistirSessao(data: SessaoApi, lembrar: boolean): Extract<ResultadoLogin, { ok: true }> {
+  setToken(data.token, lembrar);
+  return montarResultadoLogin(data);
+}
+
+function podePersistirNoLogin(data: SessaoApi): boolean {
+  if (data.primeiroAcesso) return true;
+  if (data.unidades.length === 1) return true;
+  return Boolean(data.unidadeAtualId);
+}
+
 export async function autenticar(email: string, senha: string, lembrar: boolean): Promise<ResultadoLogin> {
   clearToken();
 
   try {
     const data = await api.post<SessaoApi>("/auth/login", { email, senha, lembrar });
+
+    // Multi-unidade: JWT fica só em memória até /auth/selecionar-unidade.
+    if (!podePersistirNoLogin(data)) {
+      setMemoryToken(data.token);
+      return montarResultadoLogin(data);
+    }
+
     return persistirSessao(data, lembrar);
   } catch (error) {
     return { ok: false, erro: mensagemErro(error, "Não foi possível entrar. Tente novamente.") };
@@ -118,6 +147,10 @@ export async function selecionarUnidade(unidadeId: string, lembrar: boolean) {
   const data = await api.post<SelecionarUnidadeResponse>("/auth/selecionar-unidade", { unidadeId });
   setToken(data.token, lembrar);
   return data;
+}
+
+export function descartarLoginPendente() {
+  clearToken();
 }
 
 export async function obterSessaoAtual(): Promise<ContextoAuth | null> {
