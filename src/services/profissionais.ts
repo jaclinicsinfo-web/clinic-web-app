@@ -49,7 +49,6 @@ export interface ProfissionalPayload {
   rg: string | null;
   email: string;
   telefone: string;
-  fotoUrl: string | null;
   especialidades: string[];
   conselho: string;
   registroConselho: string;

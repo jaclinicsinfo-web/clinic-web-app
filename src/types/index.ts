@@ -91,7 +91,6 @@ export interface Profissional {
   nome: string;
   cpf: string;
   rg?: string | null;
-  fotoUrl?: string;
   email: string;
   telefone: string;
   comissaoPorProcedimento?: boolean;
