@@ -82,6 +82,7 @@ export interface VisaoGeralFinanceiro {
   fluxoDiario: FluxoCaixaPonto[];
   fluxoMensal: FluxoCaixaPonto[];
   inadimplentes: PacienteInadimplente[];
+  somenteProprios?: boolean;
 }
 
 export interface PagamentoPayload {

@@ -112,12 +112,23 @@ export function primeiraRotaPermitida(permissoes: Permissao[] | undefined | null
   return "/dashboard";
 }
 
+function rotaForaDoEscopoProprio(pathname: string) {
+  return (
+    pathname.startsWith("/financeiro/contas-a-pagar") ||
+    pathname.startsWith("/financeiro/convenios") ||
+    pathname.startsWith("/configuracoes/usuarios") ||
+    pathname.startsWith("/profissionais/novo")
+  );
+}
+
 export function podeAcessarRota(
   pathname: string,
   permissoes: Permissao[] | undefined | null,
   perfilNome: string | undefined,
   plano?: PlanoAtual | null,
+  isolarDados = false,
 ) {
+  if (isolarDados && rotaForaDoEscopoProprio(pathname)) return false;
   if (rotaExigeAdministrador(pathname) && !isAdministrador(perfilNome)) return false;
   if (rotaExigeAdminOuGestor(pathname)) return isAdminOuGestor(perfilNome);
 

@@ -43,6 +43,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
   const permissoes = sessao?.permissoes;
   const admin = isAdministrador(sessao?.perfil);
   const adminOuGestor = isAdminOuGestor(sessao?.perfil);
+  const isolarDados = Boolean(sessao?.isolarDados);
 
   const plano = sessao?.plano;
 
@@ -62,6 +63,14 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
         .map((item) => {
           if (!item.children) return item;
           const children = item.children.filter((child) => {
+            if (
+              isolarDados &&
+              (child.href.startsWith("/financeiro/contas-a-pagar") ||
+                child.href.startsWith("/financeiro/convenios") ||
+                child.href.startsWith("/configuracoes/usuarios"))
+            ) {
+              return false;
+            }
             if (child.href.startsWith("/configuracoes/pagamentos")) {
               return planoIncluiModulo(plano, "financeiro") && temPermissao(permissoes, item.modulo);
             }

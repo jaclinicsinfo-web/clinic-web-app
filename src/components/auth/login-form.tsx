@@ -44,6 +44,7 @@ interface LoginPendente {
   permissoes: Permissao[] | null;
   clinicaNome: string | null;
   clinicaId: string | null;
+  isolarDados: boolean;
 }
 
 export function LoginForm() {
@@ -87,6 +88,7 @@ export function LoginForm() {
     clinicaNome: string | null,
     clinicaId: string | null,
     primeiroAcesso = false,
+    isolarDados = false,
   ) {
     iniciarSessao(
       usuario,
@@ -99,6 +101,7 @@ export function LoginForm() {
       clinicaNome,
       clinicaId,
       primeiroAcesso,
+      isolarDados,
     );
     if (primeiroAcesso) {
       router.push("/primeiro-acesso");
@@ -134,6 +137,7 @@ export function LoginForm() {
         resultado.clinicaNome,
         resultado.clinicaId,
         true,
+        resultado.isolarDados,
       );
       return;
     }
@@ -154,6 +158,8 @@ export function LoginForm() {
         resultado.permissoes,
         resultado.clinicaNome,
         resultado.clinicaId,
+        false,
+        resultado.isolarDados,
       );
       return;
     }
@@ -173,6 +179,7 @@ export function LoginForm() {
       permissoes: resultado.permissoes,
       clinicaNome: resultado.clinicaNome,
       clinicaId: resultado.clinicaId,
+      isolarDados: resultado.isolarDados,
     });
   }
 
@@ -194,6 +201,8 @@ export function LoginForm() {
         pendente.permissoes,
         pendente.clinicaNome,
         pendente.clinicaId,
+        false,
+        pendente.isolarDados,
       );
     } catch (error) {
       setConfirmandoUnidade(false);

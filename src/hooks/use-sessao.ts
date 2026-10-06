@@ -26,6 +26,7 @@ function montarSessao(
   clinicaNome: string | null,
   clinicaId: string | null,
   primeiroAcesso = false,
+  isolarDados = false,
 ): SessaoUsuario {
   return {
     id: usuario.id,
@@ -34,6 +35,7 @@ function montarSessao(
     perfil: usuario.perfilNome,
     perfilId: usuario.perfilId,
     permissoes,
+    isolarDados,
     unidadeAtualId,
     unidadesAcesso: usuario.unidadesAcesso,
     unidades,
@@ -110,6 +112,7 @@ function lerStorage(): SessaoUsuario | null {
       ...parsed,
       perfilId: parsed.perfilId ?? "",
       permissoes: Array.isArray(parsed.permissoes) ? normalizarPermissoes(parsed.permissoes) : null,
+      isolarDados: Boolean(parsed.isolarDados),
       plano: parsed.plano
         ? {
             ...parsed.plano,
@@ -162,6 +165,7 @@ interface SessaoState {
     clinicaNome?: string | null,
     clinicaId?: string | null,
     primeiroAcesso?: boolean,
+    isolarDados?: boolean,
   ) => void;
   aplicarContextoPlano: (input: {
     usuario?: Usuario;
@@ -173,6 +177,7 @@ interface SessaoState {
     usoUsuarios: UsoUsuarios | null;
     permissoes?: Permissao[] | null;
     perfilId?: string;
+    isolarDados?: boolean;
     tema?: "claro" | "escuro";
   }) => void;
   atualizarUso: (usoUsuarios: UsoUsuarios) => void;
@@ -206,7 +211,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
     }
     set({ sessao, hidratado: true, lembrar: persistida });
   },
-  iniciarSessao: (usuario, unidadeAtualId, unidades, lembrar, plano = null, usoUsuarios = null, permissoes = null, clinicaNome = null, clinicaId = null, primeiroAcesso = false) => {
+  iniciarSessao: (usuario, unidadeAtualId, unidades, lembrar, plano = null, usoUsuarios = null, permissoes = null, clinicaNome = null, clinicaId = null, primeiroAcesso = false, isolarDados = false) => {
     // Não persiste sessão de módulos sem unidade escolhida.
     if (!primeiroAcesso && !unidadeAtualId?.trim()) {
       return;
@@ -225,6 +230,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       clinicaNome,
       clinicaId,
       primeiroAcesso,
+      isolarDados,
     );
     if (plano && evento !== "upgrade") gravarPlanoVisto(plano.codigo, clinicaId);
     if (clinicaId && unidadeAtualId) gravarUltimaUnidade(clinicaId, unidadeAtualId);
@@ -243,6 +249,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       perfil: input.usuario?.perfilNome ?? atual.perfil,
       perfilId: input.perfilId ?? input.usuario?.perfilId ?? atual.perfilId,
       permissoes: input.permissoes !== undefined ? normalizarPermissoes(input.permissoes) : atual.permissoes,
+      isolarDados: input.isolarDados ?? atual.isolarDados,
       unidades: input.unidades ?? atual.unidades,
       clinicaNome: input.clinicaNome ?? atual.clinicaNome,
       clinicaId,

@@ -11,7 +11,7 @@ export function GuardaModulo({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const sessao = useSessaoStore((state) => state.sessao);
-  const permitido = podeAcessarRota(pathname, sessao?.permissoes, sessao?.perfil, sessao?.plano);
+  const permitido = podeAcessarRota(pathname, sessao?.permissoes, sessao?.perfil, sessao?.plano, sessao?.isolarDados);
 
   React.useEffect(() => {
     if (!sessao || sessao.permissoes === null) return;

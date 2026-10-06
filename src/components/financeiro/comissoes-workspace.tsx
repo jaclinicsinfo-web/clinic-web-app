@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import { formatCurrency } from "@/lib/format";
 import {
   aprovarComissaoApi,
@@ -33,6 +34,7 @@ const resumoVazio: ResumoComissoes = {
 };
 
 export function ComissoesWorkspace() {
+  const isolado = useSessaoStore((state) => Boolean(state.sessao?.isolarDados));
   const [comissoes, setComissoes] = React.useState<Comissao[]>([]);
   const [resumo, setResumo] = React.useState(resumoVazio);
   const [competencias, setCompetencias] = React.useState<string[]>([]);
@@ -85,15 +87,17 @@ export function ComissoesWorkspace() {
     <div className="space-y-6">
       <PageHeader
         title="Comissões"
-        description="Repasses do corpo clínico por competência, com aprovação e pagamento."
+        description={isolado ? "Suas comissões por competência." : "Repasses do corpo clínico por competência, com aprovação e pagamento."}
         actions={
           <>
+            {isolado ? null : (
             <Pode modulo="financeiro" acao="criar">
               <Button variant="outline" loading={calculando} onClick={() => void calcular()}>
                 Calcular competência
               </Button>
             </Pode>
-            {resumo.competencia ? (
+            )}
+            {!isolado && resumo.competencia ? (
               <Pode modulo="financeiro" acao="editar">
               <FecharFolhaButton
                 competencia={resumo.competencia}
@@ -132,6 +136,7 @@ export function ComissoesWorkspace() {
       </div>
 
       <ComissoesTable
+        gestao={!isolado}
         comissoes={comissoes}
         competencias={competencias}
         onAprovar={async (comissao) => {

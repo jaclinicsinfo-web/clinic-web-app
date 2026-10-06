@@ -457,6 +457,7 @@ export interface PerfilAcesso {
   nome: string;
   descricao: string;
   sistema: boolean;
+  isolarDados: boolean;
   permissoes: Permissao[];
 }
 
@@ -491,6 +492,7 @@ export interface UsoUsuarios {
 export interface PerfilSessao {
   id: string;
   nome: string;
+  isolarDados?: boolean;
   permissoes: Permissao[];
 }
 
@@ -502,6 +504,7 @@ export interface SessaoUsuario {
   perfil: string;
   perfilId: string;
   permissoes: Permissao[] | null;
+  isolarDados: boolean;
   unidadeAtualId: string;
   unidadesAcesso: string[];
   unidades: Unidade[];

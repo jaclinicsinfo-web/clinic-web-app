@@ -6,7 +6,7 @@ export async function listarPerfisApi() {
   return data.perfis;
 }
 
-export async function salvarPermissoesApi(id: string, permissoes: Permissao[]) {
-  const data = await api.patch<{ perfil: PerfilAcesso }>(`/perfis/${id}`, { permissoes });
+export async function salvarPermissoesApi(id: string, permissoes: Permissao[], isolarDados: boolean) {
+  const data = await api.patch<{ perfil: PerfilAcesso }>(`/perfis/${id}`, { permissoes, isolarDados });
   return data.perfil;
 }

@@ -24,6 +24,7 @@ import { useSessaoStore } from "@/hooks/use-sessao";
 import type { Comissao } from "@/types";
 
 interface ComissoesTableProps {
+  gestao?: boolean;
   comissoes: Comissao[];
   competencias: string[];
   onAprovar: (comissao: Comissao) => Promise<void> | void;
@@ -32,9 +33,9 @@ interface ComissoesTableProps {
 
 type AcaoComissao = { comissao: Comissao; tipo: "aprovar" | "pagar" };
 
-export function ComissoesTable({ comissoes, competencias, onAprovar, onPagar }: ComissoesTableProps) {
+export function ComissoesTable({ gestao = true, comissoes, competencias, onAprovar, onPagar }: ComissoesTableProps) {
   const permissoes = useSessaoStore((state) => state.sessao?.permissoes);
-  const podeEditar = temPermissao(permissoes, "financeiro", "editar");
+  const podeEditar = gestao && temPermissao(permissoes, "financeiro", "editar");
   const [competencia, setCompetencia] = React.useState("todas");
   const [status, setStatus] = React.useState("todos");
   const [acao, setAcao] = React.useState<AcaoComissao | null>(null);

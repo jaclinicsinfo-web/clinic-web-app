@@ -25,10 +25,11 @@ export type ResultadoLogin =
       clinicaId: string | null;
       plano: PlanoAtual | null;
       usoUsuarios: UsoUsuarios | null;
-      permissoes: Permissao[] | null;
-      perfilId: string;
-      primeiroAcesso: boolean;
-    }
+  permissoes: Permissao[] | null;
+  perfilId: string;
+  isolarDados: boolean;
+  primeiroAcesso: boolean;
+}
   | { ok: false; erro: string };
 
 export interface ContextoAuth {
@@ -41,6 +42,7 @@ export interface ContextoAuth {
   usoUsuarios: UsoUsuarios | null;
   permissoes: Permissao[] | null;
   perfilId: string;
+  isolarDados: boolean;
 }
 
 export interface SessaoApi extends ContextoAuth {
@@ -84,6 +86,10 @@ function lerUso(raw: Partial<SessaoApi> | null | undefined): UsoUsuarios | null 
   };
 }
 
+function lerIsolamento(raw: Partial<SessaoApi> | null | undefined) {
+  return Boolean(raw?.perfil?.isolarDados);
+}
+
 function lerPermissoes(raw: Partial<SessaoApi> | null | undefined): Permissao[] | null {
   const bruto = raw?.perfil?.permissoes ?? raw?.permissoes;
   if (bruto == null) return null;
@@ -102,6 +108,7 @@ function montarResultadoLogin(data: SessaoApi): Extract<ResultadoLogin, { ok: tr
     usoUsuarios: lerUso(data),
     permissoes: lerPermissoes(data),
     perfilId: data.perfil?.id ?? data.usuario.perfilId,
+    isolarDados: lerIsolamento(data),
     primeiroAcesso: Boolean(data.primeiroAcesso),
   };
 }
@@ -166,6 +173,7 @@ export async function obterSessaoAtual(): Promise<ContextoAuth | null> {
       usoUsuarios: lerUso(data),
       permissoes: lerPermissoes(data),
       perfilId: data.perfil?.id ?? data.usuario.perfilId,
+      isolarDados: lerIsolamento(data),
     };
   } catch (error) {
     if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {

@@ -73,6 +73,7 @@ export function PrimeiroAcessoForm() {
         resultado.clinicaNome,
         resultado.clinicaId,
         false,
+        resultado.isolarDados,
       );
       toast.success("Unidade e administrador configurados.");
       router.push("/dashboard");

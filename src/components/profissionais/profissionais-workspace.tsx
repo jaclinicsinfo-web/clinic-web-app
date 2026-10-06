@@ -31,6 +31,7 @@ const resumoVazio: ResumoProfissionais = {
 };
 
 export function ProfissionaisWorkspace() {
+  const isolado = useSessaoStore((state) => Boolean(state.sessao?.isolarDados));
   const sessao = useSessaoStore((state) => state.sessao);
   const mostraFinanceiro =
     planoIncluiModulo(sessao?.plano, "financeiro") && temPermissao(sessao?.permissoes, "financeiro");
@@ -83,6 +84,7 @@ export function ProfissionaisWorkspace() {
             : "Corpo clínico da clínica: vínculos e disponibilidade na agenda."
         }
         actions={
+          isolado ? null : (
           <Pode modulo="profissionais" acao="criar">
             <Button asChild>
               <Link href="/profissionais/novo">
@@ -91,6 +93,7 @@ export function ProfissionaisWorkspace() {
               </Link>
             </Button>
           </Pode>
+          )
         }
       />
 

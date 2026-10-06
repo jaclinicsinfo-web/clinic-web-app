@@ -38,7 +38,7 @@ export function PacientesWorkspace() {
   const sessao = useSessaoStore((state) => state.sessao);
   const perfil = sessao?.perfil;
   const setPacienteNome = useEntidadeLabelsStore((state) => state.setPaciente);
-  const profissionalSaude = isProfissionalSaude(perfil);
+  const profissionalSaude = isProfissionalSaude(perfil) || Boolean(sessao?.isolarDados);
   const mostraFinanceiro =
     planoIncluiModulo(sessao?.plano, "financeiro") && temPermissao(sessao?.permissoes, "financeiro");
 

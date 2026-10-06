@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { useSessaoStore } from "@/hooks/use-sessao";
 import { obterVisaoGeralApi, type VisaoGeralFinanceiro } from "@/services/financeiro";
 
 const vazio: VisaoGeralFinanceiro = {
@@ -74,6 +75,7 @@ const vazio: VisaoGeralFinanceiro = {
 };
 
 export function FinanceiroWorkspace() {
+  const isoladoSessao = useSessaoStore((state) => Boolean(state.sessao?.isolarDados));
   const [dados, setDados] = React.useState<VisaoGeralFinanceiro>(vazio);
   const [carregando, setCarregando] = React.useState(true);
   const [erro, setErro] = React.useState<string | null>(null);
@@ -100,6 +102,7 @@ export function FinanceiroWorkspace() {
     };
   }, []);
 
+  const isolado = isoladoSessao || Boolean(dados.somenteProprios);
   const receber = dados.receber;
   const pagar = dados.pagar;
   const fluxo = dados.fluxo;
@@ -149,7 +152,10 @@ export function FinanceiroWorkspace() {
       valor: valor(comissoes.totalPrevisto),
       detalhe: "previsto na competência",
     },
-  ];
+  ].filter((atalho) => {
+    if (!isolado) return true;
+    return atalho.href !== "/financeiro/contas-a-pagar" && atalho.href !== "/financeiro/convenios";
+  });
 
   if (erro) {
     return <EmptyState title="Não foi possível carregar" description={erro} />;
@@ -159,7 +165,11 @@ export function FinanceiroWorkspace() {
     <div className="space-y-6">
       <PageHeader
         title="Financeiro"
-        description="Visão consolidada de recebimentos, despesas, convênios e comissões da clínica."
+        description={
+          isolado
+            ? "Recebimentos, fluxo e comissões dos seus atendimentos."
+            : "Visão consolidada de recebimentos, despesas, convênios e comissões da clínica."
+        }
         actions={
           <>
             <Button variant="outline" asChild>
@@ -182,12 +192,14 @@ export function FinanceiroWorkspace() {
           icon={Wallet}
           hint={`${receber.quantidadeEmAberto} cobranças · ${formatCurrency(receber.vencendo7Dias)} vencem em 7 dias`}
         />
+        {isolado ? null : (
         <StatCard
           label="Total a pagar"
           value={valor(pagar.totalAPagar)}
           icon={Receipt}
           hint={`${pagar.quantidadeAPagar} despesas · ${formatCurrency(pagar.vencendo7Dias)} vencem em 7 dias`}
         />
+        )}
         <StatCard
           label="Saldo do mês"
           value={valor(fluxo.saldoMes)}
