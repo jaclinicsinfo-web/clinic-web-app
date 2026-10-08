@@ -361,11 +361,7 @@ export function LoginForm() {
       </form>
 
       <p className="mt-8 text-xs leading-relaxed text-muted-foreground">
-        Ainda não tem uma clínica no sistema?{" "}
-        <Link href="/" className="font-medium text-primary hover:text-primary/80">
-          Comece com 7 dias grátis
-        </Link>
-        . Novos usuários de uma clínica já existente são criados em
+        O cadastro de novos usuários é feito pelo administrador da clínica em
         <span className="font-medium text-foreground"> Configurações › Usuários</span>.
       </p>
     </div>
