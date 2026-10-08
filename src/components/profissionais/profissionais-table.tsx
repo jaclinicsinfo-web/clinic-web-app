@@ -211,7 +211,7 @@ export function ProfissionaisTable({ profissionais, especialidades, onInativar, 
         toolbar={
           <>
             <Select value={especialidade} onValueChange={setEspecialidade}>
-              <SelectTrigger className="w-48" aria-label="Filtrar por especialidade">
+              <SelectTrigger className="w-auto shrink-0" aria-label="Filtrar por especialidade">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -225,7 +225,7 @@ export function ProfissionaisTable({ profissionais, especialidades, onInativar, 
             </Select>
 
             <Select value={vinculo} onValueChange={setVinculo}>
-              <SelectTrigger className="w-36" aria-label="Filtrar por vínculo">
+              <SelectTrigger className="w-auto shrink-0" aria-label="Filtrar por vínculo">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -237,7 +237,7 @@ export function ProfissionaisTable({ profissionais, especialidades, onInativar, 
             </Select>
 
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-36" aria-label="Filtrar por status">
+              <SelectTrigger className="w-auto shrink-0" aria-label="Filtrar por status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

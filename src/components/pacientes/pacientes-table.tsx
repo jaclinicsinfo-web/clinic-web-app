@@ -22,7 +22,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { ApiError } from "@/lib/api";
-import { calculateAge, formatCurrency, formatDate, formatPhone } from "@/lib/format";
+import { calculateAge, formatCurrency, formatDate, formatIdade, formatPhone } from "@/lib/format";
 import { planoIncluiModulo } from "@/lib/modulos-plano";
 import { temPermissao } from "@/lib/permissoes";
 import type { Paciente } from "@/types";
@@ -95,7 +95,7 @@ export function PacientesTable({
                 {paciente.nome}
               </Link>
               <p className="text-xs text-muted-foreground">
-                {calculateAge(paciente.dataNascimento)} anos
+                {formatIdade(paciente.dataNascimento)}
                 {paciente.alergias.length > 0 && (
                   <span className="ml-2 text-danger">· Alergia: {paciente.alergias.join(", ")}</span>
                 )}
@@ -234,7 +234,7 @@ export function PacientesTable({
         toolbar={
           <>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-36 shrink-0" aria-label="Filtrar por status">
+              <SelectTrigger className="w-auto shrink-0" aria-label="Filtrar por status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -247,7 +247,7 @@ export function PacientesTable({
 
             {!somenteProprios && (
               <Select value={profissional} onValueChange={setProfissional}>
-                <SelectTrigger className="w-44 shrink-0" aria-label="Filtrar por profissional">
+                <SelectTrigger className="w-auto max-w-[14rem] shrink-0" aria-label="Filtrar por profissional">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -262,7 +262,7 @@ export function PacientesTable({
             )}
 
             <Select value={faixa} onValueChange={(valor) => setFaixa(valor as FaixaEtaria)}>
-              <SelectTrigger className="w-36 shrink-0" aria-label="Filtrar por faixa etária">
+              <SelectTrigger className="w-auto shrink-0" aria-label="Filtrar por faixa etária">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { calculateAge, formatPhone, getInitials } from "@/lib/format";
+import { formatIdade, formatPhone, getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export interface PatientCardPaciente {
@@ -31,7 +31,7 @@ export function PatientCard({
   onClick,
   className,
 }: PatientCardProps) {
-  const idade = paciente.dataNascimento ? calculateAge(paciente.dataNascimento) : null;
+  const idade = paciente.dataNascimento ? formatIdade(paciente.dataNascimento) : null;
 
   return (
     <button
@@ -53,7 +53,7 @@ export function PatientCard({
         <p className="truncate text-sm font-medium text-foreground">{paciente.nome}</p>
         <p className="truncate text-xs text-muted-foreground">
           {formatPhone(paciente.telefone)}
-          {idade !== null ? ` · ${idade} anos` : ""}
+          {idade !== null ? ` · ${idade}` : ""}
         </p>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">

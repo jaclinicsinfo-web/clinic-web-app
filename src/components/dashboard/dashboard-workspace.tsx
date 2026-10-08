@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api";
-import { formatCurrency, formatPercent } from "@/lib/format";
+import { formatCurrency, formatIdade, formatPercent } from "@/lib/format";
 import { obterDashboardApi, type DashboardPayload } from "@/services/dashboard";
 
 function diaMes(iso: string) {
@@ -327,7 +327,7 @@ export function DashboardWorkspace() {
                         >
                           {paciente.nome}
                         </Link>
-                        <p className="text-xs text-muted-foreground">{paciente.idade} anos</p>
+                        <p className="text-xs text-muted-foreground">{formatIdade(paciente.dataNascimento)}</p>
                       </div>
                       <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                         {diaMes(paciente.dataNascimento)}

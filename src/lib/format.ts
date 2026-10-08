@@ -1,4 +1,4 @@
-import { differenceInYears, format, parseISO } from "date-fns";
+import { addMonths, differenceInDays, differenceInMonths, differenceInYears, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 function toDate(value: Date | string) {
@@ -80,8 +80,31 @@ export function formatWeekday(value: Date | string) {
   return format(toDate(value), "EEEE", { locale: ptBR });
 }
 
+function toBirthDate(value: Date | string) {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+    return parseLocalDate(value.slice(0, 10));
+  }
+  return toDate(value);
+}
+
 export function calculateAge(birthDate: Date | string) {
-  return differenceInYears(new Date(), toDate(birthDate));
+  return differenceInYears(new Date(), toBirthDate(birthDate));
+}
+
+/** Menores de 1 ano aparecem em meses e dias. A partir de 1 ano, só os anos. */
+export function formatIdade(birthDate: Date | string) {
+  const nasc = toBirthDate(birthDate);
+  const hoje = new Date();
+  const anos = differenceInYears(hoje, nasc);
+  if (anos >= 1) return anos === 1 ? "1 ano" : `${anos} anos`;
+
+  const meses = Math.max(differenceInMonths(hoje, nasc), 0);
+  const dias = Math.max(differenceInDays(hoje, addMonths(nasc, meses)), 0);
+  if (meses === 0) return dias === 1 ? "1 dia" : `${dias} dias`;
+
+  const parteMes = meses === 1 ? "1 mês" : `${meses} meses`;
+  if (dias === 0) return parteMes;
+  return `${parteMes} e ${dias === 1 ? "1 dia" : `${dias} dias`}`;
 }
 
 export function formatCpf(cpf: string) {

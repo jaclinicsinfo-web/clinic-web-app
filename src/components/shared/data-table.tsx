@@ -117,9 +117,9 @@ export function DataTable<TData>({
   }
 
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full min-w-0 flex-1 basis-full sm:min-w-[16rem] sm:basis-64">
+    <div className={cn("flex flex-col gap-2", className)}>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <div className="relative w-full min-w-0 sm:w-64 sm:shrink-0">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={globalFilter}

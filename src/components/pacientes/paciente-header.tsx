@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Pode } from "@/components/auth/pode";
-import { calculateAge, formatCurrency, formatPhone, getInitials, maskCpf } from "@/lib/format";
+import { formatCurrency, formatIdade, formatPhone, getInitials, maskCpf } from "@/lib/format";
 import type { Paciente } from "@/types";
 
 export function PacienteHeader({ paciente }: { paciente: Paciente }) {
@@ -28,7 +28,7 @@ export function PacienteHeader({ paciente }: { paciente: Paciente }) {
             </div>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              {calculateAge(paciente.dataNascimento)} anos · CPF {maskCpf(paciente.cpf)}
+              {formatIdade(paciente.dataNascimento)} · CPF {maskCpf(paciente.cpf)}
               {paciente.profissao ? ` · ${paciente.profissao}` : ""}
             </p>
 
