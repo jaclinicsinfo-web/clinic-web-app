@@ -81,44 +81,40 @@ function VisaoDia({
     );
   }
 
-  const colunas = `64px repeat(${profissionais.length}, minmax(176px, 1fr))`;
+  const colunas = `4.5rem repeat(${profissionais.length}, minmax(176px, 1fr))`;
+  const larguraMinima = 72 + profissionais.length * 176;
 
   return (
-    <div className="overflow-auto rounded-xl border border-border bg-card">
-      <div style={{ minWidth: 64 + profissionais.length * 176 }}>
-        <div
-          className="sticky top-0 z-20 grid border-b border-border bg-card"
-          style={{ gridTemplateColumns: colunas }}
-        >
-          <div className="border-r border-border" />
-          {profissionais.map((profissional) => {
-            const quantidade = agendamentos.filter(
-              (agendamento) => agendamento.profissionalId === profissional.id,
-            ).length;
-            return (
-              <div key={profissional.id} className="border-r border-border px-3 py-2 last:border-r-0">
-                <p className="truncate text-sm font-semibold text-foreground">{profissional.nome}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {profissional.especialidades[0]}
-                  {quantidade > 0 ? ` · ${quantidade}` : ""}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="relative grid" style={{ gridTemplateColumns: colunas, height: alturaTotal }}>
-          <div className="relative border-r border-border">
-            {slots.map((slot) => (
-              <div
-                key={slot}
-                className="absolute right-2 -translate-y-1/2 text-[11px] tabular-nums text-muted-foreground"
-                style={{ top: posicaoTopo(slot) }}
-              >
-                {slot}
-              </div>
-            ))}
+    <GradeComTitulo colunas={colunas} larguraMinima={larguraMinima} titulo={
+      <>
+        <div className="sticky left-0 z-10 border-r border-border bg-card" />
+        {profissionais.map((profissional) => {
+          const quantidade = agendamentos.filter(
+            (agendamento) => agendamento.profissionalId === profissional.id,
+          ).length;
+          return (
+            <div key={profissional.id} className="min-w-0 border-r border-border px-3 py-2 last:border-r-0">
+              <p className="truncate text-sm font-semibold text-foreground">{profissional.nome}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {profissional.especialidades[0]}
+                {quantidade > 0 ? ` · ${quantidade}` : ""}
+              </p>
+            </div>
+          );
+        })}
+      </>
+    }>
+      <div className="sticky left-0 z-10 h-full border-r border-border bg-card">
+        {slots.map((slot) => (
+          <div
+            key={slot}
+            className="absolute right-1 text-[11px] leading-none tabular-nums text-muted-foreground"
+            style={{ top: posicaoTopo(slot) + 4 }}
+          >
+            {slot}
           </div>
+        ))}
+      </div>
 
           {profissionais.map((profissional) => (
             <ColunaProfissional
@@ -132,6 +128,49 @@ function VisaoDia({
               onReagendar={onReagendar}
             />
           ))}
+    </GradeComTitulo>
+  );
+}
+
+function GradeComTitulo({
+  colunas,
+  larguraMinima,
+  titulo,
+  children,
+}: {
+  colunas: string;
+  larguraMinima: number;
+  titulo: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const tituloRef = React.useRef<HTMLDivElement>(null);
+  const corpoRef = React.useRef<HTMLDivElement>(null);
+  const origem = React.useRef<"titulo" | "corpo" | null>(null);
+
+  function sincronizar(de: "titulo" | "corpo") {
+    const faixa = tituloRef.current;
+    const corpo = corpoRef.current;
+    if (!faixa || !corpo || origem.current) return;
+    origem.current = de;
+    if (de === "corpo") faixa.scrollLeft = corpo.scrollLeft;
+    else corpo.scrollLeft = faixa.scrollLeft;
+    origem.current = null;
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card">
+      <div
+        ref={tituloRef}
+        className="shrink-0 overflow-x-auto overflow-y-hidden border-b border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        onScroll={() => sincronizar("titulo")}
+      >
+        <div className="grid" style={{ gridTemplateColumns: colunas, minWidth: larguraMinima }}>
+          {titulo}
+        </div>
+      </div>
+      <div ref={corpoRef} className="min-h-0 flex-1 overflow-auto" onScroll={() => sincronizar("corpo")}>
+        <div className="relative grid" style={{ gridTemplateColumns: colunas, minWidth: larguraMinima, height: alturaTotal }}>
+          {children}
         </div>
       </div>
     </div>
@@ -261,7 +300,7 @@ function VisaoSemana({
   const dias = eachDayOfInterval({ start: inicio, end: endOfWeek(referencia, { weekStartsOn: 1 }) });
 
   return (
-    <div className="overflow-auto rounded-xl border border-border bg-card">
+    <div className="h-full min-h-0 overflow-auto rounded-xl border border-border bg-card">
       <div className="grid min-w-[840px] grid-cols-7">
         {dias.map((dia) => {
           const iso = formatISODate(dia);
@@ -333,7 +372,7 @@ function VisaoMes({ dataIso, agendamentos, onSelectDia }: CalendarViewProps) {
   const hoje = new Date();
 
   return (
-    <div className="overflow-x-auto overflow-y-hidden rounded-xl border border-border bg-card">
+    <div className="h-full min-h-0 overflow-auto rounded-xl border border-border bg-card">
       <div className="min-w-[560px]">
         <div className="grid grid-cols-7 border-b border-border bg-muted/40">
           {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((dia) => (

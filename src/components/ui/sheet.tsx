@@ -26,7 +26,7 @@ const SheetContent = React.forwardRef<
       ref={ref}
       data-slot="drawer-content"
       className={cn(
-        "fixed inset-y-0 z-50 flex w-full flex-col border-border bg-card shadow-2xl",
+        "fixed inset-y-0 z-50 flex h-full max-h-[var(--app-altura,100dvh)] w-full max-w-full flex-col border-border bg-card pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] shadow-2xl",
         side === "right" ? "right-0 border-l" : "left-0 border-r",
         width,
         className,

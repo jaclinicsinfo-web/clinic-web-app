@@ -12,7 +12,7 @@ interface FormSectionProps {
 const columnClasses = {
   1: "md:grid-cols-1",
   2: "md:grid-cols-2",
-  3: "md:grid-cols-3",
+  3: "md:grid-cols-2 xl:grid-cols-3",
 };
 
 export function FormSection({ title, description, children, columns = 2, className }: FormSectionProps) {

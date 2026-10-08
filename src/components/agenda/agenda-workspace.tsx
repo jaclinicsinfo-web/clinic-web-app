@@ -345,7 +345,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-auto min-h-0 flex-col gap-3 md:h-full md:overflow-hidden">
       {carregando ? (
         <div className="flex min-h-[40vh] items-center justify-center">
           <Loader2 className="size-5 animate-spin text-primary" aria-label="Carregando agenda" />
@@ -359,6 +359,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
         />
       ) : (
         <>
+      <div className="shrink-0">
       <PageHeader
         title="Agenda"
         description="Grade por profissional, confirmações, check-in e encaixes da clínica."
@@ -388,15 +389,16 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
           </>
         }
       />
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Atendimentos do dia" value={String(resumo.total)} />
         <StatCard label="Confirmados / check-in" value={String(resumo.confirmados)} />
         <StatCard label="Em atendimento" value={String(resumo.emAtendimento)} />
         {mostraFinanceiro && <StatCard label="Previsto no dia" value={formatCurrency(resumo.faturamento)} />}
       </div>
 
-      <Card>
+      <Card className="shrink-0">
         <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="icon-sm" onClick={() => setDataIso(deslocarPeriodo(dataIso, visao, -1))} aria-label="Período anterior">
@@ -477,7 +479,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
         </CardContent>
       </Card>
 
-      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+      <div className="flex shrink-0 flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
         {statusFiltro.map((status) => (
           <span key={status} className="inline-flex items-center gap-1.5">
             <span className={cn("size-2.5 rounded-sm border", classesBlocoStatus[status])} />
@@ -486,6 +488,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
         ))}
       </div>
 
+      <div className="flex h-[70dvh] min-w-0 flex-col md:h-auto md:min-h-0 md:flex-1">
       <CalendarView
         visao={visao}
         dataIso={dataIso}
@@ -505,6 +508,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
           setVisao("dia");
         }}
       />
+      </div>
 
       <AppointmentSheet
         open={sheetAberto}

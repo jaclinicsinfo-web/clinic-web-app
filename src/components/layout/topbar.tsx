@@ -105,8 +105,8 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
               });
             }}
           >
-            <SelectTrigger className="hidden w-52 md:flex" aria-label="Unidade">
-              <span className="flex min-w-0 items-center gap-2">
+            <SelectTrigger className="hidden w-36 md:flex lg:w-52" aria-label="Unidade">
+              <span className="flex min-w-0 items-center gap-2 overflow-hidden">
                 <Building2 className="size-4 shrink-0 text-muted-foreground" />
                 <SelectValue />
               </span>

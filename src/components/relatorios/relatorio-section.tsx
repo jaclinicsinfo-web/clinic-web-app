@@ -82,7 +82,7 @@ export function RelatorioSection<T>({
 
       {resumo && resumo.length > 0 && (
         <CardContent className="pt-0">
-          <dl className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-muted/50 p-4 sm:grid-cols-4">
+          <dl className="grid grid-cols-1 gap-4 rounded-lg border border-border bg-muted/50 p-4 sm:grid-cols-2 lg:grid-cols-4">
             {resumo.map((item) => (
               <div key={item.label}>
                 <dt className="text-xs text-muted-foreground">{item.label}</dt>

@@ -132,12 +132,14 @@ html.dark {
     width: 100%;
     max-width: 100%;
     height: 100%;
-    height: 100dvh;
+    height: var(--app-altura, 100dvh);
+    max-height: var(--app-altura, 100dvh);
     overflow: hidden;
     overflow-x: clip;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
   }
 
   html:not(.dark) {
@@ -149,7 +151,8 @@ html.dark {
     width: 100%;
     max-width: 100%;
     height: 100%;
-    height: 100dvh;
+    height: var(--app-altura, 100dvh);
+    max-height: var(--app-altura, 100dvh);
     min-height: 0;
     flex-direction: column;
     overflow: hidden;
@@ -171,6 +174,27 @@ html.dark {
   video,
   canvas {
     max-width: 100%;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  li,
+  label,
+  td,
+  th {
+    overflow-wrap: break-word;
+  }
+
+  /* 16px evita o zoom do Safari ao focar um campo. No iPad esse zoom não desfaz quando o teclado fecha. */
+  @media (pointer: coarse) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
   }
 
   ::placeholder {

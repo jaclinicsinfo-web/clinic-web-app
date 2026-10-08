@@ -23,7 +23,7 @@ export function PacienteHeader({ paciente }: { paciente: Paciente }) {
 
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{paciente.nome}</h1>
+              <h1 className="break-words text-lg font-semibold tracking-tight text-foreground">{paciente.nome}</h1>
               <StatusBadge domain="paciente" status={paciente.status} />
             </div>
 
@@ -54,9 +54,9 @@ export function PacienteHeader({ paciente }: { paciente: Paciente }) {
                 <dd className="tabular-nums">{formatPhone(paciente.whatsapp ?? paciente.telefone)}</dd>
               </div>
               {paciente.email && (
-                <div className="flex items-center gap-1.5">
-                  <Mail className="size-3.5" />
-                  <dd className="truncate">{paciente.email}</dd>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <Mail className="size-3.5 shrink-0" />
+                  <dd className="min-w-0 break-all">{paciente.email}</dd>
                 </div>
               )}
               <div className="flex items-center gap-1.5">
