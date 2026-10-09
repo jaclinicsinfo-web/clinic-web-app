@@ -276,19 +276,22 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
         toast.error("Você não tem permissão para criar agendamentos.");
         return;
       }
+      const { recorrencia, ...edicao } = payload;
       if (draft.id) {
-        const { recorrencia: _recorrencia, ...edicao } = payload;
         const salvo = await atualizarAgendamentoApi(draft.id, edicao);
         setAgendamentos((atual) => atual.map((item) => (item.id === salvo.id ? salvo : item)));
         toast.success("Agendamento atualizado", {
           description: `${salvo.pacienteNome} · ${salvo.horaInicio}`,
         });
       } else {
-        const { agendamento: salvo, recorrencia } = await criarAgendamentoApi(payload);
-        if (recorrencia) {
+        const { agendamento: salvo, recorrencia: serie } = await criarAgendamentoApi({
+          ...edicao,
+          recorrencia,
+        });
+        if (serie) {
           await carregar(dataIso, visao);
-          const pulados = recorrencia.pulados.filter(Boolean);
-          toast.success(`${recorrencia.criados} horários agendados`, {
+          const pulados = serie.pulados.filter(Boolean);
+          toast.success(`${serie.criados} horários agendados`, {
             description: pulados.length
               ? `${salvo.pacienteNome} · ${salvo.horaInicio}. ${pulados.length} ${pulados.length === 1 ? "data pulada" : "datas puladas"} porque o horário já estava ocupado.`
               : `${salvo.pacienteNome} · ${salvo.horaInicio}`,
