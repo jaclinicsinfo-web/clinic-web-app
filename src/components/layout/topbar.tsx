@@ -87,7 +87,7 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-3 sm:h-16 sm:gap-3 sm:px-4 lg:px-6">
-      <Button variant="ghost" size="icon" className="touch-manipulation shrink-0 lg:hidden" onClick={onOpenMobileMenu} aria-label="Abrir menu">
+      <Button variant="ghost" size="icon" className="touch-manipulation shrink-0 xl:hidden" onClick={onOpenMobileMenu} aria-label="Abrir menu">
         <Menu />
       </Button>
 
@@ -199,7 +199,7 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
               <Avatar className="size-8">
                 <AvatarFallback>{getInitials(sessao?.nome ?? "")}</AvatarFallback>
               </Avatar>
-              <span className="hidden text-left lg:block">
+              <span className="hidden text-left xl:block">
                 <span className="block text-sm font-medium leading-tight text-foreground">{sessao?.nome}</span>
                 <span className="block text-xs leading-tight text-muted-foreground">{sessao?.perfil}</span>
               </span>

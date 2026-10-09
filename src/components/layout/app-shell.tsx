@@ -27,11 +27,11 @@ function MenuMobile({ onClose }: { onClose: () => void }) {
     <>
       <button
         type="button"
-        className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+        className="fixed inset-0 z-40 bg-black/50 xl:hidden"
         onClick={onClose}
         aria-label="Fechar menu"
       />
-      <div className="fixed inset-y-0 left-0 z-50 h-full w-64 touch-manipulation shadow-xl lg:hidden">
+      <div className="fixed inset-y-0 left-0 z-50 h-full w-64 touch-manipulation shadow-xl xl:hidden">
         <Sidebar collapsed={false} onToggleCollapse={onClose} onNavigate={onClose} />
       </div>
     </>,
@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden overflow-x-clip bg-background">
       <PlanoSync />
-      <div className="hidden h-full min-h-0 shrink-0 lg:block">
+      <div className="hidden h-full min-h-0 shrink-0 xl:block">
         <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed((value) => !value)} />
       </div>
 

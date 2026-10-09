@@ -209,9 +209,15 @@ export async function criarAgendamentoApi(payload: {
   tipo: TipoAgendamento;
   observacoes: string | null;
   status: AgendamentoStatus;
+  recorrencia?: {
+    intervalo: "semanal" | "duas_semanas" | "tres_semanas" | "mensal";
+    meses: 1 | 2 | 3 | 6 | 12;
+  };
 }) {
-  const data = await api.post<{ agendamento: Agendamento }>("/agenda", payload);
-  return data.agendamento;
+  return api.post<{
+    agendamento: Agendamento;
+    recorrencia?: { criados: number; pulados: string[] };
+  }>("/agenda", payload);
 }
 
 export async function atualizarAgendamentoApi(

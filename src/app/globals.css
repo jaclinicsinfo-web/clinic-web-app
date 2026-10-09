@@ -197,6 +197,24 @@ html.dark {
     }
   }
 
+  /* Com o teclado aberto a tela fica baixa: o cadastro inteiro rola, em vez de esconder os campos atrás dos botões. */
+  @media (max-height: 640px) {
+    [data-form-pagina] {
+      height: 100% !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+    }
+
+    [data-form-pagina] [data-form-corpo],
+    [data-form-pagina] form,
+    [data-form-pagina] form > div:first-child {
+      flex: none !important;
+      height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+  }
+
   ::placeholder {
     color: var(--color-muted-foreground);
     opacity: 1;

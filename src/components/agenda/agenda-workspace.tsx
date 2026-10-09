@@ -264,6 +264,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
       tipo: draft.tipo,
       observacoes: draft.observacoes ?? null,
       status: draft.status,
+      recorrencia: draft.recorrencia,
     };
 
     try {
@@ -275,15 +276,30 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
         toast.error("Você não tem permissão para criar agendamentos.");
         return;
       }
-      const salvo = draft.id
-        ? await atualizarAgendamentoApi(draft.id, payload)
-        : await criarAgendamentoApi(payload);
-      setAgendamentos((atual) =>
-        draft.id ? atual.map((item) => (item.id === salvo.id ? salvo : item)) : [...atual, salvo],
-      );
-      toast.success(draft.id ? "Agendamento atualizado" : "Horário agendado", {
-        description: `${salvo.pacienteNome} · ${salvo.horaInicio}`,
-      });
+      if (draft.id) {
+        const { recorrencia: _recorrencia, ...edicao } = payload;
+        const salvo = await atualizarAgendamentoApi(draft.id, edicao);
+        setAgendamentos((atual) => atual.map((item) => (item.id === salvo.id ? salvo : item)));
+        toast.success("Agendamento atualizado", {
+          description: `${salvo.pacienteNome} · ${salvo.horaInicio}`,
+        });
+      } else {
+        const { agendamento: salvo, recorrencia } = await criarAgendamentoApi(payload);
+        if (recorrencia) {
+          await carregar(dataIso, visao);
+          const pulados = recorrencia.pulados.filter(Boolean);
+          toast.success(`${recorrencia.criados} horários agendados`, {
+            description: pulados.length
+              ? `${salvo.pacienteNome} · ${salvo.horaInicio}. ${pulados.length} ${pulados.length === 1 ? "data pulada" : "datas puladas"} porque o horário já estava ocupado.`
+              : `${salvo.pacienteNome} · ${salvo.horaInicio}`,
+          });
+        } else {
+          setAgendamentos((atual) => [...atual, salvo]);
+          toast.success("Horário agendado", {
+            description: `${salvo.pacienteNome} · ${salvo.horaInicio}`,
+          });
+        }
+      }
       const pacienteSalvo = pacientes.find((item) => item.id === draft.pacienteId);
       if (pacienteSalvo) {
         setUltimosPacientes((atual) =>
@@ -345,7 +361,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
   }, []);
 
   return (
-    <div className="flex h-auto min-h-0 flex-col gap-3 md:h-full md:overflow-hidden">
+    <div className="flex h-auto min-h-0 flex-col gap-3 [@media(min-height:900px)]:h-full [@media(min-height:900px)]:overflow-hidden">
       {carregando ? (
         <div className="flex min-h-[40vh] items-center justify-center">
           <Loader2 className="size-5 animate-spin text-primary" aria-label="Carregando agenda" />
@@ -399,7 +415,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
       </div>
 
       <Card className="shrink-0">
-        <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
+        <CardContent className="flex flex-col gap-3 p-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="icon-sm" onClick={() => setDataIso(deslocarPeriodo(dataIso, visao, -1))} aria-label="Período anterior">
               <ChevronLeft />
@@ -488,7 +504,7 @@ export function AgendaWorkspace({ dataInicial }: AgendaWorkspaceProps) {
         ))}
       </div>
 
-      <div className="flex h-[70dvh] min-w-0 flex-col md:h-auto md:min-h-0 md:flex-1">
+      <div className="flex h-[70dvh] min-w-0 flex-col [@media(min-height:900px)]:h-auto [@media(min-height:900px)]:min-h-0 [@media(min-height:900px)]:flex-1">
       <CalendarView
         visao={visao}
         dataIso={dataIso}

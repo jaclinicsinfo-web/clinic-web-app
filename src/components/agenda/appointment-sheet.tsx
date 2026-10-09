@@ -12,6 +12,7 @@ import { FormField, FormSection } from "@/components/shared/form-section";
 import { Pode } from "@/components/auth/pode";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -79,6 +80,10 @@ export interface AgendamentoDraft {
   valor: number;
   status: AgendamentoStatus;
   observacoes?: string;
+  recorrencia?: {
+    intervalo: "semanal" | "duas_semanas" | "tres_semanas" | "mensal";
+    meses: 1 | 2 | 3 | 6 | 12;
+  };
 }
 
 export interface PacienteAgenda extends PatientCardPaciente {
@@ -127,6 +132,9 @@ export function AppointmentSheet({
 
   const edicao = Boolean(agendamento);
   const somenteLeitura = edicao && !podeEditar;
+  const [recorrente, setRecorrente] = React.useState(false);
+  const [intervalo, setIntervalo] = React.useState<"semanal" | "duas_semanas" | "tres_semanas" | "mensal">("semanal");
+  const [meses, setMeses] = React.useState<1 | 2 | 3 | 6 | 12>(3);
 
   const {
     handleSubmit,
@@ -146,8 +154,12 @@ export function AppointmentSheet({
   React.useEffect(() => {
     if (!open) {
       setBusca("");
+      setRecorrente(false);
+      setIntervalo("semanal");
+      setMeses(3);
       return;
     }
+    setRecorrente(false);
     reset(valoresIniciais(agendamento, slot, pacienteInicialId));
   }, [open, agendamento, slot, pacienteInicialId, reset]);
 
@@ -254,6 +266,7 @@ export function AppointmentSheet({
       valor: valorCalculado,
       status: form.status,
       observacoes: form.observacoes || undefined,
+      recorrencia: !agendamento && recorrente ? { intervalo, meses } : undefined,
     });
   }
 
@@ -459,6 +472,59 @@ export function AppointmentSheet({
                   />
                 </FormField>
               </div>
+
+              {!edicao && (
+                <div className="col-span-full space-y-3 rounded-lg border border-border px-4 py-3">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="recorrente"
+                      className="mt-0.5"
+                      checked={recorrente}
+                      onCheckedChange={(marcado) => setRecorrente(marcado === true)}
+                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="recorrente">Agendamento recorrente</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Repete o mesmo horário para este paciente. Datas já ocupadas são puladas.
+                      </p>
+                    </div>
+                  </div>
+                  {recorrente && (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <FormField label="Repetir">
+                        <Select value={intervalo} onValueChange={(valor) => setIntervalo(valor as typeof intervalo)}>
+                          <SelectTrigger aria-label="Repetir">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="semanal">Toda semana</SelectItem>
+                            <SelectItem value="duas_semanas">A cada 2 semanas</SelectItem>
+                            <SelectItem value="tres_semanas">A cada 3 semanas</SelectItem>
+                            <SelectItem value="mensal">Todo mês</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormField>
+                      <FormField label="Durante">
+                        <Select
+                          value={String(meses)}
+                          onValueChange={(valor) => setMeses(Number(valor) as 1 | 2 | 3 | 6 | 12)}
+                        >
+                          <SelectTrigger aria-label="Durante">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1 mês</SelectItem>
+                            <SelectItem value="2">2 meses</SelectItem>
+                            <SelectItem value="3">3 meses</SelectItem>
+                            <SelectItem value="6">6 meses</SelectItem>
+                            <SelectItem value="12">1 ano</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormField>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <FormField label="Sala / consultório" error={errors.sala?.message}>
                 <Select value={values.sala || undefined} onValueChange={(valor) => setValue("sala", valor)}>
