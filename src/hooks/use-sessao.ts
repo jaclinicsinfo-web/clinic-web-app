@@ -9,7 +9,8 @@ import { LIMITES_UNIDADES, modulosDoPlano } from "@/lib/modulos-plano";
 import { encerrarSessaoApi, gravarUltimaUnidade, selecionarUnidade } from "@/services/auth";
 import { useEntidadeLabelsStore } from "@/hooks/use-entidade-labels";
 import { normalizarPermissoes } from "@/lib/permissoes";
-import type { CodigoPlano, Permissao, PlanoAtual, SessaoUsuario, Unidade, UsoUsuarios, Usuario } from "@/types";
+import { lerAcessoGratuito } from "@/lib/acesso-gratuito";
+import type { AcessoGratuito, CodigoPlano, Permissao, PlanoAtual, SessaoUsuario, Unidade, UsoUsuarios, Usuario } from "@/types";
 
 const STORAGE_LOCAL = "clinicerp.sessao";
 const STORAGE_TEMP = "clinicerp.sessao.temp";
@@ -21,6 +22,7 @@ function montarSessao(
   unidades: Unidade[],
   plano: PlanoAtual | null,
   usoUsuarios: UsoUsuarios | null,
+  acessoGratuito: AcessoGratuito | null,
   planoEvento: SessaoUsuario["planoEvento"],
   permissoes: Permissao[] | null,
   clinicaNome: string | null,
@@ -43,6 +45,7 @@ function montarSessao(
     clinicaId,
     plano,
     usoUsuarios,
+    acessoGratuito,
     planoEvento,
     tema: usuario.tema === "escuro" ? "escuro" : "claro",
     primeiroAcesso,
@@ -121,6 +124,7 @@ function lerStorage(): SessaoUsuario | null {
           }
         : null,
       usoUsuarios: parsed.usoUsuarios ?? null,
+      acessoGratuito: lerAcessoGratuito(parsed.acessoGratuito),
       planoEvento: resolverEvento(null, parsed.plano, parsed.usoUsuarios, parsed.clinicaId),
       clinicaNome: parsed.clinicaNome ?? null,
       clinicaId: parsed.clinicaId ?? null,
@@ -166,6 +170,7 @@ interface SessaoState {
     clinicaId?: string | null,
     primeiroAcesso?: boolean,
     isolarDados?: boolean,
+    acessoGratuito?: AcessoGratuito | null,
   ) => void;
   aplicarContextoPlano: (input: {
     usuario?: Usuario;
@@ -178,6 +183,7 @@ interface SessaoState {
     permissoes?: Permissao[] | null;
     perfilId?: string;
     isolarDados?: boolean;
+    acessoGratuito?: AcessoGratuito | null;
     tema?: "claro" | "escuro";
   }) => void;
   atualizarUso: (usoUsuarios: UsoUsuarios) => void;
@@ -211,7 +217,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
     }
     set({ sessao, hidratado: true, lembrar: persistida });
   },
-  iniciarSessao: (usuario, unidadeAtualId, unidades, lembrar, plano = null, usoUsuarios = null, permissoes = null, clinicaNome = null, clinicaId = null, primeiroAcesso = false, isolarDados = false) => {
+  iniciarSessao: (usuario, unidadeAtualId, unidades, lembrar, plano = null, usoUsuarios = null, permissoes = null, clinicaNome = null, clinicaId = null, primeiroAcesso = false, isolarDados = false, acessoGratuito = null) => {
     // Não persiste sessão de módulos sem unidade escolhida.
     if (!primeiroAcesso && !unidadeAtualId?.trim()) {
       return;
@@ -225,6 +231,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       unidades,
       plano,
       usoUsuarios,
+      acessoGratuito,
       evento,
       permissoes == null ? null : normalizarPermissoes(permissoes),
       clinicaNome,
@@ -256,6 +263,7 @@ export const useSessaoStore = create<SessaoState>((set, get) => ({
       unidadeAtualId: input.unidadeAtualId ?? atual.unidadeAtualId,
       plano: input.plano,
       usoUsuarios: input.usoUsuarios,
+      acessoGratuito: input.acessoGratuito !== undefined ? input.acessoGratuito : atual.acessoGratuito,
       planoEvento: evento,
       tema: input.usuario?.tema ?? input.tema ?? atual.tema,
     };

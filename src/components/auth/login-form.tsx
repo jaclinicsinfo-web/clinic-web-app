@@ -23,9 +23,10 @@ import {
   selecionarUnidade,
 } from "@/services/auth";
 import { useSessaoStore } from "@/hooks/use-sessao";
+import { mensagemValidadeTeste } from "@/lib/acesso-gratuito";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
-import type { Permissao, PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
+import type { AcessoGratuito, Permissao, PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Informe seu e-mail.").email("E-mail inválido."),
@@ -45,6 +46,7 @@ interface LoginPendente {
   clinicaNome: string | null;
   clinicaId: string | null;
   isolarDados: boolean;
+  acessoGratuito: AcessoGratuito | null;
 }
 
 export function LoginForm() {
@@ -89,6 +91,7 @@ export function LoginForm() {
     clinicaId: string | null,
     primeiroAcesso = false,
     isolarDados = false,
+    acessoGratuito: AcessoGratuito | null = null,
   ) {
     iniciarSessao(
       usuario,
@@ -102,6 +105,7 @@ export function LoginForm() {
       clinicaId,
       primeiroAcesso,
       isolarDados,
+      acessoGratuito,
     );
     if (primeiroAcesso) {
       router.push("/primeiro-acesso");
@@ -110,8 +114,9 @@ export function LoginForm() {
     if (clinicaId && unidadeAtualId) {
       gravarUltimaUnidade(clinicaId, unidadeAtualId);
     }
+    const validade = mensagemValidadeTeste(acessoGratuito?.expiraEm, plano?.nome);
     toast.success(`Olá, ${usuario.nome.split(" ")[0]}!`, {
-      description: `${usuario.perfilNome} · sessão iniciada`,
+      description: validade ?? `${usuario.perfilNome} · sessão iniciada`,
     });
     router.push("/dashboard");
   }
@@ -138,6 +143,7 @@ export function LoginForm() {
         resultado.clinicaId,
         true,
         resultado.isolarDados,
+        resultado.acessoGratuito,
       );
       return;
     }
@@ -160,6 +166,7 @@ export function LoginForm() {
         resultado.clinicaId,
         false,
         resultado.isolarDados,
+        resultado.acessoGratuito,
       );
       return;
     }
@@ -180,6 +187,7 @@ export function LoginForm() {
       clinicaNome: resultado.clinicaNome,
       clinicaId: resultado.clinicaId,
       isolarDados: resultado.isolarDados,
+      acessoGratuito: resultado.acessoGratuito,
     });
   }
 
@@ -203,6 +211,7 @@ export function LoginForm() {
         pendente.clinicaId,
         false,
         pendente.isolarDados,
+        pendente.acessoGratuito,
       );
     } catch (error) {
       setConfirmandoUnidade(false);
@@ -241,6 +250,11 @@ export function LoginForm() {
           Olá, {pendente.usuario.nome.split(" ")[0]}. Você tem acesso a mais de uma unidade. Escolha onde deseja
           trabalhar nesta sessão.
         </p>
+        {mensagemValidadeTeste(pendente.acessoGratuito?.expiraEm, pendente.plano?.nome) ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            {mensagemValidadeTeste(pendente.acessoGratuito?.expiraEm, pendente.plano?.nome)}
+          </p>
+        ) : null}
 
         {erroAuth && (
           <p

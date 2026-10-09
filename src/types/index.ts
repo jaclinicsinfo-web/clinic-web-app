@@ -489,6 +489,10 @@ export interface UsoUsuarios {
   podeAdicionar: boolean;
 }
 
+export interface AcessoGratuito {
+  expiraEm: string;
+}
+
 export interface PerfilSessao {
   id: string;
   nome: string;
@@ -512,6 +516,7 @@ export interface SessaoUsuario {
   clinicaId: string | null;
   plano: PlanoAtual | null;
   usoUsuarios: UsoUsuarios | null;
+  acessoGratuito: AcessoGratuito | null;
   planoEvento: "upgrade" | "downgrade" | null;
   tema?: "claro" | "escuro";
   primeiroAcesso?: boolean;

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/shared/form-section";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { ApiError } from "@/lib/api";
+import { mensagemValidadeTeste } from "@/lib/acesso-gratuito";
 import { concluirPrimeiroAcesso } from "@/services/auth";
 
 const schema = z.object({
@@ -74,8 +75,12 @@ export function PrimeiroAcessoForm() {
         resultado.clinicaId,
         false,
         resultado.isolarDados,
+        resultado.acessoGratuito,
       );
-      toast.success("Unidade e administrador configurados.");
+      const validade = mensagemValidadeTeste(resultado.acessoGratuito?.expiraEm, resultado.plano?.nome);
+      toast.success("Unidade e administrador configurados.", {
+        description: validade ?? undefined,
+      });
       router.push("/dashboard");
     } catch (error) {
       setErro(error instanceof ApiError ? error.message : "Não foi possível salvar. Tente novamente.");
@@ -90,6 +95,8 @@ export function PrimeiroAcessoForm() {
     );
   }
 
+  const validadeTeste = mensagemValidadeTeste(sessao.acessoGratuito?.expiraEm, sessao.plano?.nome);
+
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Primeiro acesso</p>
@@ -97,6 +104,7 @@ export function PrimeiroAcessoForm() {
       <p className="mt-1.5 text-sm text-muted-foreground">
         Confirme quem administra o painel e a unidade de atendimento. A clínica é configurada numa etapa seguinte.
       </p>
+      {validadeTeste ? <p className="mt-3 text-xs text-muted-foreground">{validadeTeste}</p> : null}
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
         {erro && (

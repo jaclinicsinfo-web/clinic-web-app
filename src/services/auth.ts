@@ -1,7 +1,8 @@
 import { api, ApiError, clearToken, setMemoryToken, setToken } from "@/lib/api";
 import { modulosDoPlano } from "@/lib/modulos-plano";
 import { normalizarPermissoes } from "@/lib/permissoes";
-import type { PerfilSessao, Permissao, PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
+import { lerAcessoGratuito } from "@/lib/acesso-gratuito";
+import type { AcessoGratuito, PerfilSessao, Permissao, PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
 
 const STORAGE_ULTIMA_UNIDADE = "clinicerp.ultimaUnidade";
 
@@ -25,6 +26,7 @@ export type ResultadoLogin =
       clinicaId: string | null;
       plano: PlanoAtual | null;
       usoUsuarios: UsoUsuarios | null;
+      acessoGratuito: AcessoGratuito | null;
   permissoes: Permissao[] | null;
   perfilId: string;
   isolarDados: boolean;
@@ -40,6 +42,7 @@ export interface ContextoAuth {
   clinicaId: string | null;
   plano: PlanoAtual | null;
   usoUsuarios: UsoUsuarios | null;
+  acessoGratuito: AcessoGratuito | null;
   permissoes: Permissao[] | null;
   perfilId: string;
   isolarDados: boolean;
@@ -106,6 +109,7 @@ function montarResultadoLogin(data: SessaoApi): Extract<ResultadoLogin, { ok: tr
     clinicaId: data.clinicaId ?? null,
     plano: lerPlano(data),
     usoUsuarios: lerUso(data),
+    acessoGratuito: lerAcessoGratuito(data.acessoGratuito),
     permissoes: lerPermissoes(data),
     perfilId: data.perfil?.id ?? data.usuario.perfilId,
     isolarDados: lerIsolamento(data),
@@ -171,6 +175,7 @@ export async function obterSessaoAtual(): Promise<ContextoAuth | null> {
       clinicaId: data.clinicaId ?? null,
       plano: lerPlano(data),
       usoUsuarios: lerUso(data),
+      acessoGratuito: lerAcessoGratuito(data.acessoGratuito),
       permissoes: lerPermissoes(data),
       perfilId: data.perfil?.id ?? data.usuario.perfilId,
       isolarDados: lerIsolamento(data),

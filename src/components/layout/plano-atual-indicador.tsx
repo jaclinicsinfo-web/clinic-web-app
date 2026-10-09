@@ -2,6 +2,7 @@
 
 import { Sparkles } from "lucide-react";
 
+import { mensagemValidadeTeste } from "@/lib/acesso-gratuito";
 import { useSessaoStore } from "@/hooks/use-sessao";
 import { planoEstaAcimaDoTeto } from "@/lib/plano";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,8 @@ export function PlanoAtualIndicador({ className }: PlanoAtualIndicadorProps) {
   if (!sessao?.plano) return null;
 
   const acima = planoEstaAcimaDoTeto(sessao.usoUsuarios);
-  const descricao = `Plano ${sessao.plano.nome}`;
+  const validade = mensagemValidadeTeste(sessao.acessoGratuito?.expiraEm, sessao.plano.nome);
+  const descricao = validade ?? `Plano ${sessao.plano.nome}`;
 
   return (
     <span

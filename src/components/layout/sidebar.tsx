@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Lock, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
+import { mensagemValidadeTeste } from "@/lib/acesso-gratuito";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { PlanoAtualIndicador } from "@/components/layout/plano-atual-indicador";
 import { navGroups, type NavItem } from "@/lib/navigation";
@@ -46,6 +47,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
   const isolarDados = Boolean(sessao?.isolarDados);
 
   const plano = sessao?.plano;
+  const validadeTeste = mensagemValidadeTeste(sessao?.acessoGratuito?.expiraEm, plano?.nome);
 
   const gruposVisiveis = navGroups
     .map((grupo) => ({
@@ -126,7 +128,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
               </TooltipTrigger>
               <TooltipContent side="right">
                 {sessao?.clinicaNome || "J.A. Clinics"}
-                {plano ? ` · Plano ${plano.nome}` : ""}
+                {validadeTeste ? ` · ${validadeTeste}` : plano ? ` · Plano ${plano.nome}` : ""}
               </TooltipContent>
             </Tooltip>
           ) : (
