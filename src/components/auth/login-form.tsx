@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FormField } from "@/components/shared/form-section";
+import { SeletorPagamento } from "@/components/assinatura/seletor-pagamento";
 import {
   autenticar,
   descartarLoginPendente,
@@ -27,6 +28,7 @@ import { mensagemValidadeTeste } from "@/lib/acesso-gratuito";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import type { AcessoGratuito, Permissao, PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
+import type { BloqueioCobranca } from "@/services/assinatura";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Informe seu e-mail.").email("E-mail inválido."),
@@ -58,6 +60,7 @@ export function LoginForm() {
   const [mostrarSenha, setMostrarSenha] = React.useState(false);
   const [erroAuth, setErroAuth] = React.useState<string | null>(null);
   const [pendente, setPendente] = React.useState<LoginPendente | null>(null);
+  const [bloqueio, setBloqueio] = React.useState<(BloqueioCobranca & { mensagem: string }) | null>(null);
   const [unidadeId, setUnidadeId] = React.useState("");
   const [confirmandoUnidade, setConfirmandoUnidade] = React.useState(false);
 
@@ -126,6 +129,10 @@ export function LoginForm() {
     const resultado = await autenticar(values.email, values.senha, values.lembrar);
 
     if (!resultado.ok) {
+      if (resultado.bloqueio?.pagamentoToken) {
+        setBloqueio({ ...resultado.bloqueio, mensagem: resultado.erro });
+        return;
+      }
       setErroAuth(resultado.erro);
       return;
     }
@@ -223,6 +230,37 @@ export function LoginForm() {
     return (
       <div className="flex h-40 items-center justify-center">
         <Loader2 className="size-5 animate-spin text-primary" aria-label="Carregando" />
+      </div>
+    );
+  }
+
+  if (bloqueio?.pagamentoToken) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setBloqueio(null)}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          Voltar
+        </button>
+
+        <h1 className="mt-6 text-2xl font-semibold tracking-tight text-foreground">
+          {bloqueio.codigo === "TESTE_ENCERRADO" ? "Assine para continuar" : "Renove a assinatura"}
+        </h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">{bloqueio.mensagem}</p>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Os dados da clínica estão guardados. Assim que o Mercado Pago confirmar, o acesso volta na hora.
+        </p>
+
+        <div className="mt-6">
+          <SeletorPagamento
+            planoInicial={bloqueio.planoAtual}
+            cicloInicial={bloqueio.cicloAtual}
+            tokenPagamento={bloqueio.pagamentoToken}
+          />
+        </div>
       </div>
     );
   }

@@ -2,6 +2,7 @@ import { api, ApiError, clearToken, setMemoryToken, setToken } from "@/lib/api";
 import { modulosDoPlano } from "@/lib/modulos-plano";
 import { normalizarPermissoes } from "@/lib/permissoes";
 import { lerAcessoGratuito } from "@/lib/acesso-gratuito";
+import { lerBloqueioCobranca, type BloqueioCobranca } from "@/services/assinatura";
 import type { AcessoGratuito, PerfilSessao, Permissao, PlanoAtual, Unidade, UsoUsuarios, Usuario } from "@/types";
 
 const STORAGE_ULTIMA_UNIDADE = "clinicerp.ultimaUnidade";
@@ -32,7 +33,7 @@ export type ResultadoLogin =
   isolarDados: boolean;
   primeiroAcesso: boolean;
 }
-  | { ok: false; erro: string };
+  | { ok: false; erro: string; bloqueio?: BloqueioCobranca | null };
 
 export interface ContextoAuth {
   usuario: Usuario;
@@ -142,7 +143,11 @@ export async function autenticar(email: string, senha: string, lembrar: boolean)
 
     return persistirSessao(data, lembrar);
   } catch (error) {
-    return { ok: false, erro: mensagemErro(error, "Não foi possível entrar. Tente novamente.") };
+    return {
+      ok: false,
+      erro: mensagemErro(error, "Não foi possível entrar. Tente novamente."),
+      bloqueio: error instanceof ApiError && error.status === 403 ? lerBloqueioCobranca(error.details) : null,
+    };
   }
 }
 

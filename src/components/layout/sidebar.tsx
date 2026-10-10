@@ -78,6 +78,7 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavigate }: SidebarProp
             }
             if (child.href.startsWith("/configuracoes/usuarios")) return adminOuGestor;
             if (child.href.startsWith("/configuracoes/permissoes")) return admin;
+            if (child.href.startsWith("/configuracoes/assinatura")) return admin;
             return temPermissao(permissoes, item.modulo);
           });
           return {

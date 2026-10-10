@@ -16,6 +16,7 @@ const abas: { label: string; href: string; visivel?: "admin" | "adminOuGestor"; 
   { label: "Procedimentos", href: "/configuracoes/procedimentos" },
   { label: "Pagamentos", href: "/configuracoes/pagamentos", moduloPlano: "financeiro" },
   { label: "Estilização", href: "/configuracoes/estilizacao" },
+  { label: "Assinatura", href: "/configuracoes/assinatura", visivel: "admin" },
 ];
 
 export function ConfiguracoesTabs() {

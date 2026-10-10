@@ -89,7 +89,7 @@ export function moduloDaRota(pathname: string): ModuloSistema | null {
 }
 
 export function rotaExigeAdministrador(pathname: string) {
-  return pathname.startsWith("/configuracoes/permissoes");
+  return pathname.startsWith("/configuracoes/permissoes") || pathname.startsWith("/configuracoes/assinatura");
 }
 
 export function rotaExigeAdminOuGestor(pathname: string) {

@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AvisoCobranca } from "@/components/layout/aviso-cobranca";
 import { AvisoTeste } from "@/components/layout/aviso-teste";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { useSessaoStore } from "@/hooks/use-sessao";
@@ -98,6 +99,7 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
 
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
         <AvisoTeste />
+        <AvisoCobranca />
         {sessao && unidades.length > 0 && (
           <Select
             value={sessao.unidadeAtualId}
