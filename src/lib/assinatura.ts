@@ -1,4 +1,4 @@
-import type { AssinaturaClinica } from "@/services/assinatura";
+import type { AssinaturaClinica, CicloCobranca, PagamentoAssinatura } from "@/services/assinatura";
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 /** A partir de quantos dias antes do vencimento o sistema começa a avisar. */
@@ -14,6 +14,22 @@ export function diasAte(iso: string | null | undefined, agora = Date.now()) {
   return Math.ceil((new Date(iso).getTime() - agora) / DIA_MS);
 }
 
+/** Onde o cliente gerencia as assinaturas e o cartão no Mercado Pago. */
+export const URL_ASSINATURAS_MERCADO_PAGO = "https://www.mercadopago.com.br/subscriptions";
+
+export function rotuloCiclo(ciclo: CicloCobranca) {
+  return ciclo === "anual" ? "anual" : "mensal";
+}
+
+/** "Pix", "Cartão à vista", "Cartão em 3x". */
+export function rotuloMeio(pagamento: Pick<PagamentoAssinatura, "meio" | "parcelas">) {
+  if (pagamento.meio === "pix") return "Pix";
+  if (pagamento.meio === "cartao_credito") {
+    return pagamento.parcelas && pagamento.parcelas > 1 ? `Cartão em ${pagamento.parcelas}x` : "Cartão à vista";
+  }
+  return pagamento.meio ? "Outro" : "—";
+}
+
 export type TomAviso = "warning" | "danger";
 
 /** Aviso de cobrança para o topo do sistema. Teste em andamento já tem o selo próprio. */
@@ -26,7 +42,9 @@ export function avisoDeCobranca(assinatura: AssinaturaClinica | null, agora = Da
       longo: `A assinatura venceu em ${dataCurta(assinatura.venceEm)}. O acesso será bloqueado em ${dataCurta(assinatura.bloqueiaEm)} se o pagamento não for feito.`,
     };
   }
-  if (assinatura.situacao === "em_dia") {
+  // Com a cobrança automática ativa (e sem falha), não precisa lembrar de pagar.
+  const automaticaEmOrdem = assinatura.automatica?.status === "ativa" && !assinatura.automatica.falhou;
+  if (assinatura.situacao === "em_dia" && !automaticaEmOrdem) {
     const dias = diasAte(assinatura.venceEm, agora);
     if (dias !== null && dias <= DIAS_AVISO_VENCIMENTO) {
       return {

@@ -86,8 +86,8 @@ function RetornoPagamento() {
       </p>
       {estadoTela === "pendente" ? (
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Se você pagou com Pix, a confirmação pode levar alguns minutos. Você pode sair desta página: o vencimento é
-          atualizado sozinho quando o Mercado Pago avisar.
+          Se você pagou com Pix, a confirmação pode levar alguns minutos. Você pode sair desta página: a assinatura é
+          atualizada sozinha quando o Mercado Pago avisar.
         </p>
       ) : null}
       <Button asChild className="mt-6 w-full" size="lg" variant={estadoTela === "pago" ? "default" : "outline"}>
